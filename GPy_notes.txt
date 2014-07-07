@@ -1,0 +1,5 @@
+NOTES ON GPy WORKING
+
+Xpred = np.reshape(np.arange(0, 105, 1), (numObs, 1))
+mu, var = m._raw_predict(Xpred, full_cov=True)
+m.predict(Xpred)
