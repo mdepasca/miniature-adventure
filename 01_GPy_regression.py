@@ -1,65 +1,44 @@
-# vim: tabstop=8 expandtab shiftwidth=4 softtabstop=4
-# -*- coding: utf-8 -*-
-# <nbformat>3.0</nbformat>
-
-# <headingcell level=1>
-
-# Using GPy package to perform Gaussian Processes regression on SN lightcurves
-
-# <rawcell>
-
-# https://gpy.readthedocs.org/en/latest/tuto_GP_regression.html
-
-# <codecell>
-
 import numpy as np
 import pylab as pb
 pb.ion()
 import GPy
 import pickle
+import gzip as gzip
 from matplotlib import pyplot as plt
 import snphotcc_infile_reformat as snphot
 import time
-# %matplotlib inline
-
-# <markdowncell>
 
 # The dataset is a simulated one coming from the SuperNova Classification Challange (Kessler+ 2010).
 # The ASCII files are read using code from Newling+ 2011. A catalog of LCs is produced.
-
-# <rawcell>
 
 # import utility
 # 
 # snCatalog = utility.create_sn_catalog('../DES_BLIND+HOSTZ')
 # utility.pickle_sn_catalog(snCatalog, 'snCatalog.pkl')
 
-# <markdowncell>
+
 
 # Opening pickle file containing the catalog
 
-# <codecell>
+
 t1 = time.mktime(time.gmtime())
-f = open('snCatalog.pkl', 'rb')
+dirTrainData = 'train_data/'
+fileZip = 'snCatalog.gz'
+# f = open('snCatalog.pkl', 'rb')
+f = gzip.open(dirTrainData + fileZip, 'rb')
 snCatalog = pickle.load(f)
 f.close()
 
-# <codecell>
-
 len(snCatalog.SNID)
-
-# <codecell>
 
 gLimMag = 25.2
 rLimMag = 25.4
 iLimMag = 25.1
 zLimMag = 24.9
 
-# <markdowncell>
 
 # Looking for SN with ID 142 (whose LC as already been fitted with Faraway's R code)
 
-# <codecell>
 
 #snIdx = np.where(snCatalog.SNID == 142)[0][0]
 snIdx = np.random.random_integers(low=0, high=len(snCatalog.SNID))
