@@ -99,14 +99,11 @@ def pick_random_sn(catalog, band):
     snIdx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[snIdx].lightCurvesDict[band].mjd)
 
-    #t = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].mjd, (numObs, 1))
+    t = catalog.sne[snIdx].lightCurvesDict[band].mjd
     t = t - np.min(t)
 
-    # flux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].flux, 
-    #                   (numObs, 1))
     flux = catalog.sne[snIdx].lightCurvesDict[band].flux
-    # errFlux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].fluxErr, 
-    #                   (numObs, 1))
+    
     errFlux = catalog.sne[snIdx].lightCurvesDict[band].fluxErr
     
     return t, flux, errFlux
