@@ -95,17 +95,22 @@ def pick_random_sn(catalog, band):
     """
     Extract random observation in specified band from catalog. 
     Returns time, flux and flux errors arrays.
-    The output shape is suited for GPy regression.
     """
     snIdx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[snIdx].lightCurvesDict[band].mjd)
 
-    t = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].mjd, (numObs, 1))
+    #t = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].mjd, (numObs, 1))
     t = t - np.min(t)
 
-    flux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].flux, 
-                      (numObs, 1))
-    errFlux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].fluxErr, 
-                      (numObs, 1))
+    # flux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].flux, 
+    #                   (numObs, 1))
+    flux = catalog.sne[snIdx].lightCurvesDict[band].flux
+    # errFlux = np.reshape(catalog.sne[snIdx].lightCurvesDict[band].fluxErr, 
+    #                   (numObs, 1))
+    errFlux = catalog.sne[snIdx].lightCurvesDict[band].fluxErr
     
     return t, flux, errFlux
+
+
+def reshape_for_GPy(vec):
+    return np.reshape(vec, (len(vec), 1))
