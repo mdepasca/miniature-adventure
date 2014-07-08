@@ -1,12 +1,12 @@
 import numpy as np
 import pylab as pb
 pb.ion()
-import GPy
-import pickle
+import GPy as GPy
+import pickle as pkl
 import gzip as gzip
 from matplotlib import pyplot as plt
 import snphotcc_infile_reformat as snphot
-import time
+import time as time
 
 # The dataset is a simulated one coming from the SuperNova Classification Challange (Kessler+ 2010).
 # The ASCII files are read using code from Newling+ 2011. A catalog of LCs is produced.
@@ -25,8 +25,10 @@ t1 = time.mktime(time.gmtime())
 dirTrainData = 'train_data/'
 fileZip = 'snCatalog.gz'
 # f = open('snCatalog.pkl', 'rb')
+print '  Unzipping traning catalog ...'
 f = gzip.open(dirTrainData + fileZip, 'rb')
-snCatalog = pickle.load(f)
+print '  Unpickling training catalog ...'
+snCatalog = pkl.load(f)
 f.close()
 
 len(snCatalog.SNID)
@@ -44,11 +46,11 @@ zLimMag = 24.9
 snIdx = np.random.random_integers(low=0, high=len(snCatalog.SNID))
 print snCatalog.SNID[snIdx]
 
-# <markdowncell>
+
 
 # Band Selection
 
-# <codecell>
+
 offset = 3
 nLines = 6
 nCols = 8
@@ -73,7 +75,6 @@ for band in ('g', 'r', 'i', 'z'):
         snIdx = i + offset * (nLines * nCols)
         numObs = len(snCatalog.sne[snIdx].lightCurvesDict[band].mjd)
 
-# <codecell>
 
 #numObs = len(snCatalog.sne[snIdx].g.mjd)
         X = np.reshape(snCatalog.sne[snIdx].lightCurvesDict[band].mjd, (numObs, 1))
@@ -88,22 +89,20 @@ for band in ('g', 'r', 'i', 'z'):
         errYmag = np.reshape(errYmag, (numObs, 1))
         errYmag
 
-    # <markdowncell>
-    
-    # Setting the kernel function from which depends the cross-validation between different inputs
-    
-    # <codecell>
 
+        # 
+        # Setting the kernel function from which depends the cross-validation between different inputs
+        # 
         kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)#GPy.kern.RBF(1)
 
 
-    # <markdowncell>
+        # 
+        # Creating the GP model
+        # 
 
-    # Creating the GP model
-
-    # <codecell>
-
-    #Model 1
+        # 
+        # Model 1
+        # 
         m = GPy.models.GPHeteroscedasticRegression(X, Ymag, kern)
         m['.*Gaussian_noise'] = errYmag.flatten() #Set the noise parameters to the error in Y
         [m['.*Gaussian_noise_%s' %i].constrain_fixed() for i in range(numObs)] #Fix the noise parameters, we know its value so we don't need to learn it
@@ -132,8 +131,8 @@ for band in ('g', 'r', 'i', 'z'):
             k = 0
             j += 1
     
-    figFile = 'img/samples/sn_sample%(block)03d_%(band)s.pdf' % {"block": offset+1, "band": band}
-    pb.savefig(figFile, format='pdf', dpi=300)
+    # figFile = 'img/samples/sn_sample%(block)03d_%(band)s.pdf' % {"block": offset+1, "band": band}
+    # pb.savefig(figFile, format='pdf', dpi=300)
 
 t2 = time.mktime(time.gmtime())
 deltaT = time.localtime(t2 - t1)
