@@ -16,48 +16,37 @@ class LightCurve():
 
 	def __init__(self, label):
 		self.label = label
-		self.mjd = np.zeros(0) #[]
-		self.flux = np.zeros(0) #[]
-		self.fluxErr = np.zeros(0) #[]
+		self.mjd = np.zeros(0)
+		self.flux = np.zeros(0)
+		self.fluxErr = np.zeros(0)
 
 	def addDataPoint(self, mjd, flux, fluxErr):
-		"""Adds a data point to the light curve.
-
 		"""
-		self.mjd = np.append(self.mjd, mjd) # self.mjd.append(mjd)
-		self.flux = np.append(self.flux, flux) # self.flux.append(flux)
-		self.fluxErr = np.append(self.fluxErr, fluxErr) # self.fluxErr.append(fluxErr)
-		
-	# def updateArrays(self):
-	# 	"""Converts all light curve data from lists to numpy arrays.
-
-	# 	"""
-	# 	self.mjd=numpy.array(self.mjd, dtype=numpy.float32)
-	# 	self.flux=numpy.array(self.flux, dtype=numpy.float32)
-	# 	self.fluxErr=numpy.array(self.fluxErr, dtype=numpy.float32)
-				
+		Adds a data point to the light curve.
+		"""
+		self.mjd = np.append(self.mjd, mjd)
+		self.flux = np.append(self.flux, flux)
+		self.fluxErr = np.append(self.fluxErr, fluxErr)
 
 	def make_shifted_mjd(self, distance):
-		"""Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
-
 		"""
-		self.shifted_mjd = self.mjd-distance
+		Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
+		"""
+		self.shifted_mjd = self.mjd - distance
 		
 	def get_maxfluxIndex(self):
-		"""Return the index of the maximum flux
-
 		"""
-		# return self.flux.tolist().index(self.flux.max())
+		Return the index of the maximum flux
+		"""
 		return np.argmax(self.flux)
 	
 	def get_max_fmfe_Index(self):
-		"""Return the index of max (flux - fluxErr)
-		
+		"""
+		Return the index of max (flux - fluxErr)
 		"""
 		difference = np.subtract(self.flux, self.fluxErr)
-		# return difference.tolist().index(difference.max())
+		
 		return np.argmax(difference)
-	
 	
 	def get_max_flux_p(self, p):
 		"""
@@ -70,7 +59,7 @@ class LightCurve():
 			self.badCurve = True
 		else:
 			self.badCurve = False
-#------------------------------------------------------------------------------------------------------------
+
 
 
 class Supernova():
@@ -88,13 +77,11 @@ class Supernova():
 	hostGalaxyID	(int)	THe host galaxy ID (all supernovae (in +zPhotHost) catalog have this)
 	zPhotHost		(float)	The redshift of the host galaxy (all supernovae in the catalog have this)
 	zPhotHostErr	(float)	Error in zPhotHost
-
-
 	"""
 
 	def __init__(self, inFileName):
-		"""Parses all the light curve data in inFileName into a Supernova object.
-
+		"""
+		Parses all the light curve data in inFileName into a Supernova object.
 		"""
 
 		inFile = file(inFileName, "r")
@@ -108,9 +95,9 @@ class Supernova():
 
 
 		self.lightCurvesDict = {'g':self.g, 
-					'r':self.r, 
-					'i':self.i, 
-					'z':self.z}
+								'r':self.r, 
+								'i':self.i, 
+								'z':self.z}
 		
 		for line in lines:
 			if len(line) > 3 and line[0] != "#":
@@ -132,7 +119,7 @@ class Supernova():
 					elif passband == "z":
 						self.z.addDataPoint(mjd, flux, fluxErr)
 					else:
-						print "Argh! What filter is this supposed to be?"
+						print "Filter not recognized: {:<5}".format(passband)
 				elif tag == "SNID":
 					self.SNID = int(data[0])
 				elif tag == "SNTYPE":
@@ -153,53 +140,36 @@ class Supernova():
 				elif tag == "HOST_GALAXY_PHOTO-Z":
 					self.zPhotHost = float(data[0])
 					self.zPhotHostErr = float(data[2])
-		
-		# self.g.updateArrays()
-		# self.r.updateArrays()
-		# self.i.updateArrays()
-		# self.z.updateArrays()
-		
+
 	def __cmp__(self, other):
 		return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
-		
-	#def __write__(self):
-	#	return 'bang'
-#------------------------------------------------------------------------------------------------------------
 
-class X:
-	def __init__(self, x):
-		self.y = np.arange(0,20)
-		self.x = x
-	
-	def pick(self):
-		f = open('testing1.pkl', 'w')
-		cPickle.dump(self, f)
-		f.close()
-		
 		
 		
 class SupernovaeCatalog():
 	"""
 	Class variables are
 	sne		(object array)	list of Supernova objects
-	zSpec	(float array) the spectroscopically observed redshift (None if no spctrscp) 
+	zSpec	(float array) the spectroscopically observed redshift 
+			(None if no spctrscp) 
 	zPhotHost	(float array)	the redshift of the host galaxy
 	SNID	(int array)	the IDs of the Supernovae
 	SNType	(int array)	The types of the supernovae
 	"""
 	def __init__(self, dataDir, load_all):
-		"""This class loads in all the light curve data under dataDir into a big list, and creates a
-		series of top level arrays that we can use to cut the catalog by z, type etc. load_all: Do you want to
+		"""
+		This class loads in all the light curve data under dataDir into a big 
+		list, and creates a series of top level arrays that we can use to cut 
+		the catalog by z, type etc. load_all: Do you want to
 		load all of the data, or will your computer then crash?
-		
 		"""
 		
 		print ">>> Loading data from text files ..."
 		inFileNames = glob.glob(dataDir+os.path.sep+"DES_SN*.DAT")
-		self.sne = np.zeros(0, dtype=np.object) # []
-		self.zPhotHost = np.zeros(0, dtype=np.float32) # []
-		self.SNID = np.zeros(0, dtype=np.int) # []
-		self.SNType = np.zeros(0, dtype=np.int) # [] # ints
+		self.sne = np.zeros(0, dtype=np.object)
+		self.zPhotHost = np.zeros(0, dtype=np.float32)
+		self.SNID = np.zeros(0, dtype=np.int)
+		self.SNType = np.zeros(0, dtype=np.int)
 		count = 0
 		for inFileName in inFileNames:
 			count += 1
@@ -221,31 +191,24 @@ class SupernovaeCatalog():
 
 			else:	
 				sn = Supernova(inFileName)            
-				self.SNType = np.append(self.SNType, sn.SNTypeInt)# self.SNType.append(sn.SNTypeInt)
-				self.SNID   = np.append(self.SNID, sn.SNID)# self.SNID  .append(sn.SNID)
-				self.sne    = np.append(self.sne, sn)# self.sne   .append(sn)
+				self.SNType = np.append(self.SNType, sn.SNTypeInt)
+				self.SNID   = np.append(self.SNID, sn.SNID)
+				self.sne    = np.append(self.sne, sn)
 
-		# self.zPhotHost=numpy.array(self.zPhotHost, dtype=numpy.float32)
 		self.zPhotHost = np.nan_to_num(self.zPhotHost)
-		# self.SNID=numpy.array(self.SNID, dtype=numpy.int)
-		# self.SNType=numpy.array(self.SNType, dtype=numpy.int)
-		# self.sne=numpy.array(self.sne, dtype=numpy.object)
-		
-
 			
 	def findSupernovae(self, SNType, zSpecLow, zSpecHigh):
-		"""Given a SNType code and a redshift range, return a list of matching supernovae in the catalog.
-		
+		"""
+		Given a SNType code and a redshift range, return a list of matching 
+		supernovae in the catalog.		
 		"""
 		typeMask = np.equal(self.SNType, SNType)
 		zSpecMask = np.logical_and(np.greater(self.zSpec, zSpecLow), 
-					   np.less(self.zSpec, zSpecHigh))
+					   			   np.less(self.zSpec, zSpecHigh))
 		mask = np.logical_and(typeMask, zSpecMask)
 		foundSupernovae = self.sne[mask]
 		
 		return foundSupernovae
-
-
 
 	def getSNTypeStr(self, SNTypeInt):
 		"""Given a SNTypeInt, returns a string, e.g. 'Ia'
@@ -279,7 +242,6 @@ class SupernovaeCatalog():
 		
 		return SNTypeStr
 
-
 	def getSNTypeInt(self, SNTypeStr):
 		"""Given a SNTypeStr, returns the corresponding int, e.g. 1
 		
@@ -296,20 +258,18 @@ class SupernovaeCatalog():
 		"""
 			
 		if SNTypeStr == "Ia":
-			SNTypeInt=1
+			SNTypeInt = 1
 		elif SNTypeStr == "II":
-			SNTypeInt=2
+			SNTypeInt = 2
 		elif SNTypeStr == "Ib/c":
-			SNTypeInt=3
+			SNTypeInt = 3
 		elif SNTypeStr == "pec. Ia":
-			SNTypeInt=11
+			SNTypeInt = 11
 		elif SNTypeStr == "other":
-			SNTypeInt=66
+			SNTypeInt = 66
 		elif SNTypeStr == "rejected":
-			SNTypeInt=-1
+			SNTypeInt = -1
 		elif SNTypeStr == "unclassified":
-			SNTypeInt=-9
+			SNTypeInt = -9
 		
 		return SNTypeInt
-
-#----------------------------------------------------------------------------
