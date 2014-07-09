@@ -94,36 +94,39 @@ def open_gzip_pkl_catalog(path):
 def pick_random_sn(catalog, band):
     """
     Extract random observation in specified band from catalog. 
-    Returns time, flux, flux errors arrays and index in the catalog.
+    Returns phase, flux, flux errors arrays and index in the catalog.
+    Phase has zeropoint on the maximum flux in r band
     """
     snIdx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[snIdx].lightCurvesDict[band].mjd)
 
-    t = catalog.sne[snIdx].lightCurvesDict[band].mjd
-    t = t - np.min(t)
+    phase = catalog.sne[snIdx].lightCurvesDict[band].mjd
+    phase = phase - phase[catalog.sne[snIdx].lightCurvesDict['r'].flux.argmax()]
 
     flux = catalog.sne[snIdx].lightCurvesDict[band].flux
     
     errFlux = catalog.sne[snIdx].lightCurvesDict[band].fluxErr
     
-    return t, flux, errFlux, snIdx
+    return phase, flux, errFlux, snIdx
 
 def get_sn(catalog, band, idx):
     """
     Extract specified supernova observation in specified band from catalog.
     Returns time, flux, flux errors arrays.
+    Time has zeropoint on the maximum flux in r band
     """
 
     numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
 
-    t = catalog.sne[idx].lightCurvesDict[band].mjd
-    t = t - np.min(t)
+    phase = catalog.sne[idx].lightCurvesDict[band].mjd
+    phase = phase - phase[catalog.sne[snIdx].lightCurvesDict['r'].flux.argmax()]
+    # t = t - np.min(t)
 
     flux = catalog.sne[idx].lightCurvesDict[band].flux
     
     errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
     
-    return t, flux, errFlux
+    return phase, flux, errFlux
 
 def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
