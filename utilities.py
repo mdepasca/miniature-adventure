@@ -5,6 +5,7 @@ import numpy as np
 import numpy.ma as ma                     # Masked arrays
 import pickle as pkl
 import gzip as gzip
+import GPy as GPy
 
 def flux_to_mag(flux, limFlux=False):
     """
@@ -16,7 +17,7 @@ def flux_to_mag(flux, limFlux=False):
     INPUT:
         flux: numpy array of fluxes
         limFlux: specifies the limiting flux
-
+        
     OUTPUT:
         mag: magnitude-converted fluxes
     """
@@ -119,7 +120,7 @@ def get_sn(catalog, band, idx):
     numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
 
     phase = catalog.sne[idx].lightCurvesDict[band].mjd
-    phase = phase - phase[catalog.sne[snIdx].lightCurvesDict['r'].flux.argmax()]
+    phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
     # t = t - np.min(t)
 
     flux = catalog.sne[idx].lightCurvesDict[band].flux
@@ -130,3 +131,23 @@ def get_sn(catalog, band, idx):
 
 def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
+
+
+def gp_fit(phase, mag, errMag, kernel, n_restarts=0):
+    """
+    Performs gaussian process regression
+    NOTE
+    check on shap of input should be added
+    """
+    rsPhase = reshape_for_GPy(phase)
+    rsMag = reshape_for_GPy(mag)
+
+    gpModel = GPy.models.GPHeteroscedasticRegression(rsPhase, rsMag, kern)
+    gpModel['.*Gaussian_noise'] = errMag
+    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed() 
+     for i in range(phase.size)]
+    if n_restarts > 0:
+        gpModel.optimize_restarts(num_restarts=n_restarts, 
+                                  verbose=False,
+                                  robust=True,
+                                  messages=False)
