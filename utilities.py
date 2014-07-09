@@ -26,7 +26,7 @@ def flux_to_mag(flux, limFlux=False):
 
         # applying the mask to detection below the limiting flux
         maFlux = ma.masked_where(flux < limFlux, flux)
-
+        
         # to avoid warnings due to values passed to np.log10
         # fluxMask = maFlux.mask
         # maMag = -2.5 * (-11.0 + np.log10(ma.filled(maFlux,1)))
@@ -94,7 +94,7 @@ def open_gzip_pkl_catalog(path):
 def pick_random_sn(catalog, band):
     """
     Extract random observation in specified band from catalog. 
-    Returns time, flux and flux errors arrays.
+    Returns time, flux, flux errors arrays and index in the catalog.
     """
     snIdx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[snIdx].lightCurvesDict[band].mjd)
@@ -106,8 +106,24 @@ def pick_random_sn(catalog, band):
     
     errFlux = catalog.sne[snIdx].lightCurvesDict[band].fluxErr
     
-    return t, flux, errFlux
+    return t, flux, errFlux, snIdx
 
+def get_sn(catalog, band, idx):
+    """
+    Extract specified supernova observation in specified band from catalog.
+    Returns time, flux, flux errors arrays.
+    """
+
+    numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
+
+    t = catalog.sne[idx].lightCurvesDict[band].mjd
+    t = t - np.min(t)
+
+    flux = catalog.sne[idx].lightCurvesDict[band].flux
+    
+    errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
+    
+    return t, flux, errFlux
 
 def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
