@@ -133,21 +133,28 @@ def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
 
 
-def gp_fit(phase, mag, errMag, kernel, n_restarts=0):
+def gp_fit(X, Y, errY, kernel, n_restarts=0):
     """
     Performs gaussian process regression
     NOTE
     check on shap of input should be added
     """
-    rsPhase = reshape_for_GPy(phase)
-    rsMag = reshape_for_GPy(mag)
+    rsX = reshape_for_GPy(X)
+    rsY = reshape_for_GPy(Y)
 
-    gpModel = GPy.models.GPHeteroscedasticRegression(rsPhase, rsMag, kern)
-    gpModel['.*Gaussian_noise'] = errMag
-    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed() 
-     for i in range(phase.size)]
+    gpModel = GPy.models.GPHeteroscedasticRegression(rsX, rsY, kernel)
+    gpModel['.*Gaussian_noise'] = errY
+
+    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
+     for i in range(X.size)]
+
     if n_restarts > 0:
         gpModel.optimize_restarts(num_restarts=n_restarts, 
                                   verbose=False,
                                   robust=True,
                                   messages=False)
+
+    predPhase = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
+
+    meanY, var = gpModel._raw_predict(predPhase, full_cov=True)
+    return meanY, var, gpM
