@@ -211,18 +211,27 @@ if __name__ == '__main__':
               'r': 25.4, 
               'i': 25.1, 
               'z': 24.9}
-    print "Band {:<3}".format(args.band)
-    if args.candidate: print args.candidate
+    
+    dataSN = "../DES_BLIND+HOSTZ/"
 
     if args.catalog is None:
-
         # args.catalog = open_gzip_pkl_catalog(args.path)
         if args.candidate is None:
-            phase, flux, errFlux, args.candidate = pick_random_sn(
-                                                    args.catalog, args.band)       
+            args.candidate = np.random.random_integers(
+                                low=0, high=18321)# num SN in SNPhotCC
+
+            # phase, flux, errFlux, args.candidate = pick_random_sn(
+            #                                         args.catalog, args.band)
+        pathToSN = dataSN + "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
+        sn = get_sn_from_file(pathToSN)
+
+        phase = sn.lightCurvesDict[args.band].mjd
+        flux = sn.lightCurvesDict[args.band].flux
+        errFlux = sn.lightCurvesDict[args.band].fluxErr
     else:
-        phase, flux, errFlux = get_sn(
-                                args.catalog, args.band, args.candidate)
+        pass
+        # phase, flux, errFlux = get_sn(
+        #                         args.catalog, args.band, args.candidate)
     
     print args.candidate
 
