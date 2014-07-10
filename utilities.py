@@ -2,10 +2,43 @@
 Implementation of general use functions.
 """
 import numpy as np
-import numpy.ma as ma                     # Masked arrays
+import numpy.ma as ma
 import pickle as pkl
 import gzip as gzip
 import GPy as GPy
+import classes as classes
+import time as time
+import argparse
+import matplotlib.pyplot as plt
+
+if __name__ == '__main__':
+    """
+    Parsing input of parameters for test.
+    """
+    start_time = time.time()
+    parser = argparse.ArgumentParser(
+        description="Test of general functions.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument(
+        "-s", "--sn-candidate", dest="candidate", 
+        type=np.int64, default=None, 
+        help="Candidate id")
+    
+    parser.add_argument("-b", "--band", dest="band", default='r', 
+                        help="Photometric band.")
+    
+    parser.add_argument(
+        "-c", "--catalog", dest="catalog", default=None,
+        help="SN catalog.")
+    
+    parser.add_argument(
+        "-p", "--catalog_path", dest="path", 
+        default="train_data/snCatalog.gz",
+        help="Path to SN catalog.")
+
+    args = parser.parse_args()
+
 
 def flux_to_mag(flux, limFlux=False):
     """
@@ -98,17 +131,18 @@ def pick_random_sn(catalog, band):
     Returns phase, flux, flux errors arrays and index in the catalog.
     Phase has zeropoint on the maximum flux in r band
     """
-    snIdx = np.random.random_integers(low=0, high=len(catalog.SNID))
-    numObs = len(catalog.sne[snIdx].lightCurvesDict[band].mjd)
+    idx = np.random.random_integers(low=0, high=len(catalog.SNID))
+    numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
 
-    phase = catalog.sne[snIdx].lightCurvesDict[band].mjd
-    phase = phase - phase[catalog.sne[snIdx].lightCurvesDict['r'].flux.argmax()]
+    phase = catalog.sne[idx].lightCurvesDict[band].mjd
+    # phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
+    phase = phase - phase.min()
 
-    flux = catalog.sne[snIdx].lightCurvesDict[band].flux
+    flux = catalog.sne[idx].lightCurvesDict[band].flux
     
-    errFlux = catalog.sne[snIdx].lightCurvesDict[band].fluxErr
+    errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
     
-    return phase, flux, errFlux, snIdx
+    return phase, flux, errFlux, idx
 
 def get_sn(catalog, band, idx):
     """
@@ -120,14 +154,20 @@ def get_sn(catalog, band, idx):
     numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
 
     phase = catalog.sne[idx].lightCurvesDict[band].mjd
-    phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
-    # t = t - np.min(t)
+    # phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
+    phase = phase - phase.min()
 
     flux = catalog.sne[idx].lightCurvesDict[band].flux
     
     errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
     
     return phase, flux, errFlux
+
+def get_sn_from_file(pathToSN):
+    """Reads photometric data of SN from file formatted by SNPhotCC"""
+
+    sn = classes.Supernova(pathToSN)
+    return sn
 
 def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
@@ -157,4 +197,45 @@ def gp_fit(X, Y, errY, kernel, n_restarts=0):
     predPhase = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
 
     meanY, var = gpModel._raw_predict(predPhase, full_cov=True)
-    return meanY, var, gpM
+    return meanY, var, gpModel
+
+#
+#
+# Module Testing
+#
+#
+if __name__ == '__main__':
+    # these limiting magnitudes are for simulations of DES survey. They should
+    # be changed.
+    limMag = {'g': 25.2, 
+              'r': 25.4, 
+              'i': 25.1, 
+              'z': 24.9}
+    print "Band {:<3}".format(args.band)
+    if args.candidate: print args.candidate
+
+    if args.catalog is None:
+
+        # args.catalog = open_gzip_pkl_catalog(args.path)
+        if args.candidate is None:
+            phase, flux, errFlux, args.candidate = pick_random_sn(
+                                                    args.catalog, args.band)       
+    else:
+        phase, flux, errFlux = get_sn(
+                                args.catalog, args.band, args.candidate)
+    
+    print args.candidate
+
+    
+    # tranforming to magnitudes
+    limFlux = mag_to_flux(limMag[args.band])
+    mag = flux_to_mag(flux, limFlux)
+    errMag = flux_error_to_mag_error(errFlux, flux)
+
+    # check the bias. Neale: should be added to the mean of the rational 
+    # quadratic
+    # kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
+
+    kern = GPy.kern.RatQuad(1)
+    mu, var, GPModel = gp_fit(phase, mag, errMag, kern, n_restarts=10)
+    print time.time()-start_time
