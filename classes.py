@@ -6,12 +6,14 @@ import cPickle
 
 class LightCurve():
 	"""
-	Once fully initiated, instances of this class have the following important properties
+	Once fully initiated, instances of this class have the following important 
+	properties
 	label			(string) 'g','r','i' or 'z'
 	mjd				(array) modified julian dates of observations
 	flux			(array) the observed flux
 	fluxErr			(array) the error in the observed flux
-	shifted_mjd		(array) mjd shifted such that the peak has mjd = 0. To be modified
+	shifted_mjd		(array) mjd shifted such that the peak has mjd = 0. To be 
+							modified
 	"""
 
 	def __init__(self, label):
@@ -70,12 +72,16 @@ class Supernova():
 	r				(LightCurve)
 	i				(LightCurve)
 	z				(LightCurve)
-	lightCurvesDict	(dictionary) 4 entries, g,r,i,z returning the corresponding LightCurves
+	lightCurvesDict	(dictionary) 4 entries, g,r,i,z returning the corresponding 
+								 LightCurves
 	SNID			(int)	supernova ID
-	SNTypeInt		(int)	supernova type integer (see relationship between number and type)
+	SNTypeInt		(int)	supernova type integer (see relationship between 
+													number and type)
 	zSpec			(float)	If known via spectroscope, otherwise None
-	hostGalaxyID	(int)	THe host galaxy ID (all supernovae (in +zPhotHost) catalog have this)
-	zPhotHost		(float)	The redshift of the host galaxy (all supernovae in the catalog have this)
+	hostGalaxyID	(int)	THe host galaxy ID (all supernovae (in +zPhotHost) 
+												catalog have this)
+	zPhotHost		(float)	The redshift of the host galaxy (all supernovae in 
+														the catalog have this)
 	zPhotHostErr	(float)	Error in zPhotHost
 	"""
 
