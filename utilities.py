@@ -37,6 +37,14 @@ if __name__ == '__main__':
         default="train_data/snCatalog.gz",
         help="Path to SN catalog.")
 
+    parser.add_argument(
+        "-t", "--test-lengthscale", dest="testLength",
+        default=False, help="Flag to randomize the lengthscale parameter.")
+
+    parser.add_argument(
+        "-m", "--magnitudes", dest="mag",
+        default=False, help="Flag to switch to magnitudes.")
+
     args = parser.parse_args()
 
 
@@ -173,12 +181,18 @@ def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
 
 
-def gp_fit(X, Y, errY, kernel, n_restarts=0):
+def gp_fit(X, Y, errY, kernel, n_restarts=0, test_length=False):
     """
     Performs gaussian process regression
     NOTE
     check on shap of input should be added
     """
+ 
+    medPhaseStep = np.median(np.abs(np.subtract(phase[0:-2], phase[1:-1])))
+    maxPhaseStep = phase[-1] - phase[0]
+    print "  Median phase step {:<5.3f}".format(medPhaseStep)
+    print "  Time range {:<5.3f}".format(maxPhaseStep)
+
     rsX = reshape_for_GPy(X)
     rsY = reshape_for_GPy(Y)
 
@@ -187,6 +201,17 @@ def gp_fit(X, Y, errY, kernel, n_restarts=0):
 
     [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
      for i in range(X.size)]
+
+    if test_length:
+        np.random.RandomState
+        length = np.random.uniform(low=medPhaseStep, high=maxPhaseStep)
+        print "  Randomized lengthscale {:<5.3f}".format(length)
+        gpModel['.*lengthscale'].constrain_fixed(length, warning=True)
+    else:
+        pass
+        # gpModel['.*lengthscale'].constrain_bounded(
+        #     2*medPhaseStep, maxPhaseStep,
+        #     warning=True)
 
     if n_restarts > 0:
         gpModel.optimize_restarts(num_restarts=n_restarts, 
@@ -233,18 +258,53 @@ if __name__ == '__main__':
         # phase, flux, errFlux = get_sn(
         #                         args.catalog, args.band, args.candidate)
     
-    print args.candidate
-
+    print "  Candidate ID {:>06}".format(args.candidate)
+    print "  Testing lengthscale {:<5}".format(args.testLength)
+    print "  Magnitudes {:<5}".format(args.mag)
     
     # tranforming to magnitudes
-    limFlux = mag_to_flux(limMag[args.band])
-    mag = flux_to_mag(flux, limFlux)
-    errMag = flux_error_to_mag_error(errFlux, flux)
+    if args.mag:
+        limFlux = mag_to_flux(limMag[args.band])
+        mag = flux_to_mag(flux, limFlux)
+        errMag = flux_error_to_mag_error(errFlux, flux)
 
     # check the bias. Neale: should be added to the mean of the rational 
     # quadratic
-    # kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
+    #kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
 
     kern = GPy.kern.RatQuad(1)
-    mu, var, GPModel = gp_fit(phase, mag, errMag, kern, n_restarts=10)
-    print time.time()-start_time
+
+
+    if args.mag:
+        mu, var, GPModel = gp_fit(
+            phase, mag, errMag, 
+            kern, n_restarts=10, test_length=args.testLength)
+    else:    
+        mu, var, GPModel = gp_fit(
+            phase, flux, errFlux, 
+            kern, n_restarts=10, test_length=args.testLength)
+    
+    print GPModel['.*lengthscale']
+    print GPModel['.*power']
+
+    if plt.get_fignums():
+        figNum = plt.get_fignums()[-1]+1
+    else:
+        figNum = 1
+
+    GPModel.plot_f(fignum=figNum)
+
+    if args.mag:
+        ylim = plt.ylim()
+        plt.ylim(ylim[1], ylim[0])
+        plt.errorbar(phase, mag, 
+                     yerr=errMag, fmt=None, ecolor='black', zorder=1)
+    else:
+        plt.errorbar(phase, flux, 
+                     yerr=errFlux, fmt=None, ecolor='black', zorder=1)
+
+    plt.text(
+        plt.xlim()[0], 
+        plt.ylim()[1], "{:>06}".format(args.candidate))
+    print "The process took {:5.3f} secs.".format(time.time()-start_time)
+    plt.show()
