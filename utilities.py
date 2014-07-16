@@ -10,6 +10,21 @@ import classes as classes
 import time as time
 import argparse
 import matplotlib.pyplot as plt
+from cStringIO import StringIO
+
+# code from 
+#
+# http://stackoverflow.com/questions/16571150/
+#        how-to-capture-stdout-output-from-a-python-function-call
+import sys
+class Capturing(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        sys.stdout = self._stdout
 
 if __name__ == '__main__':
     """
@@ -29,21 +44,26 @@ if __name__ == '__main__':
                         help="Photometric band.")
     
     parser.add_argument(
-        "-c", "--catalog", dest="catalog", default=None,
+        "-d", "--data-catalog", dest="catalog", default=None,
         help="SN catalog.")
     
     parser.add_argument(
-        "-p", "--catalog_path", dest="path", 
+        "-c", "--catalog-path", dest="path", 
         default="train_data/snCatalog.gz",
         help="Path to SN catalog.")
 
     parser.add_argument(
         "-t", "--test-lengthscale", dest="testLength",
-        default=False, help="Flag to randomize the lengthscale parameter.")
+        action="store_true", 
+        help="Flag to randomize the lengthscale parameter.")
 
     parser.add_argument(
         "-m", "--magnitudes", dest="mag",
-        default=False, help="Flag to switch to magnitudes.")
+        action="store_true", help="Flag to switch to magnitudes.")
+
+    parser.add_argument(
+        "-p", "--prior-test", dest="testPrior",
+        action="store_true", help="Flag to test prior on lengthscale")
 
     args = parser.parse_args()
 
@@ -181,17 +201,20 @@ def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
 
 
-def gp_fit(X, Y, errY, kernel, n_restarts=0, test_length=False):
+def gp_fit(
+    X, Y, errY, kernel, n_restarts=0, 
+    test_length=False,
+    test_prior=False):
     """
     Performs gaussian process regression
     NOTE
-    check on shap of input should be added
+    check on shape of input should be added
     """
  
-    medPhaseStep = np.median(np.abs(np.subtract(phase[0:-2], phase[1:-1])))
-    maxPhaseStep = phase[-1] - phase[0]
-    print "  Median phase step {:<5.3f}".format(medPhaseStep)
-    print "  Time range {:<5.3f}".format(maxPhaseStep)
+    medXStep = np.median(np.abs(np.subtract(X[0:-2], X[1:-1])))
+    maxXStep = X[-1] - X[0]
+    print "  Median X step {:<5.3f}".format(medXStep)
+    print "  X range {:<5.3f}".format(maxXStep)
 
     rsX = reshape_for_GPy(X)
     rsY = reshape_for_GPy(Y)
@@ -199,29 +222,32 @@ def gp_fit(X, Y, errY, kernel, n_restarts=0, test_length=False):
     gpModel = GPy.models.GPHeteroscedasticRegression(rsX, rsY, kernel)
     gpModel['.*Gaussian_noise'] = errY
 
-    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
-     for i in range(X.size)]
+    # Block to capture unwanted output from .constrain_fixed() function
+    with Capturing() as output:
+        [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
+         for i in range(X.size)]
 
     if test_length:
         np.random.RandomState
-        length = np.random.uniform(low=medPhaseStep, high=maxPhaseStep)
+        length = np.random.uniform(low=medXStep, high=maxXStep)
         print "  Randomized lengthscale {:<5.3f}".format(length)
-        gpModel['.*lengthscale'].constrain_fixed(length, warning=True)
+        gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
+    elif test_prior:
+        prior = GPy.core.parameterization.priors.Gamma(1, 20)
+        gpModel['.*lengthscale'].set_prior(prior, warning=False)
     else:
         pass
-        # gpModel['.*lengthscale'].constrain_bounded(
-        #     2*medPhaseStep, maxPhaseStep,
-        #     warning=True)
 
     if n_restarts > 0:
+        
         gpModel.optimize_restarts(num_restarts=n_restarts, 
                                   verbose=False,
                                   robust=True,
                                   messages=False)
 
-    predPhase = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
+    predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
 
-    meanY, var = gpModel._raw_predict(predPhase, full_cov=True)
+    meanY, var = gpModel._raw_predict(predX, full_cov=True)
     return meanY, var, gpModel
 
 #
@@ -240,13 +266,20 @@ if __name__ == '__main__':
     dataSN = "../DES_BLIND+HOSTZ/"
 
     if args.catalog is None:
-        # args.catalog = open_gzip_pkl_catalog(args.path)
-        if args.candidate is None:
-            args.candidate = np.random.random_integers(
-                                low=0, high=18321)# num SN in SNPhotCC
+        '''
+        The use of SN catalog as from Newling has been deprecated. Its 
+        handling is too timecosuming. Getting data from SN file seems much
+        faster
+        '''
 
-            # phase, flux, errFlux, args.candidate = pick_random_sn(
-            #                                         args.catalog, args.band)
+        if args.candidate is None:
+            # Picking random candidate
+            #
+            # high set max number of SN in SNPhotCC 
+            args.candidate = np.random.random_integers(
+                                low=0, high=18321)
+
+        # Setting path and getting data
         pathToSN = dataSN + "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
         sn = get_sn_from_file(pathToSN)
 
@@ -255,14 +288,12 @@ if __name__ == '__main__':
         errFlux = sn.lightCurvesDict[args.band].fluxErr
     else:
         pass
-        # phase, flux, errFlux = get_sn(
-        #                         args.catalog, args.band, args.candidate)
     
-    print "  Candidate ID {:>06}".format(args.candidate)
-    print "  Testing lengthscale {:<5}".format(args.testLength)
-    print "  Magnitudes {:<5}".format(args.mag)
+    print "  Candidate ID          {:<06}".format(args.candidate)
+    print "  Testing lengthscale ? {:<5}".format(args.testLength)
+    print "  Magnitudes ?          {:<5}".format(args.mag)
     
-    # tranforming to magnitudes
+    # Tranforming to magnitudes
     if args.mag:
         limFlux = mag_to_flux(limMag[args.band])
         mag = flux_to_mag(flux, limFlux)
@@ -273,20 +304,29 @@ if __name__ == '__main__':
     #kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
 
     kern = GPy.kern.RatQuad(1)
-
-
+    # kern = GPy.kern.RBF(1)
+    # Fitting the data points
     if args.mag:
         mu, var, GPModel = gp_fit(
             phase, mag, errMag, 
-            kern, n_restarts=10, test_length=args.testLength)
-    else:    
+            kern, n_restarts=10, 
+            test_length=args.testLength, 
+            test_prior=args.testPrior)
+    else:
         mu, var, GPModel = gp_fit(
             phase, flux, errFlux, 
-            kern, n_restarts=10, test_length=args.testLength)
-    
-    print GPModel['.*lengthscale']
-    print GPModel['.*power']
+            kern, n_restarts=10, 
+            test_length=args.testLength,
+            test_prior=args.testPrior)
 
+    
+    print GPModel['.*lengthscale|.*power']
+    
+    print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
+
+    # 
+    # Plot
+    # 
     if plt.get_fignums():
         figNum = plt.get_fignums()[-1]+1
     else:
@@ -306,5 +346,5 @@ if __name__ == '__main__':
     plt.text(
         plt.xlim()[0], 
         plt.ylim()[1], "{:>06}".format(args.candidate))
-    print "The process took {:5.3f} secs.".format(time.time()-start_time)
+    print "  The process took {:5.3f} secs.".format(time.time()-start_time)
     plt.show()
