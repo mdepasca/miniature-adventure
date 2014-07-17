@@ -231,7 +231,8 @@ def gp_fit(
         np.random.RandomState
         length = np.random.uniform(low=medXStep, high=maxXStep)
         print "  Randomized lengthscale {:<5.3f}".format(length)
-        gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
+        with Capturing() as output:
+            gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
     elif test_prior:
         prior = GPy.core.parameterization.priors.Gamma(1, 20)
         gpModel['.*lengthscale'].set_prior(prior, warning=False)
@@ -244,12 +245,20 @@ def gp_fit(
                                   verbose=False,
                                   robust=True,
                                   messages=False)
+    else:
+        gpModel.optimize(optimizer='scg')
 
     predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
 
     meanY, var = gpModel._raw_predict(predX, full_cov=True)
     return meanY, var, gpModel
 
+
+def save_fit(
+    candidate,
+    fitX, 
+    fit, errFit):
+    pass
 #
 #
 # Module Testing
@@ -276,11 +285,17 @@ if __name__ == '__main__':
             # Picking random candidate
             #
             # high set max number of SN in SNPhotCC 
-            args.candidate = np.random.random_integers(
-                                low=0, high=18321)
+            candidateIdx = np.random.random_integers(
+                low=0, high=18321)
+            print candidateIdx
+            args.candidate = np.genfromtxt(
+                dataSN+"DES_BLIND+HOSTZ.LIST", dtype=None)[candidateIdx]
 
-        # Setting path and getting data
-        pathToSN = dataSN + "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
+            # Setting path and getting data
+            pathToSN = dataSN + args.candidate
+        else:
+            pathToSN = dataSN + \
+                        "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
         sn = get_sn_from_file(pathToSN)
 
         phase = sn.lightCurvesDict[args.band].mjd
@@ -305,7 +320,10 @@ if __name__ == '__main__':
 
     kern = GPy.kern.RatQuad(1)
     # kern = GPy.kern.RBF(1)
+
     # Fitting the data points
+    # 
+    # TBD: the fit is OK if passes the model validation procedure
     if args.mag:
         mu, var, GPModel = gp_fit(
             phase, mag, errMag, 
@@ -315,7 +333,7 @@ if __name__ == '__main__':
     else:
         mu, var, GPModel = gp_fit(
             phase, flux, errFlux, 
-            kern, n_restarts=10, 
+            kern, n_restarts=0, 
             test_length=args.testLength,
             test_prior=args.testPrior)
 
@@ -324,6 +342,8 @@ if __name__ == '__main__':
     
     print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
 
+    print "  Fit to data:", mu, "\n"
+    print "  Normalised fit to data:", mu/mu.max(), "\n"
     # 
     # Plot
     # 
