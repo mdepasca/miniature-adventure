@@ -3,11 +3,11 @@ Implementation of general use functions.
 """
 import numpy as np
 import numpy.ma as ma
-import pickle as pkl
-import gzip as gzip
-import GPy as GPy
-import classes as classes
-import time as time
+import pickle 
+import gzip 
+import GPy 
+import classes 
+import time 
 import argparse
 import matplotlib.pyplot as plt
 from cStringIO import StringIO
@@ -66,7 +66,9 @@ if __name__ == '__main__':
         action="store_true", help="Flag to test prior on lengthscale")
 
     args = parser.parse_args()
-
+else:
+    # the file has been imported as a module
+    pass
 
 def flux_to_mag(flux, limFlux=False):
     """
