@@ -81,8 +81,8 @@ if __name__ == "__main__":
                 flux = candidate.lightCurvesDict[b].flux
                 errFlux = candidate.lightCurvesDict[b].fluxErr
                 # test_prior should be deleted as option. Prior too weak.
-                if (candidate.lightCurvesDict[b].badCurve is not True) or \
-                    (candidate.lightCurvesDict[b].size >= 3):
+                if (candidate.lightCurvesDict[b].badCurve is not True) and \
+                    (flux.size >= 3):
                     mu, var, GPModel = util.gp_fit(
                                         phase, flux, errFlux, 
                                         kern, n_restarts=10, 
