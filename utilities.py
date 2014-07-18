@@ -26,6 +26,14 @@ class Capturing(list):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    
 if __name__ == '__main__':
     """
     Parsing input of parameters for test.
