@@ -206,7 +206,8 @@ def reshape_for_GPy(vec):
 def gp_fit(
     X, Y, errY, kernel, n_restarts=0, 
     test_length=False,
-    test_prior=False):
+    test_prior=False,
+    verbose=False):
     """
     Performs gaussian process regression
     NOTE
@@ -215,8 +216,9 @@ def gp_fit(
  
     medXStep = np.median(np.abs(np.subtract(X[0:-2], X[1:-1])))
     maxXStep = X[-1] - X[0]
-    print "  Median X step {:<5.3f}".format(medXStep)
-    print "  X range {:<5.3f}".format(maxXStep)
+    if verbose:
+        print "  Median X step {:<5.3f}".format(medXStep)
+        print "  X range {:<5.3f}".format(maxXStep)
 
     rsX = reshape_for_GPy(X)
     rsY = reshape_for_GPy(Y)
@@ -232,7 +234,8 @@ def gp_fit(
     if test_length:
         np.random.RandomState
         length = np.random.uniform(low=medXStep, high=maxXStep)
-        print "  Randomized lengthscale {:<5.3f}".format(length)
+        if verbose:
+            print "  Randomized lengthscale {:<5.3f}".format(length)
         with Capturing() as output:
             gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
     elif test_prior:
@@ -325,48 +328,53 @@ if __name__ == '__main__':
 
     # Fitting the data points
     # 
-    # TBD: the fit is OK if passes the model validation procedure
-    if args.mag:
-        mu, var, GPModel = gp_fit(
-            phase, mag, errMag, 
-            kern, n_restarts=10, 
-            test_length=args.testLength, 
-            test_prior=args.testPrior)
-    else:
-        mu, var, GPModel = gp_fit(
-            phase, flux, errFlux, 
-            kern, n_restarts=0, 
-            test_length=args.testLength,
-            test_prior=args.testPrior)
-
-    
-    print GPModel['.*lengthscale|.*power']
-    
-    print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
-
-    print "  Fit to data:", mu, "\n"
-    print "  Normalised fit to data:", mu/mu.max(), "\n"
+    # TBD: the fit is OK if passes the model validation procedure (which has 
     # 
-    # Plot
-    # 
-    if plt.get_fignums():
-        figNum = plt.get_fignums()[-1]+1
+    # to be done)
+    if sn.badCurve:
+        if args.mag:
+            mu, var, GPModel = gp_fit(
+                phase, mag, errMag, 
+                kern, n_restarts=10, 
+                test_length=args.testLength, 
+                test_prior=args.testPrior)
+        else:
+            mu, var, GPModel = gp_fit(
+                phase, flux, errFlux, 
+                kern, n_restarts=0, 
+                test_length=args.testLength,
+                test_prior=args.testPrior)
+
+        
+        print GPModel['.*lengthscale|.*power']
+        
+        print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
+
+        print "  Fit to data:", mu, "\n"
+        print "  Normalised fit to data:", mu/mu.max(), "\n"
+        # 
+        # Plot
+        # 
+        if plt.get_fignums():
+            figNum = plt.get_fignums()[-1]+1
+        else:
+            figNum = 1
+
+        GPModel.plot_f(fignum=figNum)
+
+        if args.mag:
+            ylim = plt.ylim()
+            plt.ylim(ylim[1], ylim[0])
+            plt.errorbar(phase, mag, 
+                         yerr=errMag, fmt=None, ecolor='black', zorder=1)
+        else:
+            plt.errorbar(phase, flux, 
+                         yerr=errFlux, fmt=None, ecolor='black', zorder=1)
+
+        plt.text(
+            plt.xlim()[0], 
+            plt.ylim()[1], "{:>06}".format(args.candidate))
+        print "  The process took {:5.3f} secs.".format(time.time()-start_time)
+        plt.show()
     else:
-        figNum = 1
-
-    GPModel.plot_f(fignum=figNum)
-
-    if args.mag:
-        ylim = plt.ylim()
-        plt.ylim(ylim[1], ylim[0])
-        plt.errorbar(phase, mag, 
-                     yerr=errMag, fmt=None, ecolor='black', zorder=1)
-    else:
-        plt.errorbar(phase, flux, 
-                     yerr=errFlux, fmt=None, ecolor='black', zorder=1)
-
-    plt.text(
-        plt.xlim()[0], 
-        plt.ylim()[1], "{:>06}".format(args.candidate))
-    print "  The process took {:5.3f} secs.".format(time.time()-start_time)
-    plt.show()
+        print "  This was flagged as BAD CURVE!"
