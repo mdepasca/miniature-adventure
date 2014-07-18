@@ -15,7 +15,8 @@ class LightCurve():
 	shifted_mjd		(array) mjd shifted such that the peak has mjd = 0. To be 
 							modified
 	"""
-
+	badCurve = False
+	shifted_mjd = np.zeros(0)
 	def __init__(self, band):
 		self.band = band
 		self.mjd = np.zeros(0)
@@ -26,17 +27,17 @@ class LightCurve():
 	def set_badCurve(cls):	
 		if len(cls.flux) == 0:
 			cls.badCurve = True
-		else:
-			cls.badCurve = False
+		# else:
+		# 	cls.badCurve = False
 
 	@classmethod
-	def addDataPoint(self, mjd, flux, fluxErr):
+	def addDataPoint(cls, mjd, flux, fluxErr):
 		"""
 		Adds a data point to the light curve.
 		"""
-		self.mjd = np.append(self.mjd, mjd)
-		self.flux = np.append(self.flux, flux)
-		self.fluxErr = np.append(self.fluxErr, fluxErr)
+		cls.mjd = np.append(cls.mjd, mjd)
+		cls.flux = np.append(cls.flux, flux)
+		cls.fluxErr = np.append(cls.fluxErr, fluxErr)
 
 	@property
 	def make_shifted_mjd(self, distance):
@@ -123,7 +124,7 @@ class Supernova():
 					passband = data[1]
 					flux = float(data[3])
 					fluxErr = float(data[4])
-						if fluxErr > 0:
+					if fluxErr > 0:
 						if passband == "g":
 							self.g.addDataPoint(mjd, flux, fluxErr)
 						elif passband == "r":
@@ -157,7 +158,7 @@ class Supernova():
 
 		for b in self.lightCurvesDict.keys():
 			self.lightCurvesDict[b].set_badCurve()
-			
+
 	def __cmp__(self, other):
 		return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
