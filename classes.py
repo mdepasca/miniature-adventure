@@ -123,16 +123,17 @@ class Supernova():
 					passband = data[1]
 					flux = float(data[3])
 					fluxErr = float(data[4])
-					if passband == "g":
-						self.g.addDataPoint(mjd, flux, fluxErr)
-					elif passband == "r":
-						self.r.addDataPoint(mjd, flux, fluxErr)
-					elif passband == "i":
-						self.i.addDataPoint(mjd, flux, fluxErr)
-					elif passband == "z":
-						self.z.addDataPoint(mjd, flux, fluxErr)
-					else:
-						print "Filter not recognized: {:<5}".format(passband)
+						if fluxErr > 0:
+						if passband == "g":
+							self.g.addDataPoint(mjd, flux, fluxErr)
+						elif passband == "r":
+							self.r.addDataPoint(mjd, flux, fluxErr)
+						elif passband == "i":
+							self.i.addDataPoint(mjd, flux, fluxErr)
+						elif passband == "z":
+							self.z.addDataPoint(mjd, flux, fluxErr)
+						else:
+							print "Filter not recognized: {:<5}".format(passband)
 				elif tag == "SNID":
 					self.SNID = int(data[0])
 				elif tag == "SNTYPE":
@@ -154,6 +155,9 @@ class Supernova():
 					self.zPhotHost = float(data[0])
 					self.zPhotHostErr = float(data[2])
 
+		for b in self.lightCurvesDict.keys():
+			self.lightCurvesDict[b].set_badCurve()
+			
 	def __cmp__(self, other):
 		return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
