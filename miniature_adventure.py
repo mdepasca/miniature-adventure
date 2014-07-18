@@ -60,7 +60,8 @@ if __name__ == "__main__":
 
         vecCandidates = np.genfromtxt(
                 dirData+os.sep+fNameCandidates, dtype=None)
-
+        tenPercent = vecCandidates.size / 10
+        const = 1
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(vecCandidates.size)
 
@@ -69,7 +70,9 @@ if __name__ == "__main__":
 
         kern = GPy.kern.RatQuad(1)
         
-        # Fitting single lightcurves
+        # Fitting single lightcurves 
+        #
+        # THIS PIECE NEEDS TO BE PARALLELIZED
         for i in range(vecCandidates.size):
             candidate = util.get_sn_from_file(dirData+os.sep+vecCandidates[i])
 
@@ -78,11 +81,22 @@ if __name__ == "__main__":
                 flux = candidate.lightCurvesDict[b].flux
                 errFlux = candidate.lightCurvesDict[b].fluxErr
                 # test_prior should be deleted as option. Prior too weak.
-                mu, var, GPModel = util.gp_fit(
-                                    phase, flux, errFlux, 
-                                    kern, n_restarts=10, 
-                                    test_length=True,
-                                    test_prior=False)
+                if (candidate.lightCurvesDict[b].badCurve is not True) or \
+                    (candidate.lightCurvesDict[b].size >= 3):
+                    mu, var, GPModel = util.gp_fit(
+                                        phase, flux, errFlux, 
+                                        kern, n_restarts=10, 
+                                        test_length=True,
+                                        test_prior=False)
+                else:
+                    print indent + \
+                    "Candidate {:<d} has ".format(candidate.SNID) + \
+                    util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
+                    "{:<1} lightcurve".format(b)
+            if i > const * tenPercent:
+                print "\n" + indent + util.bcolors.OKGREEN + \
+                    "{:<d}% Completed".format() + util.bcolors.ENDC
+                const += 1
         
     if args.zeroPoint:
         print"qq"
