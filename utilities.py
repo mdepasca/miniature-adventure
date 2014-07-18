@@ -331,7 +331,7 @@ if __name__ == '__main__':
     # TBD: the fit is OK if passes the model validation procedure (which has 
     # 
     # to be done)
-    if sn.badCurve:
+    if not sn.lightCurvesDict[args.band].badCurve:
         if args.mag:
             mu, var, GPModel = gp_fit(
                 phase, mag, errMag, 
