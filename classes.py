@@ -8,7 +8,7 @@ class LightCurve():
 	"""
 	Once fully initiated, instances of this class have the following important 
 	properties
-	label			(string) 'g','r','i' or 'z'
+	band			(string) 'g','r','i' or 'z'
 	mjd				(array) modified julian dates of observations
 	flux			(array) the observed flux
 	fluxErr			(array) the error in the observed flux
@@ -16,12 +16,20 @@ class LightCurve():
 							modified
 	"""
 
-	def __init__(self, label):
-		self.label = label
+	def __init__(self, band):
+		self.band = band
 		self.mjd = np.zeros(0)
 		self.flux = np.zeros(0)
 		self.fluxErr = np.zeros(0)
 
+	@classmethod
+	def set_badCurve(cls):	
+		if len(cls.flux) == 0:
+			cls.badCurve = True
+		else:
+			cls.badCurve = False
+
+	@classmethod
 	def addDataPoint(self, mjd, flux, fluxErr):
 		"""
 		Adds a data point to the light curve.
@@ -30,18 +38,21 @@ class LightCurve():
 		self.flux = np.append(self.flux, flux)
 		self.fluxErr = np.append(self.fluxErr, fluxErr)
 
+	@property
 	def make_shifted_mjd(self, distance):
 		"""
 		Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
 		"""
 		self.shifted_mjd = self.mjd - distance
-		
+	
+	@property
 	def get_maxfluxIndex(self):
 		"""
 		Return the index of the maximum flux
 		"""
 		return np.argmax(self.flux)
 	
+	@property
 	def get_max_fmfe_Index(self):
 		"""
 		Return the index of max (flux - fluxErr)
@@ -50,17 +61,13 @@ class LightCurve():
 		
 		return np.argmax(difference)
 	
+	@property
 	def get_max_flux_p(self, p):
 		"""
 		Returns max (flux - p*fluxErr)
 		"""
 		return np.max(np.subtract(self.flux, p*self.fuxErr))
 		
-	def set_badCurve(self):
-		if len(self.flux) == 0:
-			self.badCurve = True
-		else:
-			self.badCurve = False
 
 
 
