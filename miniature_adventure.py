@@ -133,7 +133,7 @@ if __name__ == "__main__":
             #     # print "\n" + indent + util.bcolors.OKGREEN + \
             #     #     "{:<d}% Completed".format(const*10) + util.bcolors.ENDC
             #     const += 1
-        pbar.finish()
+        # pbar.finish()
         sys.stderr = saveErr
         ferr.close()
     if args.zeroPoint:
