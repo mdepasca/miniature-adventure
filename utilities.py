@@ -33,7 +33,7 @@ class bcolors:
     WARNING = '\033[93m'
     FAIL = '\033[91m'
     ENDC = '\033[0m'
-    
+
 if __name__ == '__main__':
     """
     Parsing input of parameters for test.
@@ -253,7 +253,6 @@ def gp_fit(
         pass
 
     if n_restarts > 0:
-        
         gpModel.optimize_restarts(num_restarts=n_restarts, 
                                   verbose=False,
                                   robust=True,
@@ -261,10 +260,10 @@ def gp_fit(
     else:
         gpModel.optimize(optimizer='scg')
 
-    predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
+    predX = reshape_for_GPy(np.arange(round(X.min()), round(X.max()), 1))
 
     meanY, var = gpModel._raw_predict(predX, full_cov=True)
-    return meanY, var, gpModel
+    return predX, meanY, var, gpModel
 
 
 def save_fit(
