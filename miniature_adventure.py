@@ -6,7 +6,6 @@ import numpy as np
 import GPy
 import time
 import classes as cls
-# import progressbar as pb
 # from progressbar import ProgressBar, SimpleProgress
 
 if __name__ == "__main__":
@@ -36,7 +35,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 else:
     pass
-
+    
 if __name__ == "__main__":
     os.system("clear")
     indent = "          "
@@ -52,6 +51,7 @@ if __name__ == "__main__":
     print indent + "*             and           *"
     print indent + "*      SN classification    *"
     print indent + "* * * * * * * * * * * * * * *" 
+    
     start_time = time.time()
     if args.fitting:
         # Perform fitting
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             + "Data are fitted using GP with a Rational Quadratic kernel"
 
         kern = GPy.kern.RatQuad(1)
-        
+    
         # Redirecting stderr output to file
         saveErr = sys.stderr
         ferr = open('error.log', 'w')
@@ -82,9 +82,12 @@ if __name__ == "__main__":
         # pbar = ProgressBar(
         #     widgets=[SimpleProgress()], 
         #     maxval=vecCandidates.size).start()
+
         # Fitting single lightcurves 
         #
         # THIS PIECE NEEDS TO BE PARALLELIZED
+        # 
+        # optimize_restarts parallel using multiprocessing
         for i in range(vecCandidates.size):
             candidate = util.get_sn_from_file(dirData+os.sep+vecCandidates[i])
             candidateFit = cls.SupernovaFit(candidate.SNID)
@@ -101,6 +104,7 @@ if __name__ == "__main__":
                     (flux.size >= 3):
                     saveOut = sys.stdout
                     fout = open('out.log', 'w')
+                    # fout = open('/dev/null', 'w')
                     sys.stdout = fout
                     predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                     phase, flux, errFlux, 
@@ -108,22 +112,29 @@ if __name__ == "__main__":
                                                     test_length=True,
                                                     test_prior=False)
 
-                    candidateFit.setLightCurve(b, predMjd, predFlux, predErr)
+
+                    candidateFit.setLightCurve(b, 
+                        predMjd.reshape(predMjd.size),
+                        predFlux.reshape(predFlux.size), 
+                        predErr.reshape(predErr.size))
                     
                     sys.stdout = saveOut
                     fout.close()
-
-                # else:
+                    print indent + \
+                        ".{:<} {:<} {:<}".format(i, candidate.SNID, b)
+                else:
                     # pass 
-                    # print indent + \
-                    #     "Candidate {:<d} has ".format(candidate.SNID) + \
-                    #     util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
-                    #     "{:<1} lightcurve".format(b)
-                # progress bar
-                # print '.{:<} {:<} {:<}'.format(i, candidate.SNID, b)
+                    print indent + \
+                        "Candidate {:<d} has ".format(candidate.SNID) + \
+                        util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
+                        "{:<1} lightcurve \n".format(b)
+                                
 
             # Setting phase 0 point to phase or r maximum
+            # 
+            # HAVE TO BE MOVED IN IF BLOCK BELOW
             candidateFit.setLCZeroPoints()
+
             # pbar.update(i + 1)
             if i == 5:
                 break
