@@ -24,20 +24,26 @@ class LightCurve():
 		self.fluxErr = np.zeros(0)
 
 	@classmethod
-	def set_badCurve(cls):	
-		if len(cls.flux) == 0:
-			cls.badCurve = True
-		# else:
-		# 	cls.badCurve = False
+	def data(band, mjd, flux, fluxErr):
+		self.band = band
+		self.mjd = mjd
+		self.flux = flux
+		self.fluxErr = fluxErr
+		self.set_badCurve()
 
-	@classmethod
-	def addDataPoint(cls, mjd, flux, fluxErr):
+	def set_badCurve(self):	
+		if len(self.flux) == 0:
+			self.badCurve = True
+		# else:
+		# 	self.badCurve = False
+
+	def addDataPoint(self, mjd, flux, fluxErr):
 		"""
 		Adds a data point to the light curve.
 		"""
-		cls.mjd = np.append(cls.mjd, mjd)
-		cls.flux = np.append(cls.flux, flux)
-		cls.fluxErr = np.append(cls.fluxErr, fluxErr)
+		self.mjd = np.append(self.mjd, mjd)
+		self.flux = np.append(self.flux, flux)
+		self.fluxErr = np.append(self.fluxErr, fluxErr)
 
 	@property
 	def make_shifted_mjd(self, distance):
@@ -162,8 +168,40 @@ class Supernova():
 	def __cmp__(self, other):
 		return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
-		
-		
+
+class SupernovaFit():
+	def __init__(self, SNID):
+		self.g = LightCurve("g")
+		self.r = LightCurve("r")
+		self.i = LightCurve("i")
+		self.z = LightCurve("z")
+		self.lightCurvesDict = {"g":self.g, 
+								"r":self.r, 
+								"i":self.i, 
+								"z":self.z}
+		self.SNID = SNID
+
+	def setLightCurve(self, band, mjd, flux, fluxErr):
+		self.lightCurvesDict[band].mjd = mjd
+		self.lightCurvesDict[band].flux = flux
+		self.lightCurvesDict[band].fluxErr = fluxErr
+		self.lightCurvesDict[band].set_badCurve()
+
+	def setLCZeroPoints(self):
+		try:
+			mjd_rMax = self.r.mjd[self.r.flux == self.r.flux.max()][0]
+			idx_rMax = np.where(self.r.flux == self.r.flux.max())[0][0]
+			for b in self.lightCurvesDict.keys():
+				if not self.lightCurvesDict[b].badCurve:
+					self.lightCurvesDict[b].mjd -= mjd_rMax
+		except:
+			print "Problem detected!"
+
+	def normalizeLC(self):
+		for b in self.lightCurvesDict.keys():
+			if not self.lightCurvesDict[b].badCurve:
+				self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
+
 class SupernovaeCatalog():
 	"""
 	Class variables are
