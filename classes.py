@@ -2,7 +2,8 @@ import numpy as np
 import os
 import glob
 import cPickle
-
+from astropy.io import ascii
+from astropy.table import Table, Column, MaskedColumn, vstack, hstack
 
 class LightCurve():
 	"""
@@ -202,10 +203,58 @@ class SupernovaFit():
 			if not self.lightCurvesDict[b].badCurve:
 				self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
 
+	def save_on_txt(self, fileName):
+		t = Table(masked=True)
+		colNames = [["MJD_r_band", "{0:5d}"],
+					["FLUX_g", "{0:10.5f}"], ["FLUX_ERR_g", "{0:10.5f}"],
+					["FLUX_r", "{0:10.5f}"], ["FLUX_ERR_r", "{0:10.5f}"],
+					["FLUX_i", "{0:10.5f}"], ["FLUX_ERR_i", "{0:10.5f}"],
+					["FLUX_z", "{0:10.5f}"], ["FLUX_ERR_z", "{0:10.5f}"]]
+
+		t["MJD_r_band"] = self.r.mjd
+		for b in self.lightCurvesDict.keys():
+			colNameFlux = "FLUX_{:<1}".format(b)
+			colNameErr = "FLUX_ERR_{:<1}".format(b)
+			print self.lightCurvesDict[b].badCurve, b
+			if self.lightCurvesDict[b].badCurve:
+				colFlux = MaskedColumn(np.zeros(self.r.mjd.size),
+					name=colNameFlux, 
+					dtype=np.float, fill_value=-9,
+					mask=np.ones(self.r.mjd.size))
+				colErr = MaskedColumn(np.zeros(self.r.mjd.size), 
+					name=colNameErr,
+					dtype=np.float, fill_value=-9,
+					mask=np.ones(self.r.mjd.size))
+			else:
+				colFlux = MaskedColumn(self.lightCurvesDict[b].flux,
+					name=colNameFlux,
+					dtype=np.float32, fill_value=-9)
+				colErr = MaskedColumn(self.lightCurvesDict[b].fluxErr,
+					name=colNameErr,
+					dtype=np.float32, fill_value=-9)
+			t.add_columns([colFlux, colErr])
+
+		t.filled()
+		fOut = open(fileName, 'w')
+		fOut.write("# SNID: {:>10d}\n".format(self.SNID))
+		ascii.write(t, output=fOut, delimiter='  ', 
+			format='fixed_width_two_line')
+		# t.write(output=fOut, delimiter='  ', format='ascii.fixed_width_two_line')
+		fOut.close()
+		# np.savetxt(fileName, (self.r.mjd,
+		# 	self.g.flux, self.g.fluxErr,
+		# 	self.r.flux, self.r.fluxErr,
+		# 	self.i.flux, self.i.fluxErr,
+		# 	self.z.flux, self.z.fluxErr), 
+		# 	fmt="%5d, %10.5f, %10.5f, %10.5f, %10.5f, %10.5f, %10.5f, \
+		# 	%10.5f, %10.5f",
+		# 	newline="\n", header="SNID: {:>10d}".format(self.SNID))
+
+
 class SupernovaeCatalog():
 	"""
 	Class variables are
-	sne		(object array)	list of Supernova objects
+	sne		(object array)	array of Supernova objects
 	zSpec	(float array) the spectroscopically observed redshift 
 			(None if no spctrscp) 
 	zPhotHost	(float array)	the redshift of the host galaxy
