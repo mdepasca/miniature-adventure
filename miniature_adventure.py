@@ -21,13 +21,13 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "-z", "--zero-point", dest="zeroPoint",
-        action="store_false",
+        action="store_true",
         help="Set zero point in time. For each object it is the time, in MJD, \
         of maximum observed in r-band (tailored on simulated data from SNANA).")
 
     parser.add_argument(
         "-d", "--distance-metric", dest="distMetric",
-        action="store_false",
+        action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
         It is use to build a diffusion map (see Coifman & Lafon (2006) \
         and Lafon & Lee (2006)).")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                 # test_prior should be deleted as option. Prior too weak.
                 # 
                 # Fitting Lightcurve
-                if (candidate.lightCurvesDict[b].badCurve is not True) and \
+                if (not candidate.lightCurvesDict[b].badCurve) and \
                     (flux.size >= 3):
                     saveOut = sys.stdout
                     fout = open('out.log', 'w')
@@ -124,6 +124,7 @@ if __name__ == "__main__":
                         ".{:<} {:<} {:<}".format(i, candidate.SNID, b)
                 else:
                     # pass 
+                    candidateFit.lightCurvesDict[b].badCurve = True
                     print indent + \
                         "Candidate {:<d} has ".format(candidate.SNID) + \
                         util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
@@ -137,6 +138,8 @@ if __name__ == "__main__":
 
             # pbar.update(i + 1)
             if i == 5:
+                candidateFit.save_on_txt(
+                    "DES_FIT_{:0>6d}.dat".format(candidate.SNID))
                 break
             # if i > const * tenPercent:
             #     pg + 1
