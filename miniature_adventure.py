@@ -42,6 +42,7 @@ if __name__ == "__main__":
     KERN_RATQUAD = "RatQuad"
     # should be possible to change the next two variables
     dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
+    dirFit = "fit_data" + os.sep
     fNameCandidates = "DES_BLIND+HOSTZ.LIST"
 
     print indent + "* * * * * * * * * * * * * * *"
@@ -135,11 +136,10 @@ if __name__ == "__main__":
             # 
             # HAVE TO BE MOVED IN IF BLOCK BELOW
             candidateFit.setLCZeroPoints()
-
+            candidateFit.save_on_txt(
+                    dirFit+"DES_FIT_{:0>6d}.dat".format(candidate.SNID))
             # pbar.update(i + 1)
             if i == 5:
-                candidateFit.save_on_txt(
-                    "DES_FIT_{:0>6d}.dat".format(candidate.SNID))
                 break
             # if i > const * tenPercent:
             #     pg + 1
