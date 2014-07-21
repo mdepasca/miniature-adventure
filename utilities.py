@@ -254,16 +254,17 @@ def gp_fit(
 
     if n_restarts > 0:
         gpModel.optimize_restarts(num_restarts=n_restarts,
-                                    parallel=True,
+                                    parallel=False,
                                     verbose=False,
                                     robust=True,
                                     messages=False)
     else:
         gpModel.optimize(optimizer='scg')
 
-    predX = reshape_for_GPy(np.arange(round(X.min()), round(X.max()), 1))
+    # predX = reshape_for_GPy(np.arange(round(X.min()), round(X.max()), 1))
+    predX = reshape_for_GPy(np.linspace(round(X.min()), round(X.max()), num=100))
 
-    meanY, var = gpModel._raw_predict(predX, full_cov=True)
+    meanY, var = gpModel._raw_predict(predX, full_cov=False)
     return predX, meanY, var, gpModel
 
 
