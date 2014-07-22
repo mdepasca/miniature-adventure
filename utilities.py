@@ -71,8 +71,16 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-p", "--prior-test", dest="testPrior",
-        action="store_true", help="Flag to test prior on lengthscale")
+        action="store_true", help="Flag to test prior on lengthscale.")
 
+    parser.add_argument(
+        "-v", "--verbose", dest="verbose",
+        action="store_true", help="Enable task progress report.")
+
+    parser.add_argument(
+        "-k", "--kernel", dest="kern",
+        default="RatQuad", help="Kernel to use in GP regression. Accepts: "+\
+        "RatQuad (Rational Quadratic) or RBF (Radial Basis Functions).")
     args = parser.parse_args()
 else:
     # the file has been imported as a module
@@ -312,7 +320,7 @@ if __name__ == '__main__':
     else:
         pass
     
-    print "  Candidate ID          {:<06}".format(args.candidate)
+    print "  Candidate ID          {:>06}".format(args.candidate)
     print "  Testing lengthscale ? {:<5}".format(args.testLength)
     print "  Magnitudes ?          {:<5}".format(args.mag)
     
@@ -326,8 +334,13 @@ if __name__ == '__main__':
     # quadratic
     #kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
 
-    kern = GPy.kern.RatQuad(1)
-    # kern = GPy.kern.RBF(1)
+    
+    if args.kern == "RatQuad":
+        kern = GPy.kern.RatQuad(1)
+    elif args.kern == "RBF":
+        kern = GPy.kern.RBF(1)
+    else:
+        raise Exception
 
     # Fitting the data points
     # 
@@ -336,25 +349,27 @@ if __name__ == '__main__':
     # to be done)
     if not sn.lightCurvesDict[args.band].badCurve:
         if args.mag:
-            mu, var, GPModel = gp_fit(
-                phase, mag, errMag, 
-                kern, n_restarts=10, 
-                test_length=args.testLength, 
-                test_prior=args.testPrior)
+            predPhase, mu, var, GPModel = gp_fit(
+                                            phase, mag, errMag, 
+                                            kern, n_restarts=10, 
+                                            test_length=args.testLength, 
+                                            test_prior=args.testPrior,
+                                            verbose=args.verbose)
         else:
-            mu, var, GPModel = gp_fit(
-                phase, flux, errFlux, 
-                kern, n_restarts=0, 
-                test_length=args.testLength,
-                test_prior=args.testPrior)
+            predPhase, mu, var, GPModel = gp_fit(
+                                            phase, flux, errFlux, 
+                                            kern, n_restarts=10, 
+                                            test_length=args.testLength,
+                                            test_prior=args.testPrior,
+                                            verbose=args.verbose)
 
         
         print GPModel['.*lengthscale|.*power']
         
         print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
 
-        print "  Fit to data:", mu, "\n"
-        print "  Normalised fit to data:", mu/mu.max(), "\n"
+        # print "  Fit to data:", mu, "\n"
+        # print "  Normalised fit to data:", mu/mu.max(), "\n"
         # 
         # Plot
         # 
