@@ -79,7 +79,7 @@ if __name__ == "__main__":
         saveErr = sys.stderr
         ferr = open('error.log', 'w')
         sys.stderr = ferr
-        
+
         # Setting up Progress bar using progressbar module
         # pbar = ProgressBar(
         #     widgets=[SimpleProgress()], 
@@ -108,29 +108,34 @@ if __name__ == "__main__":
                     fout = open('out.log', 'w')
                     # fout = open('/dev/null', 'w')
                     sys.stdout = fout
+
+                    
                     predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                     phase, flux, errFlux, 
                                                     kern, n_restarts=10, 
                                                     test_length=True,
                                                     test_prior=False)
-
+                    sys.stdout = saveOut
+                    fout.close()
 
                     candidateFit.setLightCurve(b, 
                         predMjd.reshape(predMjd.size),
                         predFlux.reshape(predFlux.size), 
                         predErr.reshape(predErr.size))
                     
-                    sys.stdout = saveOut
-                    fout.close()
                     print indent + \
-                        ".{:<} {:<} {:<}".format(i, candidate.SNID, b)
+                        "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                 else:
                     # pass 
                     candidateFit.lightCurvesDict[b].badCurve = True
-                    print indent + \
-                        "Candidate {:<d} has ".format(candidate.SNID) + \
-                        util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
-                        "{:<1} lightcurve \n".format(b)
+                    print indent + util.bcolors.FAIL + \
+                        "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
+                        util.bcolors.ENDC
+
+                    # print indent + \
+                    #     "Candidate {:<d} has ".format(candidate.SNID) + \
+                    #     util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
+                    #     "{:<1} lightcurve \n".format(b)
                                 
 
             # Setting phase 0 point to phase or r maximum
