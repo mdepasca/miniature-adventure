@@ -171,7 +171,9 @@ class Supernova():
 
 
 class SupernovaFit():
-	def __init__(self, SNID):
+	def __init__(self, SNID, 
+		SNType=None, RADeg=None, decDeg=None, MWEBV=None, zSpec=None,
+		hostGalaxyID=None, zPhotHost=None, zPhotHostErr=None):
 		self.g = LightCurve("g")
 		self.r = LightCurve("r")
 		self.i = LightCurve("i")
@@ -181,6 +183,15 @@ class SupernovaFit():
 								"i":self.i, 
 								"z":self.z}
 		self.SNID = SNID
+		self.SNType = SNType
+		self.SNType = SNType 
+		self.RADeg = RADeg 
+		self.decDeg = decDeg 
+		self.MWEBV = MWEBV 
+		self.zSpec = zSpec 
+		self.hostGalaxyID = hostGalaxyID 
+		self.zPhotHost = zPhotHost 
+		self.zPhotHostErr = zPhotHostErr 
 
 	def setLightCurve(self, band, mjd, flux, fluxErr):
 		self.lightCurvesDict[band].mjd = mjd
