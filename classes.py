@@ -4,6 +4,7 @@ import glob
 import cPickle
 from astropy.io import ascii
 from astropy.table import Table, Column, MaskedColumn, vstack, hstack
+import time
 
 class LightCurve():
 	"""
@@ -157,6 +158,7 @@ class Supernova():
 						self.zSpec = None
 					else:
 						self.zSpec = float(data[0])
+						self.zSpecErr = float(data[2])
 				elif tag == "HOST_GALAXY_GALID":
 					self.hostGalaxyID = int(data[0])
 				elif tag == "HOST_GALAXY_PHOTO-Z":
@@ -172,7 +174,8 @@ class Supernova():
 
 class SupernovaFit():
 	def __init__(self, SNID, 
-		SNType=None, RADeg=None, decDeg=None, MWEBV=None, zSpec=None,
+		SNType=None, RADeg=None, decDeg=None, MWEBV=None, 
+		zSpec=None, zSpecErr=None,
 		hostGalaxyID=None, zPhotHost=None, zPhotHostErr=None):
 		self.g = LightCurve("g")
 		self.r = LightCurve("r")
@@ -189,6 +192,7 @@ class SupernovaFit():
 		self.decDeg = decDeg 
 		self.MWEBV = MWEBV 
 		self.zSpec = zSpec 
+		self.zSpecErr = zSpecErr
 		self.hostGalaxyID = hostGalaxyID 
 		self.zPhotHost = zPhotHost 
 		self.zPhotHostErr = zPhotHostErr 
@@ -246,19 +250,37 @@ class SupernovaFit():
 
 		t.filled()
 		fOut = open(fileName, 'w')
+		fOut.write("# File produced by Miniature Adventure on " + \
+			"{:<02d}/{:<02d}/{:<4d} at {:<02d}:{:<02d}:{:<02d} GMT\n".format(
+				time.gmtime().tm_mday, time.gmtime().tm_mon, 
+				time.gmtime().tm_year,
+				time.gmtime().tm_hour, time.gmtime().tm_min, 
+				time.gmtime().tm_sec))
 		fOut.write("# SNID: {:>10d}\n".format(self.SNID))
+
+		if self.SNType :
+			fOut.write("# SNType: {:>d}\n".format(self.SNType))
+		if self.RADeg :
+			fOut.write("# RADeg: {:>9.6f}\n".format(self.RADeg))
+		if self.decDeg :
+			fOut.write("# decDeg: {:>9.6f}\n".format(self.decDeg))
+		if self.MWEBV :
+			fOut.write("# MWEBV: {:>6.4f}\n".format(self.MWEBV))
+		if self.zSpec :
+			fOut.write("# zSpec: {:>6.4f}\n".format(self.zSpec))
+		if self.zSpecErr:
+			fOut.write("# zSpecErr: {:>6.4f}\n".format(self.zSpec))
+		if self.hostGalaxyID :
+			fOut.write("# hostGalaxyID: {:>d}\n".format(self.hostGalaxyID))
+		if self.zPhotHost :
+			fOut.write("# zPhotHost: {:>6.4f}\n".format(self.zPhotHost))
+		if self.zPhotHostErr :
+			fOut.write("# zPhotHostErr: {:>6.4f}\n".format(self.zPhotHostErr))
+
 		ascii.write(t, output=fOut, delimiter='  ', 
 			format='fixed_width_two_line')
-		# t.write(output=fOut, delimiter='  ', format='ascii.fixed_width_two_line')
+		
 		fOut.close()
-		# np.savetxt(fileName, (self.r.mjd,
-		# 	self.g.flux, self.g.fluxErr,
-		# 	self.r.flux, self.r.fluxErr,
-		# 	self.i.flux, self.i.fluxErr,
-		# 	self.z.flux, self.z.fluxErr), 
-		# 	fmt="%5d, %10.5f, %10.5f, %10.5f, %10.5f, %10.5f, %10.5f, \
-		# 	%10.5f, %10.5f",
-		# 	newline="\n", header="SNID: {:>10d}".format(self.SNID))
 
 
 class SupernovaeCatalog():
