@@ -220,35 +220,33 @@ class SupernovaFit():
 
 	def save_on_txt(self, fileName):
 		t = Table(masked=True)
-		colNames = [["MJD_r_band", "{0:5d}"],
+		colNames = [["MJD_r_band", "{0:5.0f}"],
 					["FLUX_g", "{0:10.5f}"], ["FLUX_ERR_g", "{0:10.5f}"],
 					["FLUX_r", "{0:10.5f}"], ["FLUX_ERR_r", "{0:10.5f}"],
 					["FLUX_i", "{0:10.5f}"], ["FLUX_ERR_i", "{0:10.5f}"],
 					["FLUX_z", "{0:10.5f}"], ["FLUX_ERR_z", "{0:10.5f}"]]
 
+		for c in range(len(colNames)):
+			col = MaskedColumn(np.zeros(self.r.mjd.size),
+				name=colNames[c][0],
+				format=colNames[c][1],
+				dtype=np.float, fill_value=-9,
+				mask=np.zeros(self.r.mjd.size))
+			t.add_column(col)
+
 		t["MJD_r_band"] = self.r.mjd
 		for b in self.lightCurvesDict.keys():
-			colNameFlux = "FLUX_{:<1}".format(b)
-			colNameErr = "FLUX_ERR_{:<1}".format(b)
 			if self.lightCurvesDict[b].badCurve:
-				colFlux = MaskedColumn(np.zeros(self.r.mjd.size),
-					name=colNameFlux, 
-					dtype=np.float, fill_value=-9,
-					mask=np.ones(self.r.mjd.size))
-				colErr = MaskedColumn(np.zeros(self.r.mjd.size), 
-					name=colNameErr,
-					dtype=np.float, fill_value=-9,
-					mask=np.ones(self.r.mjd.size))
+				t["FLUX_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
+				t["FLUX_ERR_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
+				t["FLUX_{:<1}".format(b)].format = "{}"
+				t["FLUX_ERR_{:<1}".format(b)].format = "{}"
 			else:
-				colFlux = MaskedColumn(self.lightCurvesDict[b].flux,
-					name=colNameFlux,
-					dtype=np.float32, fill_value=-9)
-				colErr = MaskedColumn(self.lightCurvesDict[b].fluxErr,
-					name=colNameErr,
-					dtype=np.float32, fill_value=-9)
-			t.add_columns([colFlux, colErr])
-
+				t["FLUX_{:<1}".format(b)] = self.lightCurvesDict[b].flux
+				t["FLUX_ERR_{:<1}".format(b)] = self.lightCurvesDict[b].fluxErr
+		
 		t.filled()
+		
 		fOut = open(fileName, 'w')
 		fOut.write("# File produced by Miniature Adventure on " + \
 			"{:<02d}/{:<02d}/{:<4d} at {:<02d}:{:<02d}:{:<02d} GMT\n".format(
