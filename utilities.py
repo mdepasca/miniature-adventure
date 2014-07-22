@@ -267,12 +267,6 @@ def gp_fit(
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
     return predX, meanY, var, gpModel
 
-
-def save_fit(
-    candidate,
-    fitX, 
-    fit, errFit):
-    pass
 #
 #
 # Module Testing
