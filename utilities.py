@@ -254,7 +254,7 @@ def gp_fit(
 
     if n_restarts > 0:
         gpModel.optimize_restarts(num_restarts=n_restarts,
-                                    parallel=False,
+                                    parallel=True,
                                     verbose=False,
                                     robust=True,
                                     messages=False)
