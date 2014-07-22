@@ -79,6 +79,7 @@ if __name__ == "__main__":
         saveErr = sys.stderr
         ferr = open('error.log', 'w')
         sys.stderr = ferr
+        
         # Setting up Progress bar using progressbar module
         # pbar = ProgressBar(
         #     widgets=[SimpleProgress()], 
@@ -134,7 +135,7 @@ if __name__ == "__main__":
 
             # Setting phase 0 point to phase or r maximum
             # 
-            # HAVE TO BE MOVED IN IF BLOCK BELOW
+            # HAVE TO BE MOVED IN IF BLOCK on zeroPoint
             candidateFit.setLCZeroPoints()
             candidateFit.save_on_txt(
                     dirFit+"DES_FIT_{:0>6d}.dat".format(candidate.SNID))

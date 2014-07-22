@@ -215,7 +215,6 @@ class SupernovaFit():
 		for b in self.lightCurvesDict.keys():
 			colNameFlux = "FLUX_{:<1}".format(b)
 			colNameErr = "FLUX_ERR_{:<1}".format(b)
-			print self.lightCurvesDict[b].badCurve, b
 			if self.lightCurvesDict[b].badCurve:
 				colFlux = MaskedColumn(np.zeros(self.r.mjd.size),
 					name=colNameFlux, 
