@@ -281,6 +281,20 @@ class SupernovaFit():
 		fOut.close()
 
 
+class CandidatesCatalog():
+	"""Used to store in R.A.M. the list of fit to candidates lightcurves.
+	Structure inspired from SupernovaeCatalog
+
+	objs: array of Supernova objects
+	SNID: array if IDs. Follows the objs.SNID array
+	SNType: array of SN types. Useful to search for a specific type
+	"""
+
+	def __init__(self):
+		self.objs = np.zeros(0, dtype=np.object)
+		self.SNID = np.zeros(0, dtype=np.int)
+		self.SNType = np.zeros(0, dtype=np.int)
+
 class SupernovaeCatalog():
 	"""
 	Class variables are
