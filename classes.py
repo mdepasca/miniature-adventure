@@ -285,20 +285,26 @@ class CandidatesCatalog():
 	"""Used to store in R.A.M. the list of fit to candidates lightcurves.
 	Structure inspired from SupernovaeCatalog
 
-	objs: array of Supernova objects
+	candidate: array of Supernova objects
 	SNID: array if IDs. Follows the objs.SNID array
 	SNType: array of SN types. Useful to search for a specific type
 	"""
 
 	def __init__(self):
-		self.objs = np.zeros(0, dtype=np.object)
+		self.candidate = np.zeros(0, dtype=np.object)
 		self.SNID = np.zeros(0, dtype=np.int)
 		self.SNType = np.zeros(0, dtype=np.int)
+
+	def add_candidate(self, candidate):
+		self.candidate = np.append(self.candidate, candidate)
+		self.SNID = np.append(self.SNID, candidate.SNID)
+		self.SNType = np.append(self.SNType, candidate.SNType)
+
 
 class SupernovaeCatalog():
 	"""
 	Class variables are
-	sne		(object array)	array of Supernova objects
+	sne		(object array)	array of SupernovaFit objects
 	zSpec	(float array) the spectroscopically observed redshift 
 			(None if no spctrscp) 
 	zPhotHost	(float array)	the redshift of the host galaxy
