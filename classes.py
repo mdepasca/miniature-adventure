@@ -197,13 +197,13 @@ class SupernovaFit():
 		self.zPhotHost = zPhotHost 
 		self.zPhotHostErr = zPhotHostErr 
 
-	def setLightCurve(self, band, mjd, flux, fluxErr):
+	def set_lightcurve(self, band, mjd, flux, fluxErr):
 		self.lightCurvesDict[band].mjd = mjd
 		self.lightCurvesDict[band].flux = flux
 		self.lightCurvesDict[band].fluxErr = fluxErr
 		self.lightCurvesDict[band].set_badCurve()
 
-	def setLCZeroPoints(self):
+	def set_LC_zero_points(self):
 		try:
 			mjd_rMax = self.r.mjd[self.r.flux == self.r.flux.max()][0]
 			idx_rMax = np.where(self.r.flux == self.r.flux.max())[0][0]
@@ -213,7 +213,7 @@ class SupernovaFit():
 		except:
 			print "Problem detected!"
 
-	def normalizeLC(self):
+	def normalize_LC(self):
 		for b in self.lightCurvesDict.keys():
 			if not self.lightCurvesDict[b].badCurve:
 				self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
