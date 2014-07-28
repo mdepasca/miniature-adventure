@@ -213,10 +213,13 @@ class SupernovaFit():
 		except:
 			print "Problem detected!"
 
-	def normalize_LC(self):
-		for b in self.lightCurvesDict.keys():
-			if not self.lightCurvesDict[b].badCurve:
-				self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
+	@property
+	def normalize_LC(self, b):
+		return self.lightCurvesDict[b].flux / self.lightCurvesDict[b].flux.max()
+		# for b in self.lightCurvesDict.keys():
+		# 	if not self.lightCurvesDict[b].badCurve:
+		# 		self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
+
 
 	def save_on_txt(self, fileName):
 		t = Table(masked=True)
