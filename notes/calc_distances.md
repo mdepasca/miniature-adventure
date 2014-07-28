@@ -21,7 +21,8 @@ Before calculating the distance
    This can be done before distance calculation. Call this **shifted-phase**.
 
 2. When calculating the distance, **we have to know if the 2 LCs can be 
-   compared**. This means that their relative shifted-phases cross each other.
+   compared**. This means that their relative shifted-phases have to overlap
+   for some fraction.
 
 3. This determination have to be done for each LC with respect to all the others.
    - The number of LC to compare to diminishes the deeper I go into the list of
@@ -30,6 +31,11 @@ Before calculating the distance
      2. The second to all but the first one 
      3. The third to all but the first and the second and so on
      4. **Can this be a recursive function?**
+
+   - We'll end up with a NxN triangular matrix (upper or lower does not matter).
+
+     Each cell will have a pair-wise distance and can be feeded to R's
+     DiffusionMap package.
 
 
   
