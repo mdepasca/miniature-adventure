@@ -38,4 +38,23 @@ Before calculating the distance
      DiffusionMap package.
 
 
+Looking for overlapping regions
+-------------------------------
+- I keep light curves sampled on a 1-MJD grid; every sampling **is not** at a 
+  a integer value of an MJD.
+
+  When it will be time to compare fluxes, they will be probably associated to 
+  different MJDs, but the difference will be smaller then 1 MJD and this 
+  is most likely not to produce an significant error. **Anyway, this could be
+  teste**.
+
+- **The overlapping region**: if the maximums of the 2 LC are contained in the 
+  respective phase limits. There will be 2 overlapping arrays, one per LC.
+    - *Their number of elements*: will be the sum of 
+      1. the number of elements before the zero-phase happening first
+      2. the number of elements after the zero-phase happening last
+
+      (the zero-phase is the MJD associated with the maximum in r-band)
+
+
   
