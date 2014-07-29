@@ -255,7 +255,7 @@ class SupernovaFit():
 		idxOverlapCandidate = np.array()
 		idxSelfMax = np.where(self.lightCurvesDict[band].mjd == 0)[0][0]
 		idxCandidateMax = np.where(
-			candidate.lightCurvesDict[band].mjd == 0)[0][0])
+			candidate.lightCurvesDict[band].mjd == 0)[0][0]
 
 		if idxSelfMax == 0 \
 		and idxCandidateMax == (candidate.lightCurvesDict[band].mjd.size - 1):
@@ -299,7 +299,7 @@ class SupernovaFit():
 					)
 				)
 			)
-		elif:
+		else: #will be an elif:
 			print 'cross correlation process for weird situations'
 
 		return distance
