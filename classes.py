@@ -214,11 +214,95 @@ class SupernovaFit():
 			print "Problem detected!"
 
 	@property
-	def normalize_LC(self, b):
-		return self.lightCurvesDict[b].flux / self.lightCurvesDict[b].flux.max()
+	def normalize_LC(self, b, s=None):
+		"""Normalizes the light curve in band b using the maximum in that band.
+		s is a slice on the array.
+		"""
+		result = np.array()
+		if s:
+			result = \
+			self.lightCurvesDict[b].flux[s] / self.lightCurvesDict[b].flux.max()
+		else:
+			result = \
+			self.lightCurvesDict[b].flux / self.lightCurvesDict[b].flux.max()
+
+		return result
 		# for b in self.lightCurvesDict.keys():
 		# 	if not self.lightCurvesDict[b].badCurve:
 		# 		self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
+
+	@property
+	def normalize_error(self, b, s=None):
+		"""Normalizes the light curve in band b using the maximum in that band.
+		s is a slice on the array.
+		"""
+		result = np.array()
+		if s:
+			result = \
+			self.lightCurvesDict[b].fluxErr[s] / \
+			self.lightCurvesDict[b].fluxErr.max()
+		else:
+			result = \
+			self.lightCurvesDict[b].fluxErr / \
+			self.lightCurvesDict[b].fluxErr.max()
+
+		return result
+
+	@property
+	def get_distance(self, candidate, band):
+		distance = None
+		idxOverlapSelf = np.array()
+		idxOverlapCandidate = np.array()
+		idxSelfMax = np.where(self.lightCurvesDict[band].mjd == 0)[0][0]
+		idxCandidateMax = np.where(
+			candidate.lightCurvesDict[band].mjd == 0)[0][0])
+
+		if idxSelfMax == 0 \
+		and idxCandidateMax == (candidate.lightCurvesDict[band].mjd.size - 1):
+			print 'Set big distance'
+		elif idxSelfMax == (self.lightCurvesDict[band].mjd.size - 1) \
+		and idxCandidateMax == 0:
+			print 'Set big distance'
+		elif idxSelfMax != 0 and idxCandidateMax != 0:
+			if idxSelfMax >= idxCandidateMax:
+				idxOverlapSelf = slice(
+					idxSelfMax-idxCandidateMax,
+					self.lightCurvesDict[band].mjd.size)
+
+				idxOverlapCandidate = slice(
+					0, self.lightCurvesDict[band].mjd.size-idxSelfMax)
+			else:
+				idxOverlapSelf = slice(
+					0, self.lightCurvesDict[band].mjd.size-idxCandidateMax)
+
+				idxOverlapCandidate = slice(
+					idxCandidateMax-idxSelfMax,
+					candidate.lightCurvesDict[band].mjd.size)
+
+			minMjd = min(self.lightCurvesDict[band].mjd[idxOverlapSelf.start],
+				candidate.lightCurvesDict[band].mjd[idxOverlapCandidate.start])
+
+			maxMjd = max(self.lightCurvesDict[band].mjd[idxOverlapSelf.stop],
+				candidate.lightCurvesDict[band].mjd[idxOverlapCandidate.stop])
+
+			distance = (1. / (maxMjd - minMjd)) * np.sqrt(
+				np.divide(
+					np.power(
+						np.subtract(
+							self.normalize_LC(band, idxOverlapSelf),
+							candidate.normalize_LC(band, idxOverlapCandidate)
+							), 2), 
+					np.add(
+						np.power(self.normalize_error(band, idxOverlapSelf), 2), 
+						np.power(candidate.normalize_error(band, 
+							idxOverlapCandidate), 2)
+					)
+				)
+			)
+		elif:
+			print 'cross correlation process for weird situations'
+
+		return distance
 
 
 	def save_on_txt(self, fileName):
