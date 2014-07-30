@@ -270,7 +270,8 @@ def gp_fit(
         gpModel.optimize(optimizer='scg')
 
     # predX = reshape_for_GPy(np.arange(round(X.min()), round(X.max()), 1))
-    predX = reshape_for_GPy(np.linspace(round(X.min()), round(X.max()), num=100))
+    predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1))
+    # predX = reshape_for_GPy(np.linspace(round(X.min()), round(X.max()), num=100))
 
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
     return predX, meanY, var, gpModel
