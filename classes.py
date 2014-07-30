@@ -47,7 +47,6 @@ class LightCurve():
 		self.flux = np.append(self.flux, flux)
 		self.fluxErr = np.append(self.fluxErr, fluxErr)
 
-	@property
 	def make_shifted_mjd(self, distance):
 		"""
 		Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
@@ -70,15 +69,21 @@ class LightCurve():
 		
 		return np.argmax(difference)
 	
-	@property
 	def get_max_flux_p(self, p):
 		"""
 		Returns max (flux - p*fluxErr)
 		"""
 		return np.max(np.subtract(self.flux, p*self.fuxErr))
 		
+	def reset_masks(self):
+		if self.mjd.mask is not False:
+			self.mjd.mask = False
+		
+		if self.flux.mask is not False:	
+			self.flux.mask = False
 
-
+		if self.fluxErr.mask is not False:	
+			self.fluxErr.mask = False
 
 class Supernova():
 	"""
@@ -198,9 +203,9 @@ class SupernovaFit():
 		self.zPhotHostErr = zPhotHostErr 
 
 	def set_lightcurve(self, band, mjd, flux, fluxErr):
-		self.lightCurvesDict[band].mjd = mjd
-		self.lightCurvesDict[band].flux = flux
-		self.lightCurvesDict[band].fluxErr = fluxErr
+		self.lightCurvesDict[band].mjd = np.ma.asarray(mjd)
+		self.lightCurvesDict[band].flux = np.ma.asarray(flux)
+		self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr)
 		self.lightCurvesDict[band].set_badCurve()
 
 	def set_LC_zero_points(self):
@@ -213,35 +218,27 @@ class SupernovaFit():
 		except:
 			print "Problem detected!"
 
-	def normalize_LC(self, b, s=None):
+	def normalize_LC(self, b):
 		"""Normalizes the light curve in band b using the maximum in that band.
 		s is a slice on the array.
 		"""
 		result = np.array(0)
-		if s:
-			result = \
-			self.lightCurvesDict[b].flux[s] / self.lightCurvesDict[b].flux.max()
-		else:
-			result = \
-			self.lightCurvesDict[b].flux / self.lightCurvesDict[b].flux.max()
+
+		result = self.lightCurvesDict[b].flux / \
+			self.lightCurvesDict[b].flux.max()
 
 		return result
 		# for b in self.lightCurvesDict.keys():
 		# 	if not self.lightCurvesDict[b].badCurve:
 		# 		self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
 
-	def normalize_error(self, b, s=None):
+	def normalize_error(self, b):
 		"""Normalizes the light curve in band b using the maximum in that band.
 		s is a slice on the array.
 		"""
 		result = np.array(0)
-		if s:
-			result = \
-			self.lightCurvesDict[b].fluxErr[s] / \
-			self.lightCurvesDict[b].fluxErr.max()
-		else:
-			result = \
-			self.lightCurvesDict[b].fluxErr / \
+		
+		result = self.lightCurvesDict[b].fluxErr / \
 			self.lightCurvesDict[b].fluxErr.max()
 
 		return result
@@ -263,33 +260,48 @@ class SupernovaFit():
 		if np.intersect1d(self.lightCurvesDict[band].mjd, 
 			candidate.lightCurvesDict[band].mjd, assume_unique=True).size <= 1:
 			print 'Set big distance'
-		elif 
+		else:
+			if sizeSelf >= sizeCandidate:
+				bigger = self.lightCurvesDict[band].mjd.view()
+				smaller = candidate.lightCurvesDict[band].mjd.view()
+			else:
+				bigger = candidate.lightCurvesDict[band].mjd.view()
+				smaller = self.lightCurvesDict[band].mjd.view()
 
+			smaller.mask = np.in1d(smaller, bigger, invert=True)
+			bigger.mask = np.in1d(bigger, smaller, invert=True)
 
+			self.lightCurvesDict[band].flux.mask = \
+								self.lightCurvesDict[band].mjd.mask
+			self.lightCurvesDict[band].fluxErr.mask = \
+								self.lightCurvesDict[band].mjd.mask
 
+			candidate.lightCurvesDict[band].flux.mask = \
+								candidate.lightCurvesDict[band].mjd.mask
+			candidate.lightCurvesDict[band].fluxErr.mask = \
+								candidate.lightCurvesDict[band].mjd.mask			
 
-			minMjd = min(self.lightCurvesDict[band].mjd[idxOverlapSelf.start],
-				candidate.lightCurvesDict[band].mjd[idxOverlapCandidate.start])
+			minMjd = min(self.lightCurvesDict[band].mjd.compressed()[0],
+				candidate.lightCurvesDict[band].mjd.compressed()[0])
 
-			maxMjd = max(self.lightCurvesDict[band].mjd[idxOverlapSelf.stop-1],
-				candidate.lightCurvesDict[band].mjd[idxOverlapCandidate.stop-1])
+			maxMjd = max(self.lightCurvesDict[band].mjd.compressed()[-1],
+				candidate.lightCurvesDict[band].mjd.compressed()[-1])
 
 			distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.cumsum(
 				np.divide(
 					np.power(
 						np.subtract(
-							self.normalize_LC(band, idxOverlapSelf),
-							candidate.normalize_LC(band, idxOverlapCandidate)
+							self.normalize_LC(band),
+							candidate.normalize_LC(band)
 							), 2), 
 					np.add(
-						np.power(self.normalize_error(band, idxOverlapSelf), 2), 
-						np.power(candidate.normalize_error(band, 
-							idxOverlapCandidate), 2)
+						np.power(self.normalize_error(band), 2), 
+						np.power(candidate.normalize_error(band), 2)
 					)
 				)
 			))
-		else: #will be an elif:
-			print 'cross correlation process for weird situations'
+		# else: #will be an elif:
+		# 	print 'cross correlation process for weird situations'
 
 		return distance
 
