@@ -47,6 +47,11 @@ class LightCurve():
 		self.flux = np.append(self.flux, flux)
 		self.fluxErr = np.append(self.fluxErr, fluxErr)
 
+		#update the mask
+		self.mjd.mask = np.zeros(self.mjd.size)
+		self.flux.mask = np.zeros(self.flux.size)
+		self.fluxErr.mask = np.zeros(self.fluxErr.size)
+
 	def make_shifted_mjd(self, distance):
 		"""
 		Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
@@ -206,6 +211,12 @@ class SupernovaFit():
 		self.lightCurvesDict[band].mjd = np.ma.asarray(mjd)
 		self.lightCurvesDict[band].flux = np.ma.asarray(flux)
 		self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr)
+
+		# setting the masks
+		self.lightCurvesDict[band].mjd.mask = np.zeros(mjd.size)
+		self.lightCurvesDict[band].flux.mask = np.zeros(flux.size)
+		self.lightCurvesDict[band].fluxErr.mask = np.zeros(fluxErr.size)
+
 		self.lightCurvesDict[band].set_badCurve()
 
 	def set_LC_zero_points(self):
@@ -224,7 +235,7 @@ class SupernovaFit():
 		"""
 		result = np.array(0)
 
-		result = self.lightCurvesDict[b].flux / \
+		result = self.lightCurvesDict[b].flux.compressed() / \
 			self.lightCurvesDict[b].flux.max()
 
 		return result
@@ -238,7 +249,7 @@ class SupernovaFit():
 		"""
 		result = np.array(0)
 		
-		result = self.lightCurvesDict[b].fluxErr / \
+		result = self.lightCurvesDict[b].fluxErr.compressed() / \
 			self.lightCurvesDict[b].fluxErr.max()
 
 		return result
@@ -287,16 +298,16 @@ class SupernovaFit():
 			maxMjd = max(self.lightCurvesDict[band].mjd.compressed()[-1],
 				candidate.lightCurvesDict[band].mjd.compressed()[-1])
 
-			distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.cumsum(
-				np.divide(
-					np.power(
-						np.subtract(
+			distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
+				np.ma.divide(
+					np.ma.power(
+						np.ma.subtract(
 							self.normalize_LC(band),
 							candidate.normalize_LC(band)
 							), 2), 
-					np.add(
-						np.power(self.normalize_error(band), 2), 
-						np.power(candidate.normalize_error(band), 2)
+					np.ma.add(
+						np.ma.power(self.normalize_error(band), 2), 
+						np.ma.power(candidate.normalize_error(band), 2)
 					)
 				)
 			))
