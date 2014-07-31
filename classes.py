@@ -5,6 +5,21 @@ import cPickle
 from astropy.io import ascii
 from astropy.table import Table, Column, MaskedColumn, vstack, hstack
 import time
+import argparse
+
+if __name__ == '__main__':
+	parser.add_argument(
+        "-c1", "--candidate1", dest="candidate1", 
+        type=np.int64, default=None, 
+        help="First candidate id")
+
+	parser.add_argument(
+        "-c2", "--candidate2", dest="candidate2", 
+        type=np.int64, default=None, 
+        help="Second candidate id")	
+
+	args = parser.parse_args()
+
 
 class LightCurve():
 	"""
@@ -21,9 +36,9 @@ class LightCurve():
 	shifted_mjd = np.zeros(0)
 	def __init__(self, band):
 		self.band = band
-		self.mjd = np.ma.zeros(0)
-		self.flux = np.ma.zeros(0)
-		self.fluxErr = np.ma.zeros(0)
+		self.mjd = np.ma.zeros(0, dtype=np.float32)
+		self.flux = np.ma.zeros(0, dtype=np.float32)
+		self.fluxErr = np.ma.zeros(0, dtype=np.float32)
 
 	@classmethod
 	def data(band, mjd, flux, fluxErr):
@@ -43,9 +58,9 @@ class LightCurve():
 		"""
 		Adds a data point to the light curve.
 		"""
-		self.mjd = np.append(self.mjd, mjd)
-		self.flux = np.append(self.flux, flux)
-		self.fluxErr = np.append(self.fluxErr, fluxErr)
+		self.mjd = np.append(self.mjd, np.float32(mjd))
+		self.flux = np.append(self.flux, np.float32(flux))
+		self.fluxErr = np.append(self.fluxErr, np.float32(fluxErr))
 
 		#update the mask
 		self.mjd.mask = np.zeros(self.mjd.size)
@@ -207,9 +222,9 @@ class SupernovaFit():
 		self.zPhotHostErr = zPhotHostErr 
 
 	def set_lightcurve(self, band, mjd, flux, fluxErr):
-		self.lightCurvesDict[band].mjd = np.ma.asarray(mjd)
-		self.lightCurvesDict[band].flux = np.ma.asarray(flux)
-		self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr)
+		self.lightCurvesDict[band].mjd = np.ma.asarray(mjd, dtype=np.float32)
+		self.lightCurvesDict[band].flux = np.ma.asarray(flux, dtype=np.float32)
+		self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr, dtype=np.float32)
 
 		# setting the masks
 		self.lightCurvesDict[band].mjd.mask = np.zeros(mjd.size)
@@ -238,9 +253,7 @@ class SupernovaFit():
 			self.lightCurvesDict[b].flux.max()
 
 		return result
-		# for b in self.lightCurvesDict.keys():
-		# 	if not self.lightCurvesDict[b].badCurve:
-		# 		self.lightCurvesDict[b].flux /= self.lightCurvesDict[b].flux.max()
+		
 
 	def normalize_error(self, b):
 		"""Normalizes the light curve in band b using the maximum in that band.
@@ -278,8 +291,10 @@ class SupernovaFit():
 				bigger = candidate.lightCurvesDict[band].mjd.view()
 				smaller = self.lightCurvesDict[band].mjd.view()
 
-			smaller.mask = np.in1d(smaller, bigger, invert=True)
-			bigger.mask = np.in1d(bigger, smaller, invert=True)
+			smaller.mask = np.in1d(
+				np.round(smaller), np.round(bigger), invert=True)
+			bigger.mask = np.in1d(
+				np.round(bigger), np.round(smaller), invert=True)
 
 			self.lightCurvesDict[band].flux.mask = \
 								self.lightCurvesDict[band].mjd.mask
@@ -389,7 +404,7 @@ class CandidatesCatalog():
 	"""
 
 	def __init__(self):
-		self.candidate = np.zeros(0, dtype=np.object)
+		self.candidates = np.zeros(0, dtype=np.object)
 		self.SNID = np.zeros(0, dtype=np.int)
 		self.SNType = np.zeros(0, dtype=np.int)
 
@@ -526,3 +541,74 @@ class SupernovaeCatalog():
 			SNTypeInt = -9
 		
 		return SNTypeInt
+
+
+if __name__ == '__main__':
+	dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
+	fCandidatesList = "DES_BLIND+HOSTZ.LIST"
+	candidatesList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)
+	catalog = CandidatesCatalog()
+
+	if not args.candidate1:
+		args.candidate1 = np.random.random_integers(
+                low=0, high=18321)
+
+	if not args.candidate2:
+		args.candidate2 = np.random.random_integers(
+                low=0, high=18321)
+
+	while args.candidate2 == args.candidate1:
+		args.candidate2 = np.random.random_integers(
+            low=0, high=18321)
+
+
+	# Getting observation data
+	candidate1 = Supernova(
+		dirData+os.sep+candidatesList[args.candidate1])
+
+	candidate2 = Supernova(
+		dirData+os.sep+candidatesList[args.candidate2])
+
+	# Create SupernovaFit objects
+	candidateFit1 = SupernovaFit(candidate1.SNID)
+	candidateFit2 = SupernovaFit(candidate2.SNID)
+
+	catalog.add_candidate(candidateFit1)
+	catalog.add_candidate(candidateFit2)
+
+	for candidate in catalog.candidate
+	for b in candidate1.lightCurvesDict.keys():
+		phase = candidate.lightCurvesDict[b].mjd
+        flux = candidate.lightCurvesDict[b].flux
+        errFlux = candidate.lightCurvesDict[b].fluxErr
+
+        # test_prior should be deleted as option. Prior too weak.
+        # 
+        # Fitting Lightcurve
+        if (not candidate.lightCurvesDict[b].badCurve) and \
+            (flux.size >= 3):
+            saveOut = sys.stdout
+            fout = open('out.log', 'w')
+            # fout = open('/dev/null', 'w')
+            sys.stdout = fout
+
+            
+            predMjd, predFlux, predErr, GPModel = util.gp_fit(
+                                            phase, flux, errFlux, 
+                                            kern, n_restarts=10, 
+                                            test_length=True)
+            sys.stdout = saveOut
+            fout.close()
+
+            candidateFit.set_lightcurve(b, 
+                predMjd.reshape(predMjd.size),
+                predFlux.reshape(predFlux.size), 
+                predErr.reshape(predErr.size))
+            
+            print indent + \
+                "{:<} {:<} {:<}".format(i, candidate.SNID, b)
+        else:
+            candidateFit.lightCurvesDict[b].badCurve = True
+            print indent + util.bcolors.FAIL + \
+                "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
+                util.bcolors.ENDC
