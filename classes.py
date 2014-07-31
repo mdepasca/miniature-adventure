@@ -196,7 +196,6 @@ class SupernovaFit():
 								"i":self.i, 
 								"z":self.z}
 		self.SNID = SNID
-		self.SNType = SNType
 		self.SNType = SNType 
 		self.RADeg = RADeg 
 		self.decDeg = decDeg 
