@@ -6,6 +6,7 @@ import numpy as np
 import GPy
 import time
 import classes as cls
+from matplotlib import pyplot as plt
 # from progressbar import ProgressBar, SimpleProgress
 
 if __name__ == "__main__":
@@ -32,6 +33,15 @@ if __name__ == "__main__":
         It is use to build a diffusion map (see Coifman & Lafon (2006) \
         and Lafon & Lee (2006)).")
 
+    parser.add_argument(
+        "--training-directory", dest="args.dirData",
+        default="train_data" + os.sep + "DES_BLIND+HOSTZ",
+        help="Path to directory containing training data.")
+
+    parser.add_argument(
+        "--fitting-directory", dest="args.dirFit",
+        default="fit_data" + os.sep,
+        help="Path to directory in which to save fitting results.")
     args = parser.parse_args()
 else:
     pass
@@ -41,9 +51,9 @@ if __name__ == "__main__":
     indent = "          "
     KERN_RATQUAD = "RatQuad"
     # should be possible to change the next two variables
-    dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
-    dirFit = "fit_data" + os.sep
-    fNameCandidates = "DES_BLIND+HOSTZ.LIST"
+    # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
+    # args.dirFit = "fit_data" + os.sep
+    fNameCandidatesList = "DES_BLIND+HOSTZ.LIST"
 
     print indent + "* * * * * * * * * * * * * * *"
     print indent + "*    Miniature Adventure    *"
@@ -59,21 +69,22 @@ if __name__ == "__main__":
 
         # Relevant input data
         print "\n" + indent + "[1] * Fit lightcurves"
-        print "\n" + indent + "Data directory: " + os.curdir + dirData + os.sep
+        print "\n" + indent + "Data directory: " + os.curdir + args.dirData + os.sep
         print "\n" + indent + "List of candidates contained in: " \
-            + os.curdir + dirData + os.sep + fNameCandidates
+            + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
         vecCandidates = np.genfromtxt(
-                dirData+os.sep+fNameCandidates, dtype=None)
+                args.dirData+os.sep+fNameCandidatesList, dtype=None)
         # tenPercent = vecCandidates.size / 10
         # const = 0
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(vecCandidates.size)
 
         print "\n" + indent \
-            + "Data are fitted using GP with a Rational Quadratic kernel"
+            + "Data are fitted using GP with Radial Basis Function kernel."
 
-        kern = GPy.kern.RatQuad(1)
+        # kern = GPy.kern.RatQuad(1)
+        kern = GPy.kern.RBF(1)
     
         # Redirecting stderr output to file
         saveErr = sys.stderr
@@ -90,9 +101,11 @@ if __name__ == "__main__":
         # THIS PIECE NEEDS TO BE PARALLELIZED
         # 
         # optimize_restarts parallel using multiprocessing
+        candidatesCat = cls.CandidatesCatalog()
         for i in range(vecCandidates.size):
-            candidate = util.get_sn_from_file(dirData+os.sep+vecCandidates[i])
+            candidate = util.get_sn_from_file(args.dirData+os.sep+vecCandidates[i])
             candidateFit = cls.SupernovaFit(candidate.SNID)
+
             for b in candidate.lightCurvesDict.keys():
 
                 phase = candidate.lightCurvesDict[b].mjd
@@ -113,12 +126,11 @@ if __name__ == "__main__":
                     predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                     phase, flux, errFlux, 
                                                     kern, n_restarts=10, 
-                                                    test_length=True,
-                                                    test_prior=False)
+                                                    test_length=True)
                     sys.stdout = saveOut
                     fout.close()
 
-                    candidateFit.setLightCurve(b, 
+                    candidateFit.set_lightcurve(b, 
                         predMjd.reshape(predMjd.size),
                         predFlux.reshape(predFlux.size), 
                         predErr.reshape(predErr.size))
@@ -126,7 +138,6 @@ if __name__ == "__main__":
                     print indent + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                 else:
-                    # pass 
                     candidateFit.lightCurvesDict[b].badCurve = True
                     print indent + util.bcolors.FAIL + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
@@ -137,15 +148,14 @@ if __name__ == "__main__":
                     #     util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
                     #     "{:<1} lightcurve \n".format(b)
                                 
-
             # Setting phase 0 point to phase or r maximum
-            # 
-            # HAVE TO BE MOVED IN IF BLOCK on zeroPoint
-            candidateFit.setLCZeroPoints()
-            candidateFit.save_on_txt(
-                    dirFit+"DES_FIT_{:0>6d}.dat".format(candidate.SNID))
+            candidateFit.set_lc_zero_points()    
+            candidatesCat.add_candidate(candidateFit)
+            
+            # candidateFit.save_on_txt(
+            #         args.dirFit+"DES_FIT_{:0>6d}.dat".format(candidate.SNID))
             # pbar.update(i + 1)
-            if i == 5:
+            if i == 10:
                 break
             # if i > const * tenPercent:
             #     pg + 1
@@ -157,7 +167,10 @@ if __name__ == "__main__":
         sys.stderr = saveErr
         ferr.close()
     if args.zeroPoint:
-        print"qq"
+        
+        # 
+        
+        
         # Set zero point in time 
         pass
     if args.distMetric:
