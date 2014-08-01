@@ -51,6 +51,7 @@ class LightCurve():
     def __init__(self, band):
         self.band = band
         self.mjd = np.ma.zeros(0, dtype=np.float32)
+        self.shiftedMjd = np.ma.zeros(0, dtype=np.float32)
         self.flux = np.ma.zeros(0, dtype=np.float32)
         self.fluxErr = np.ma.zeros(0, dtype=np.float32)
 
@@ -68,7 +69,7 @@ class LightCurve():
         # else:
         #   self.badCurve = False
 
-    def addDataPoint(self, mjd, flux, fluxErr):
+    def add_data_point(self, mjd, flux, fluxErr):
         """
         Adds a data point to the light curve.
         """
@@ -81,20 +82,12 @@ class LightCurve():
         self.flux.mask = np.zeros(self.flux.size)
         self.fluxErr.mask = np.zeros(self.fluxErr.size)
 
-    def make_shifted_mjd(self, distance):
+    def set_shifted_mjd(self, distance):
         """
         Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
         """
-        self.shifted_mjd = self.mjd - distance
+        self.shiftedMjd = np.ma.subtract(self.mjd, distance)
     
-    @property
-    def get_maxfluxIndex(self):
-        """
-        Return the index of the maximum flux
-        """
-        return np.argmax(self.flux)
-    
-    @property
     def get_max_fmfe_Index(self):
         """
         Return the index of max (flux - fluxErr)
@@ -109,7 +102,7 @@ class LightCurve():
         """
         return np.max(np.subtract(self.flux, p*self.fuxErr))
         
-    def reset_masks(self):
+    def reset_mask(self):
         if self.mjd.mask is not False:
             self.mjd.mask = False
         
@@ -119,6 +112,16 @@ class LightCurve():
         if self.fluxErr.mask is not False:  
             self.fluxErr.mask = False
 
+    @property
+    def max_flux_index(self):
+        """
+        Return the index of the maximum flux
+        """
+        return np.argmax(self.flux)
+
+    @property
+    def size(self):
+        return self.mjd.size
 class Supernova():
     """
     Has the following properties
@@ -173,13 +176,13 @@ class Supernova():
                     fluxErr = float(data[4])
                     if fluxErr > 0:
                         if passband == "g":
-                            self.g.addDataPoint(mjd, flux, fluxErr)
+                            self.g.add_data_point(mjd, flux, fluxErr)
                         elif passband == "r":
-                            self.r.addDataPoint(mjd, flux, fluxErr)
+                            self.r.add_data_point(mjd, flux, fluxErr)
                         elif passband == "i":
-                            self.i.addDataPoint(mjd, flux, fluxErr)
+                            self.i.add_data_point(mjd, flux, fluxErr)
                         elif passband == "z":
-                            self.z.addDataPoint(mjd, flux, fluxErr)
+                            self.z.add_data_point(mjd, flux, fluxErr)
                         else:
                             print "Filter not recognized: {:<5}".format(passband)
                 elif tag == "SNID":
@@ -224,6 +227,7 @@ class SupernovaFit():
                                 "r":self.r, 
                                 "i":self.i, 
                                 "z":self.z}
+        self.peaked = False
         self.SNID = SNID
         self.SNType = SNType 
         self.RADeg = RADeg 
@@ -238,7 +242,12 @@ class SupernovaFit():
     def set_lightcurve(self, band, mjd, flux, fluxErr):
         self.lightCurvesDict[band].mjd = np.ma.asarray(mjd, dtype=np.float32)
         self.lightCurvesDict[band].flux = np.ma.asarray(flux, dtype=np.float32)
-        self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr, dtype=np.float32)
+        self.lightCurvesDict[band].fluxErr = np.ma.asarray(fluxErr, 
+            dtype=np.float32)
+
+        if (band == 'r') \
+        and self.r.max_flux_index not in set([0, -1, self.r.size-1]):
+            self.set_peaked()
 
         # setting the masks
         self.lightCurvesDict[band].mjd.mask = np.zeros(mjd.size)
@@ -247,107 +256,140 @@ class SupernovaFit():
 
         self.lightCurvesDict[band].set_badCurve()
 
-    def set_LC_zero_points(self):
+    def shift_mjds(self):
         try:
-            mjd_rMax = self.r.mjd[self.r.flux == self.r.flux.max()][0]
-            idx_rMax = np.where(self.r.flux == self.r.flux.max())[0][0]
+            # mjdrMax = self.r.mjd[self.r.flux == self.r.flux.max()][0]
+            mjdrMax = self.r.mjd[self.r.max_flux_index]
+            # idx_rMax = np.where(self.r.flux == self.r.flux.max())[0][0]
             for b in self.lightCurvesDict.keys():
                 if not self.lightCurvesDict[b].badCurve:
-                    self.lightCurvesDict[b].mjd -= mjd_rMax
+                    self.lightCurvesDict[b].set_shifted_mjd(mjdrMax)
         except:
-            print "Problem detected!"
+            print "Candidate {:<d} ".format(self.SNID) + \
+            "has no maximum in r-band."
 
-    def normalize_LC(self, b):
-        """Normalizes the light curve in band b using the maximum in that band.
+    def reset_masks(self):
+        for b in self.lightCurvesDict.keys():
+            self.lightCurvesDict[b].reset_mask()
+        
+    def normalized_flux(self, band):
+        """Normalizes the light curve in `band` using the maximum in that band.
         s is a slice on the array.
         """
         result = np.array(0)
 
-        result = self.lightCurvesDict[b].flux.compressed() / \
-            self.lightCurvesDict[b].flux.max()
+        result = self.lightCurvesDict[band].flux.compressed() / \
+            (self.g.flux.max() + 
+                self.r.flux.max() + 
+                self.i.flux.max() + 
+                self.z.flux.max())
 
         return result
-        
 
-    def normalize_error(self, b):
+    def normalized_error(self, band):
         """Normalizes the light curve in band b using the maximum in that band.
         s is a slice on the array.
         """
         result = np.array(0)
         
-        result = self.lightCurvesDict[b].fluxErr.compressed() / \
-            self.lightCurvesDict[b].fluxErr.max()
+        result = self.lightCurvesDict[band].fluxErr.compressed() / \
+            (self.g.fluxErr.max() + 
+                self.r.fluxErr.max() + 
+                self.i.fluxErr.max() + 
+                self.z.fluxErr.max())
 
         return result
 
-    def get_distance(self, candidate, band):
+    def set_peaked(self):
+        self.peaked = True
+
+    @property
+    def peaked(self):
+        return self.peaked
+
+    def get_distance(self, candidate, band, reset_masks=True):
         if type(band) is not str:
             raise TypeError
         distance = -99
-        idxOverlapSelf = slice(None)
-        idxOverlapCandidate = slice(None)
+        # idxOverlapSelf = slice(None)
+        # idxOverlapCandidate = slice(None)
 
-        sizeSelf = self.lightCurvesDict[band].mjd.size
-        sizeCandidate = candidate.lightCurvesDict[band].mjd.size
+        sizeSelf = self.lightCurvesDict[band].size
+        sizeCandidate = candidate.lightCurvesDict[band].size
 
         idxSelfMax = np.where(
-            np.abs(self.lightCurvesDict[band].mjd) == np.abs(
-                    self.lightCurvesDict[band].mjd).min()
+            np.abs(self.lightCurvesDict[band].shiftedMjd) == np.abs(
+                    self.lightCurvesDict[band].shiftedMjd).min()
             )[0][0]
         idxCandidateMax = np.where(
-                np.abs(candidate.lightCurvesDict[band].mjd) == np.abs(
-                    candidate.lightCurvesDict[band].mjd).min()
+                np.abs(candidate.lightCurvesDict[band].shiftedMjd) == np.abs(
+                    candidate.lightCurvesDict[band].shiftedMjd).min()
             )[0][0]
 
+        # these checks on maximum positions should be done outside the function
+
+        # First check: the lc are set as `not peacked` but we check if the 
+        # 
+        # maximum values are at opposite sides
         if (idxSelfMax == 0 and idxCandidateMax == sizeCandidate-1) \
         or (idxSelfMax == sizeSelf-1 and idxCandidateMax == 0):
-        # if np.intersect1d(self.lightCurvesDict[band].mjd, 
-        #     candidate.lightCurvesDict[band].mjd, assume_unique=True).size <= 1:
             print 'Set big distance'
-        else:
-            if sizeSelf >= sizeCandidate:
-                bigger = self.lightCurvesDict[band].mjd.view()
-                smaller = candidate.lightCurvesDict[band].mjd.view()
-            else:
-                bigger = candidate.lightCurvesDict[band].mjd.view()
-                smaller = self.lightCurvesDict[band].mjd.view()
 
+        elif (idxSelfMax not in set([0, sizeSelf-1]) \
+            and idxCandidateMax not in set([0, sizeCandidate-1])):
+            if sizeSelf >= sizeCandidate:
+                bigger = self.lightCurvesDict[band].shiftedMjd.view()
+                smaller = candidate.lightCurvesDict[band].shiftedMjd.view()
+            else:
+                bigger = candidate.lightCurvesDict[band].shiftedMjd.view()
+                smaller = self.lightCurvesDict[band].shiftedMjd.view()
+
+            # modifying masks
             smaller.mask = np.in1d(
                 np.round(smaller), np.round(bigger), invert=True)
             bigger.mask = np.in1d(
                 np.round(bigger), np.round(smaller), invert=True)
 
+            # setting new masks
             self.lightCurvesDict[band].flux.mask = \
-                                self.lightCurvesDict[band].mjd.mask
+                                self.lightCurvesDict[band].shiftedMjd.mask
             self.lightCurvesDict[band].fluxErr.mask = \
-                                self.lightCurvesDict[band].mjd.mask
+                                self.lightCurvesDict[band].shiftedMjd.mask
 
             candidate.lightCurvesDict[band].flux.mask = \
-                                candidate.lightCurvesDict[band].mjd.mask
+                                candidate.lightCurvesDict[band].shiftedMjd.mask
             candidate.lightCurvesDict[band].fluxErr.mask = \
-                                candidate.lightCurvesDict[band].mjd.mask            
+                                candidate.lightCurvesDict[band].shiftedMjd.mask            
 
-            minMjd = min(self.lightCurvesDict[band].mjd.compressed()[0],
-                candidate.lightCurvesDict[band].mjd.compressed()[0])
+            # calculating min a max overlapping MJD
+            minMjd = min(self.lightCurvesDict[band].shiftedMjd.compressed()[0],
+                candidate.lightCurvesDict[band].shiftedMjd.compressed()[0])
 
-            maxMjd = max(self.lightCurvesDict[band].mjd.compressed()[-1],
-                candidate.lightCurvesDict[band].mjd.compressed()[-1])
+            maxMjd = max(self.lightCurvesDict[band].shiftedMjd.compressed()[-1],
+                candidate.lightCurvesDict[band].shiftedMjd.compressed()[-1])
 
+            # calculating the distance
             distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
                 np.ma.divide(
                     np.ma.power(
                         np.ma.subtract(
-                            self.normalize_LC(band),
-                            candidate.normalize_LC(band)
+                            self.normalized_flux(band),
+                            candidate.normalized_flux(band)
                             ), 2), 
                     np.ma.add(
-                        np.ma.power(self.normalize_error(band), 2), 
-                        np.ma.power(candidate.normalize_error(band), 2)
+                        np.ma.power(self.normalized_error(band), 2), 
+                        np.ma.power(candidate.normalized_error(band), 2)
                     )
                 )
             ))
+        else:
+            print 'cross correlation process for weird situations'
         # else: #will be an elif:
         #   print 'cross correlation process for weird situations'
+
+        if reset_masks:
+            self.reset_masks()
+            candidate.reset_masks()
 
         return distance
 
@@ -428,11 +470,16 @@ class CandidatesCatalog():
         self.candidates = np.zeros(0, dtype=np.object)
         self.SNID = np.zeros(0, dtype=np.int)
         self.SNType = np.zeros(0, dtype=np.int)
+        self.peaked = np.zeros(0, dtype=np.int)
 
     def add_candidate(self, candidate):
         self.candidates = np.append(self.candidates, candidate)
         self.SNID = np.append(self.SNID, candidate.SNID)
         self.SNType = np.append(self.SNType, candidate.SNType)
+        self.peaked = np.append(self.peaked, candidate.peaked)
+
+    def get_peaked(self):
+        return np.where(self.peaked)[0][0]
 
 
 class SupernovaeCatalog():
@@ -639,23 +686,26 @@ if __name__ == '__main__':
                     "{:<} {:<}".format(candidate.SNID, b) + \
                     util.bcolors.ENDC
 
-        candidateFit.set_LC_zero_points()
+        candidateFit.shift_mjds()
         catalogFit.add_candidate(candidateFit)
 
-    print 'Distance between the 2 normalized lcs in ' + \
-    '{:<} band = {:<2.4f}'.format(args.band,
-        catalogFit.candidates[0].get_distance(catalogFit.candidates[1], 
-        args.band))
+    if catalogFit.candidates[0].peaked and catalogFit.candidates[1].peaked:
+        print 'Distance between the 2 normalized lcs in ' + \
+        '{:<} band = {:<2.4f}'.format(args.band,
+            catalogFit.candidates[0].get_distance(catalogFit.candidates[1], 
+            args.band, reset_masks=False))
 
-    plt.scatter(
-        catalogFit.candidates[0].lightCurvesDict[args.band].mjd.compressed(),
-        catalogFit.candidates[0].normalize_LC(args.band))
+        plt.scatter(
+            catalogFit.candidates[0].lightCurvesDict[args.band].shiftedMjd.compressed(),
+            catalogFit.candidates[0].normalized_flux(args.band))
 
-    plt.scatter(
-        catalogFit.candidates[1].lightCurvesDict[args.band].mjd.compressed(),
-        catalogFit.candidates[1].normalize_LC(args.band), c='orange')
+        plt.scatter(
+            catalogFit.candidates[1].lightCurvesDict[args.band].shiftedMjd.compressed(),
+            catalogFit.candidates[1].normalized_flux(args.band), c='orange')
 
-    plt.show()
+        plt.show()
+    else:
+        print 'One of the 2 candidate has not r-band peak.'
 
 
 
