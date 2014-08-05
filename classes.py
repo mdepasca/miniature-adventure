@@ -66,6 +66,9 @@ class LightCurve():
     def set_badCurve(self): 
         if len(self.flux) == 0:
             self.badCurve = True
+            self.flux.mask = True
+            self.fluxErr.mask = True
+            self.mjd.mask = True
         # else:
         #   self.badCurve = False
 
@@ -121,14 +124,14 @@ class LightCurve():
         return result
 
     def reset_mask(self):
-        if self.mjd.mask is not False:
-            self.mjd.mask = False
+        if (np.nonzero(self.mjd.mask)[0].size > 0) and (not self.badCurve):
+            self.mjd.mask = np.zeros(self.size)
         
-        if self.flux.mask is not False: 
-            self.flux.mask = False
+        if (np.nonzero(self.flux.mask)[0].size > 0) and (not self.badCurve): 
+            self.flux.mask = np.zeros(self.size)
 
-        if self.fluxErr.mask is not False:  
-            self.fluxErr.mask = False
+        if (np.nonzero(self.fluxErr.mask)[0].size > 0) and (not self.badCurve):  
+            self.fluxErr.mask = np.zeros(self.size)
 
     @property
     def max_flux_index(self):
