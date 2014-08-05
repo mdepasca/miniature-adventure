@@ -9,6 +9,11 @@ import classes as cls
 from matplotlib import pyplot as plt
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
+from rpy2.robjects.numpy2ri import numpy2ri
+# Activate automatic conversion of ndarray to R objects
+ro.conversion.py2ri = numpy2ri
+
+
 # from progressbar import ProgressBar, SimpleProgress
 
 if __name__ == "__main__":
@@ -178,30 +183,28 @@ if __name__ == "__main__":
         print "\n" + indent + "[2] * Calculate distances between lightcurves ..."
         diffusionMap = importr('diffusionMap')
         
-        
-        # crate and fill R matrix
         for b in catalog.candidates[0].lcsDict.keys():
             # creating R matrix
             Pymatrix = np.zeros((catalog.size, catalog.size),
                 dtype=np.float32)
             for i in range(catalog.size):
                 iElSize = catalog.candidates[i].lcsDict[b].size
-                for j in range(0, catalog.size):
+                for j in range(catalog.size):
                     if j < i:
                         # filling matrix elements below the diagonal
-                        Rmatrix.rx[i, j] = Rmatrix.rx(j, i)
                         Pymatrix[i, j] = Pymatrix[j,i]
                         continue # jump to the next iteration of the loop
 
                     if j == i:
                         # filling elements on the diagonal
-                        Rmatrix.rx[j, j] = 0.
                         Pymatrix [i, j] = 0.
                         continue
 
                     if catalog.candidates[j].lcsDict[b].badCurve \
                     or catalog.candidates[i].lcsDict[b].badCurve:
-                        print 'Set big distance'
+                        print util.bcolors.WARNING
+                        print indent + 'Set big distance'
+                        print util.bcolors.ENDC
                         continue
 
                     jElSize = catalog.candidates[j].lcsDict[b].size
@@ -231,15 +234,20 @@ if __name__ == "__main__":
                             catalog.candidates[j], 
                             b, reset_masks=True)
                     else:
-                        print indent + util.bcolors.WARNING + \
+                        print util.bcolors.WARNING
+                        print indent + \
                         'Perform cross-correlation to estimate maximum' + \
-                        'position: {:<} | {:<}'.format(iElMax, jElMax) + \
-                        util.bcolors.ENDC
+                        'position: {:<} | {:<}'.format(iElMax, jElMax)
+                        print util.bcolors.ENDC
 
-            
+            # Create R matrix 
+            Rmatrix = ro.Matrix(Pymatrix)
+
+            print util.bcolors.OKGREEN 
+            print indent + "---------------"
             print indent + "Band {:<} done.".format(b)
-        print"qq"
-
+            print indent + "---------------" 
+            print util.bcolors.ENDC
 
     print "\n" + indent \
         + "The process took {:5.3f} secs.".format(time.time()-start_time)
