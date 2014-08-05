@@ -101,7 +101,25 @@ class LightCurve():
         Returns max (flux - p*fluxErr)
         """
         return np.max(np.subtract(self.flux, p*self.fuxErr))
-        
+    
+    @property
+    def max_flux(self):
+        if not self.badCurve:
+            result = self.flux.max()
+        else:
+            result = 0
+
+        return result
+
+    @property
+    def max_error(self):
+        if not self.badCurve:
+            result = self.fluxErr.max()
+        else:
+            result = 0
+
+        return result
+
     def reset_mask(self):
         if self.mjd.mask is not False:
             self.mjd.mask = False
@@ -280,11 +298,12 @@ class SupernovaFit():
         """
         result = np.array(0)
 
+
         result = self.lcsDict[band].flux.compressed() / (\
-            self.g.flux.max() + 
-            self.r.flux.max() + 
-            self.i.flux.max() + 
-            self.z.flux.max()
+            self.g.max_flux + 
+            self.r.max_flux + 
+            self.i.max_flux + 
+            self.z.max_flux
             )
 
         return result
@@ -296,10 +315,10 @@ class SupernovaFit():
         result = np.array(0)
         
         result = self.lcsDict[band].fluxErr.compressed() / (\
-            self.g.fluxErr.max() + 
-            self.r.fluxErr.max() + 
-            self.i.fluxErr.max() + 
-            self.z.fluxErr.max()
+            self.g.max_error + 
+            self.r.max_error + 
+            self.i.max_error + 
+            self.z.max_error
             )
 
         return result
