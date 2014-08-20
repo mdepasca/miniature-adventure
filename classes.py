@@ -344,15 +344,7 @@ class SupernovaFit():
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
 
-        # idxSelfMax = np.where(
-        #     np.abs(self.lcsDict[band].shiftedMjd) == np.abs(
-        #             self.lcsDict[band].shiftedMjd).min()
-        #     )[0][0]
-        # idxCandidateMax = np.where(
-        #         np.abs(candidate.lcsDict[band].shiftedMjd) == np.abs(
-        #             candidate.lcsDict[band].shiftedMjd).min()
-        #     )[0][0]
-        # print idxSelfMax,idxCandidateMax
+        
         idxSelfMax = np.argmin(
             np.abs(self.lcsDict[band].shiftedMjd))#[0][0]
         idxCandidateMax = np.argmin(
@@ -364,58 +356,52 @@ class SupernovaFit():
         # 
         # First check: the lc are set as `not peacked` but we check if the 
         # 
-        # maximum values are at opposite sides
-        if (idxSelfMax == 0 and idxCandidateMax == sizeCandidate-1) \
-        or (idxSelfMax == sizeSelf-1 and idxCandidateMax == 0):
-            print 'Set big distance'
 
-        elif (idxSelfMax not in set([0, sizeSelf-1]) \
-            and idxCandidateMax not in set([0, sizeCandidate-1])):
-            if sizeSelf >= sizeCandidate:
-                bigger = self.lcsDict[band].shiftedMjd.view()
-                smaller = candidate.lcsDict[band].shiftedMjd.view()
-            else:
-                bigger = candidate.lcsDict[band].shiftedMjd.view()
-                smaller = self.lcsDict[band].shiftedMjd.view()
+        if sizeSelf >= sizeCandidate:
+            bigger = self.lcsDict[band].shiftedMjd.view()
+            smaller = candidate.lcsDict[band].shiftedMjd.view()
+        else:
+            bigger = candidate.lcsDict[band].shiftedMjd.view()
+            smaller = self.lcsDict[band].shiftedMjd.view()
 
-            # modifying masks
-            smaller.mask = np.in1d(
-                np.round(smaller), np.round(bigger), invert=True)
-            bigger.mask = np.in1d(
-                np.round(bigger), np.round(smaller), invert=True)
+        # modifying masks
+        smaller.mask = np.in1d(
+            np.round(smaller), np.round(bigger), invert=True)
+        bigger.mask = np.in1d(
+            np.round(bigger), np.round(smaller), invert=True)
 
-            # setting new masks
-            self.lcsDict[band].flux.mask = \
-                        self.lcsDict[band].shiftedMjd.mask
-            self.lcsDict[band].fluxErr.mask = \
-                        self.lcsDict[band].shiftedMjd.mask
+        # setting new masks
+        self.lcsDict[band].flux.mask = \
+                    self.lcsDict[band].shiftedMjd.mask
+        self.lcsDict[band].fluxErr.mask = \
+                    self.lcsDict[band].shiftedMjd.mask
 
-            candidate.lcsDict[band].flux.mask = \
-                        candidate.lcsDict[band].shiftedMjd.mask
-            candidate.lcsDict[band].fluxErr.mask = \
-                        candidate.lcsDict[band].shiftedMjd.mask            
+        candidate.lcsDict[band].flux.mask = \
+                    candidate.lcsDict[band].shiftedMjd.mask
+        candidate.lcsDict[band].fluxErr.mask = \
+                    candidate.lcsDict[band].shiftedMjd.mask            
 
-            # calculating min a max overlapping MJD
-            minMjd = min(self.lcsDict[band].shiftedMjd.compressed()[0],
-                candidate.lcsDict[band].shiftedMjd.compressed()[0])
+        # calculating min a max overlapping MJD
+        minMjd = min(self.lcsDict[band].shiftedMjd.compressed()[0],
+            candidate.lcsDict[band].shiftedMjd.compressed()[0])
 
-            maxMjd = max(self.lcsDict[band].shiftedMjd.compressed()[-1],
-                candidate.lcsDict[band].shiftedMjd.compressed()[-1])
+        maxMjd = max(self.lcsDict[band].shiftedMjd.compressed()[-1],
+            candidate.lcsDict[band].shiftedMjd.compressed()[-1])
 
-            # calculating the distance
-            distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
-                        np.ma.divide(
-                            np.ma.power(
-                                np.ma.subtract(
-                                    self.normalized_flux(band),
-                                    candidate.normalized_flux(band)
-                                    ), 2), 
-                            np.ma.add(
-                                np.ma.power(self.normalized_error(band), 2), 
-                                np.ma.power(candidate.normalized_error(band), 2)
-                            )
+        # calculating the distance
+        distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
+                    np.ma.divide(
+                        np.ma.power(
+                            np.ma.subtract(
+                                self.normalized_flux(band),
+                                candidate.normalized_flux(band)
+                                ), 2), 
+                        np.ma.add(
+                            np.ma.power(self.normalized_error(band), 2), 
+                            np.ma.power(candidate.normalized_error(band), 2)
                         )
-                    ))
+                    )
+                ))
 
         if reset_masks:
             self.reset_masks()
@@ -509,7 +495,7 @@ class CandidatesCatalog():
         self.peaked = np.append(self.peaked, candidate.peaked)
 
     def get_peaked(self):
-        return np.where(self.peaked)[0][0]
+        return np.where(self.peaked)[0]
 
     @property
     def size(self):
