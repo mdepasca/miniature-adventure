@@ -48,6 +48,8 @@ class LightCurve():
     """
     badCurve = False
     shifted_mjd = np.zeros(0)
+    # max from cross-correlation
+    __ccMaxFluxIndex = None
     def __init__(self, band):
         self.band = band
         self.mjd = np.ma.zeros(0, dtype=np.float32)
@@ -91,19 +93,19 @@ class LightCurve():
         """
         self.shiftedMjd = np.ma.subtract(self.mjd, distance)
     
-    def get_max_fmfe_Index(self):
-        """
-        Return the index of max (flux - fluxErr)
-        """
-        difference = np.subtract(self.flux, self.fluxErr)
+    # def get_max_fmfe_Index(self):
+    #     """
+    #     Return the index of max (flux - fluxErr)
+    #     """
+    #     difference = np.subtract(self.flux, self.fluxErr)
         
-        return np.argmax(difference)
+    #     return np.argmax(difference)
     
-    def get_max_flux_p(self, p):
-        """
-        Returns max (flux - p*fluxErr)
-        """
-        return np.max(np.subtract(self.flux, p*self.fuxErr))
+    # def get_max_flux_p(self, p):
+    #     """
+    #     Returns max (flux - p*fluxErr)
+    #     """
+    #     return np.max(np.subtract(self.flux, p*self.fuxErr))
     
     @property
     def max_flux(self):
@@ -133,12 +135,24 @@ class LightCurve():
         if (np.nonzero(self.fluxErr.mask)[0].size > 0) and (not self.badCurve):  
             self.fluxErr.mask = np.zeros(self.size)
 
+    def ccMaxFluxIndex(self, value):
+        """
+        To use only with non-peaked lcs in r band
+        """
+        if value in set([0, self.mjd.size-1]):
+            raise IndexError("index out of range")
+        
+        self.__ccMaxFluxIndex = value
+
     @property
     def max_flux_index(self):
         """
         Return the index of the maximum flux
         """
-        return np.argmax(self.flux)
+        if self.__ccMaxFluxIndex != None:
+            return self.__ccMaxFluxIndex
+        else:
+            return np.argmax(self.flux)
 
     @property
     def size(self):
@@ -281,12 +295,13 @@ class SupernovaFit():
 
     def shift_mjds(self):
         try:
-            # mjdrMax = self.r.mjd[self.r.flux == self.r.flux.max()][0]
+            # max_flux_index takes care of __ccMaxFluxIndex
             mjdrMax = self.r.mjd[self.r.max_flux_index]
-            # idx_rMax = np.where(self.r.flux == self.r.flux.max())[0][0]
+            
             for b in self.lcsDict.keys():
-                if not self.lcsDict[b].badCurve:
-                    self.lcsDict[b].set_shifted_mjd(mjdrMax)
+                if self.lcsDict[b].badCurve:
+                    continue
+                self.lcsDict[b].set_shifted_mjd(mjdrMax)
         except:
             print "Candidate {:<d} ".format(self.SNID) + \
             "has no maximum in r-band."
