@@ -31,7 +31,7 @@ if __name__ == "__main__":
         # "-f", 
         "--fitting", dest="fitting",
         action="store_true",
-        help="Fit lightcurves")
+        help="Fit lightcurves with Gaussian processes method.")
 
     # parser.add_argument(
     #     "-z", "--zero-point", dest="zeroPoint",
@@ -56,6 +56,11 @@ if __name__ == "__main__":
         "--fitting-directory", dest="dirFit",
         default="fit_data" + os.sep,
         help="Path to directory in which to save fitting results.")
+
+    parser.add_argument(
+        "--plot", dest="plot",
+        action="store_true",
+        help="Save on `pdf` file the plot of fitting curve over data.")
     args = parser.parse_args()
 else:
     pass
@@ -64,6 +69,7 @@ if __name__ == "__main__":
     os.system("clear")
     indent = "          "
     KERN_RATQUAD = "RatQuad"
+    modelList = np.zeros(0, dtype=np.object)
     # should be possible to change the next two variables
     # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     # args.dirFit = "fit_data" + os.sep
@@ -106,11 +112,6 @@ if __name__ == "__main__":
         ferr = open('error.log', 'w')
         sys.stderr = ferr
 
-        # Setting up Progress bar using progressbar module
-        # pbar = ProgressBar(
-        #     widgets=[SimpleProgress()], 
-        #     maxval=vecCandidates.size).start()
-
         # Fitting single lightcurves 
         #
         # THIS PIECE NEEDS TO BE PARALLELIZED
@@ -148,6 +149,8 @@ if __name__ == "__main__":
                     sys.stdout = saveOut
                     fout.close()
 
+                    modelList = np.append(modelList, GPModel)
+
                     candidateFit.set_lightcurve(b, 
                         predMjd.reshape(predMjd.size),
                         predFlux.reshape(predFlux.size), 
@@ -168,6 +171,7 @@ if __name__ == "__main__":
         sys.stderr = saveErr
         ferr.close()
         util.dump_pkl('tmp_catalog.pkl', catalog)
+        util.dump_pkl('tml_model_list.pkl', modelList)
 
     if args.distMetric:
         """Calculate distance between fitted lightcurves.
@@ -176,7 +180,7 @@ if __name__ == "__main__":
         """
         if not args.fitting:
             print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog(1).pkl')
+            catalog = util.open_pkl('tmp_catalog.pkl')
 
         bigDistance = 1.01
         print "\n" + indent + bcolors.undwht + \
@@ -201,20 +205,21 @@ if __name__ == "__main__":
                     ))
                 k += 1
             # pbar.update(i+1)
-
-            print round(ccMax.mean())
+            catalog.candidates[i].r.ccMaxFluxIndex(round(ccMax.mean()))
+            
         # pbar.finish()   
-        raise SystemExit
-        
+        # raise SystemExit
+
         for b in catalog.candidates[0].lcsDict.keys():
             # creating R matrix
             Pymatrix = np.zeros((catalog.size, catalog.size),
                 dtype=np.float32)
-            
-            # CROSS-CORRELATION ON NON-PEAKED LCs BEFORE
-            #
-            # LOOPING ON THE WHOLE DATASET
-
+            print bcolors.OKGREEN 
+            print indent + "-------------"
+            print indent + "Band {:<} ...".format(b)
+            print indent + "-------------" 
+            print bcolors.txtrst
+            pbar = ProgressBar(maxval=catalog.size).start()
             for i in range(catalog.size):
                 iElSize = catalog.candidates[i].lcsDict[b].size
                 for j in range(catalog.size):
@@ -230,13 +235,13 @@ if __name__ == "__main__":
 
                     if catalog.candidates[j].lcsDict[b].badCurve \
                     or catalog.candidates[i].lcsDict[b].badCurve:
-                        print bcolors.WARNING
-                        print indent + \
-                            "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
-                                catalog.candidates[i].SNID, b,
-                                j, catalog.candidates[j].SNID, b) + \
-                                'Bad Curve: set big distance.'
-                        print bcolors.txtrst
+                        # print bcolors.WARNING
+                        # print indent + \
+                        #     "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
+                        #         catalog.candidates[i].SNID, b,
+                        #         j, catalog.candidates[j].SNID, b) + \
+                        #         'Bad Curve: set big distance.'
+                        # print bcolors.txtrst
                         Pymatrix[i, j] = bigDistance
                         continue
 
@@ -257,45 +262,123 @@ if __name__ == "__main__":
                     if (iElMax == 0 and jElMax == jElSize-1) \
                     or (iElMax == iElSize-1 and jElMax == 0):
                         Pymatrix[i, j] = bigDistance
-                        print bcolors.WARNING
-                        print indent + \
-                            "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
-                                catalog.candidates[i].SNID, b,
-                                j, catalog.candidates[j].SNID, b) + \
-                                'Max at opposite sides: set big distance.'
-                        print bcolors.txtrst
+                        # print bcolors.WARNING
+                        # print indent + \
+                        #     "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
+                        #         catalog.candidates[i].SNID, b,
+                        #         j, catalog.candidates[j].SNID, b) + \
+                        #         'Max at opposite sides: set big distance.'
+                        # print bcolors.txtrst
                         continue
 
-                    if ((iElMax not in set([0, iElSize-1])) 
-                    and (jElMax not in set([0, jElSize-1]))):
-                        print indent + \
-                            "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
-                                catalog.candidates[i].SNID, b,
-                                j, catalog.candidates[j].SNID, b)
+                    # if ((iElMax not in set([0, iElSize-1])) 
+                    # and (jElMax not in set([0, jElSize-1]))):
+                    # print indent + \
+                    #     "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i,
+                    #         catalog.candidates[i].SNID, b,
+                    #         j, catalog.candidates[j].SNID, b)
 
-                        Pymatrix[i, j] = catalog.candidates[i].get_distance(
-                            catalog.candidates[j], 
-                            b, reset_masks=True)
-                    else:
-                        print bcolors.WARNING
-                        print indent + \
-                            "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
-                                catalog.candidates[i].SNID, b,
-                                j, catalog.candidates[j].SNID, b) + \
-                            'Perform cross-correlation to estimate maximum ' + \
-                            'position: {:<} | {:<}'.format(iElMax, jElMax) + \
-                            ' - Temp fix: set big distance'
-                        Pymatrix[i, j] = bigDistance
-                        print bcolors.txtrst
-
+                    Pymatrix[i, j] = catalog.candidates[i].get_distance(
+                        catalog.candidates[j], 
+                        b, reset_masks=True)
+                    # else:
+                    #     print bcolors.WARNING
+                    #     print indent + \
+                    #         "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
+                    #             catalog.candidates[i].SNID, b,
+                    #             j, catalog.candidates[j].SNID, b) + \
+                    #         'Perform cross-correlation to estimate maximum ' + \
+                    #         'position: {:<} | {:<}'.format(iElMax, jElMax) + \
+                    #         ' - Temp fix: set big distance'
+                    #     Pymatrix[i, j] = bigDistance
+                    #     print bcolors.txtrst
+                pbar.update(i+1)
+            pbar.finish()
             # Create R matrix 
             Rmatrix = ro.Matrix(Pymatrix)
 
-            print bcolors.OKGREEN 
-            print indent + "---------------"
-            print indent + "Band {:<} done.".format(b)
-            print indent + "---------------" 
-            print bcolors.txtrst
+            # print bcolors.OKGREEN 
+            # print indent + "---------------"
+            # print indent + "Band {:<} done.".format(b)
+            # print indent + "---------------" 
+            # print bcolors.txtrst
+
+    if args.plot:
+        if 'catalog' not in globals():
+            print indent + 'Loading catalog from dump file ...'
+            catalog = util.open_pkl('tmp_catalog(2).pkl')
+            vecCandidates = np.genfromtxt(
+                args.dirData+os.sep+fNameCandidatesList, dtype=None)
+            # modelList = util.open_pkl('tml_model_list(1).pkl')
+
+        fig_g, ax_g = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+                    tight_layout=True)
+        fig_r, ax_r = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+                    tight_layout=True)
+        fig_i, ax_i = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+                    tight_layout=True)
+        fig_z, ax_z = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+                    tight_layout=True)
+
+        dictFig = {'g':fig_g, 
+                   'r':fig_r,
+                   'i':fig_i,
+                   'z':fig_z}
+
+        dictAx = {'g':ax_g, 
+                  'r':ax_r,
+                  'i':ax_i,
+                  'z':ax_z}
+
+        r = {'g':0,
+             'r':0,
+             'i':0,
+             'z':0}
+
+        c = {'g':0,
+             'r':0,
+             'i':0,
+             'z':0}
+        for i in range(catalog.size):
+            # getting the data from file
+            candidate = util.get_sn_from_file(
+                args.dirData + os.sep + vecCandidates[i])
+
+            for b in catalog.candidates[0].lcsDict.keys():
+                data = candidate.lcsDict[b]
+                fit = catalog.candidates[i].lcsDict[b]
+                if c[b] > 4:
+                    c[b] = 0
+                    r[b] += 1
+
+                if not data.badCurve:
+                    dictAx[b][r[b], c[b]].scatter(data.mjd, data.flux, s=2, 
+                        label=str(candidate.SNID), c='black')
+
+                    dictAx[b][r[b], c[b]].errorbar(data.mjd, data.flux,
+                        data.fluxErr, fmt=None, color='black', ecolor='black')
+
+                    bottom = data.flux.min() - np.median(data.fluxErr)
+                    up = data.flux.max() + np.median(data.fluxErr)
+                    dictAx[b][r[b], c[b]].set_ylim(bottom, up)
+
+                    dictAx[b][r[b], c[b]].fill_between(fit.mjd, 
+                        fit.flux+fit.fluxErr, fit.flux, 
+                        where=(fit.flux+fit.fluxErr)>fit.flux,
+                        facecolor='red', alpha=0.4, linewidth=0.5)
+                    dictAx[b][r[b], c[b]].fill_between(fit.mjd, 
+                        fit.flux-fit.fluxErr, fit.flux, 
+                        where=(fit.flux-fit.fluxErr)<fit.flux,
+                        facecolor='red', alpha=0.4, linewidth=0.5)
+
+                    dictAx[b][r[b], c[b]].plot(fit.mjd, fit.flux, 'red')
+                    dictAx[b][r[b], c[b]].legend(
+                        loc='best', framealpha=0.3, fontsize='10')
+                c[b] += 1
+                
+        for b in dictFig.keys():
+            dictFig[b].savefig('test_band_{:<1}.pdf'.format(b), dpi=300)
+
 
     print "\n" + indent \
         + "The process took {:5.3f} secs.".format(time.time()-start_time)
