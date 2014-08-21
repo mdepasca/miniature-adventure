@@ -1,20 +1,25 @@
-import utilities as util
 import argparse
 import os
 import sys
-import numpy as np
-import GPy
 import time
-import classes as cls
+
+import numpy as np
 from matplotlib import pyplot as plt
+
+import GPy
+
+import classes as cls
+import utilities as util
+from utilities import bcolors
+
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
 from rpy2.robjects.numpy2ri import numpy2ri
+
 # Activate automatic conversion of ndarray to R objects
 ro.conversion.py2ri = numpy2ri
 
-
-# from progressbar import ProgressBar, SimpleProgress
+from progressbar import ProgressBar, SimpleProgress
 
 if __name__ == "__main__":
     # Parsing input from command line
@@ -23,7 +28,8 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
-        "-f", "--fitting", dest="fitting",
+        # "-f", 
+        "--fitting", dest="fitting",
         action="store_true",
         help="Fit lightcurves")
 
@@ -34,7 +40,8 @@ if __name__ == "__main__":
     #     of maximum observed in r-band (tailored on simulated data from SNANA).")
 
     parser.add_argument(
-        "-d", "--distance-metric", dest="distMetric",
+        # "-d", 
+        "--distance-metric", dest="distMetric",
         action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
         It is use to build a diffusion map (see Coifman & Lafon (2006) \
@@ -62,13 +69,13 @@ if __name__ == "__main__":
     # args.dirFit = "fit_data" + os.sep
     fNameCandidatesList = "DES_BLIND+HOSTZ.LIST"
 
-    print indent + util.bcolors.HEADER + "* * * * * * * * * * * * * * *"
+    print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
     print indent + "*    Miniature Adventure    *"
     print indent + "*    -------------------    *"
     print indent + "*    lightcurves fitting    *"
     print indent + "*             and           *"
     print indent + "*      SN classification    *"
-    print indent + "* * * * * * * * * * * * * * *" + util.bcolors.ENDC
+    print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
     if args.fitting:
@@ -76,7 +83,8 @@ if __name__ == "__main__":
 
         # Relevant input data
         print "\n" + indent + "[1] * Fit lightcurves ..."
-        print "\n" + indent + "Data directory: " + os.curdir + args.dirData + os.sep
+        print "\n" + indent + \
+            "Data directory: " + os.curdir + args.dirData + os.sep
         print "\n" + indent + "List of candidates contained in: " \
             + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
@@ -109,7 +117,9 @@ if __name__ == "__main__":
         # 
         # optimize_restarts parallel using multiprocessing
         catalog = cls.CandidatesCatalog()
-        for i in range(vecCandidates.size):
+        start = 0
+        stop = 21
+        for i in range(start, stop):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + vecCandidates[i])
             candidateFit = cls.SupernovaFit(candidate.SNID)
@@ -147,65 +157,90 @@ if __name__ == "__main__":
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                 else:
                     candidateFit.lcsDict[b].badCurve = True
-                    print indent + util.bcolors.FAIL + \
+                    print indent + bcolors.FAIL + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
-                        util.bcolors.ENDC
-
-                    # print indent + \
-                    #     "Candidate {:<d} has ".format(candidate.SNID) + \
-                    #     util.bcolors.FAIL + "BAD " + util.bcolors.ENDC + \
-                    #     "{:<1} lightcurve \n".format(b)
+                        bcolors.txtrst
                                 
             # Setting phase 0 point to phase or r maximum
             candidateFit.shift_mjds()    
             catalog.add_candidate(candidateFit)
-            
-            # candidateFit.save_on_txt(
-            #         args.dirFit+"DES_FIT_{:0>6d}.dat".format(candidate.SNID))
-            # pbar.update(i + 1)
-            if i == 10:
-                break
-            # if i > const * tenPercent:
-            #     pg + 1
-            #     print pg
-            #     # print "\n" + indent + util.bcolors.OKGREEN + \
-            #     #     "{:<d}% Completed".format(const*10) + util.bcolors.ENDC
-            #     const += 1
-        # pbar.finish()
+
         sys.stderr = saveErr
         ferr.close()
+        util.dump_pkl('tmp_catalog.pkl', catalog)
 
     if args.distMetric:
         """Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
-        print "\n" + indent + "[2] * Calculate distances between lightcurves ..."
+        if not args.fitting:
+            print indent + 'Loading catalog from dump file ...'
+            catalog = util.open_pkl('tmp_catalog(1).pkl')
+
+        bigDistance = 1.01
+        print "\n" + indent + bcolors.undwht + \
+            "[2] * Calculate distances between lightcurves ..." + \
+            bcolors.txtrst
         diffusionMap = importr('diffusionMap')
+        
+        peakIdx = np.nonzero(catalog.peaked)[0]
+        nopeakIdx = np.where(catalog.peaked == False)[0]
+
+        print '\n' + indent + \
+        'Performing cross-correlation on non peaked lightcurves ...'
+
+        # pbar = ProgressBar().start()
+        for i in nopeakIdx:
+            ccMax = np.zeros(peakIdx.size)
+            k = 0 # goes on ccMax
+            for j in peakIdx:
+                ccMax[k] = np.argmax(np.correlate(
+                    catalog.candidates[i].normalized_flux('r'),
+                    catalog.candidates[j].normalized_flux('r')
+                    ))
+                k += 1
+            # pbar.update(i+1)
+
+            print round(ccMax.mean())
+        # pbar.finish()   
+        raise SystemExit
         
         for b in catalog.candidates[0].lcsDict.keys():
             # creating R matrix
             Pymatrix = np.zeros((catalog.size, catalog.size),
                 dtype=np.float32)
+            
+            # CROSS-CORRELATION ON NON-PEAKED LCs BEFORE
+            #
+            # LOOPING ON THE WHOLE DATASET
+
             for i in range(catalog.size):
                 iElSize = catalog.candidates[i].lcsDict[b].size
                 for j in range(catalog.size):
                     if j < i:
                         # filling matrix elements below the diagonal
-                        Pymatrix[i, j] = Pymatrix[j,i]
+                        Pymatrix[i, j] = Pymatrix[j, i]
                         continue # jump to the next iteration of the loop
 
                     if j == i:
-                        # filling elements on the diagonal
-                        Pymatrix [i, j] = 0.
+                        # filling elements on the distance matrix diagonal
+                        Pymatrix[i, j] = 0.
                         continue
 
                     if catalog.candidates[j].lcsDict[b].badCurve \
                     or catalog.candidates[i].lcsDict[b].badCurve:
-                        print util.bcolors.WARNING
-                        print indent + 'Set big distance'
-                        print util.bcolors.ENDC
+                        print bcolors.WARNING
+                        print indent + \
+                            "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
+                                catalog.candidates[i].SNID, b,
+                                j, catalog.candidates[j].SNID, b) + \
+                                'Bad Curve: set big distance.'
+                        print bcolors.txtrst
+                        Pymatrix[i, j] = bigDistance
                         continue
+
+
 
                     jElSize = catalog.candidates[j].lcsDict[b].size
                     # getting index of maximum 
@@ -218,9 +253,17 @@ if __name__ == "__main__":
                         catalog.candidates[j].lcsDict[b].shiftedMjd
                         ))
 
+                    # maximum values are at opposite sides
                     if (iElMax == 0 and jElMax == jElSize-1) \
                     or (iElMax == iElSize-1 and jElMax == 0):
-                        print 'Set big distance'
+                        Pymatrix[i, j] = bigDistance
+                        print bcolors.WARNING
+                        print indent + \
+                            "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
+                                catalog.candidates[i].SNID, b,
+                                j, catalog.candidates[j].SNID, b) + \
+                                'Max at opposite sides: set big distance.'
+                        print bcolors.txtrst
                         continue
 
                     if ((iElMax not in set([0, iElSize-1])) 
@@ -234,20 +277,25 @@ if __name__ == "__main__":
                             catalog.candidates[j], 
                             b, reset_masks=True)
                     else:
-                        print util.bcolors.WARNING
+                        print bcolors.WARNING
                         print indent + \
-                        'Perform cross-correlation to estimate maximum' + \
-                        'position: {:<} | {:<}'.format(iElMax, jElMax)
-                        print util.bcolors.ENDC
+                            "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
+                                catalog.candidates[i].SNID, b,
+                                j, catalog.candidates[j].SNID, b) + \
+                            'Perform cross-correlation to estimate maximum ' + \
+                            'position: {:<} | {:<}'.format(iElMax, jElMax) + \
+                            ' - Temp fix: set big distance'
+                        Pymatrix[i, j] = bigDistance
+                        print bcolors.txtrst
 
             # Create R matrix 
             Rmatrix = ro.Matrix(Pymatrix)
 
-            print util.bcolors.OKGREEN 
+            print bcolors.OKGREEN 
             print indent + "---------------"
             print indent + "Band {:<} done.".format(b)
             print indent + "---------------" 
-            print util.bcolors.ENDC
+            print bcolors.txtrst
 
     print "\n" + indent \
         + "The process took {:5.3f} secs.".format(time.time()-start_time)
