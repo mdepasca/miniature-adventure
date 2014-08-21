@@ -37,3 +37,7 @@ nosetests.xml
 
 # Dump files
 *.pkl
+
+# Directories
+transit/
+junk/
