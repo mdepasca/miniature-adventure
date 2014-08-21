@@ -54,7 +54,15 @@ Looking for overlapping regions
       1. the number of elements before the zero-phase happening first
       2. the number of elements after the zero-phase happening last
 
-      (the zero-phase is the MJD associated with the maximum in r-band)
+      In each of the 2 the zero-phase point is included (it is the MJD 
+      associated with the maximum in r-band).
 
+1. get the elements of the first array that are in the second
+2. get the elements of the second array that are in the first
 
+   These two instruction are to build 2 masks. They are performed using
+   `np.in1d()` function with `invert=True` option (so that to have a mask)
+3. As per construction, the unmasked values will be matching MJDs.
+4. The mask is applied to flux and flux errors arrays and the differences
+   can be performed 
   
