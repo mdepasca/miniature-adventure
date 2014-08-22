@@ -509,6 +509,10 @@ class CandidatesCatalog():
         self.SNType = np.append(self.SNType, candidate.SNType)
         self.peaked = np.append(self.peaked, candidate.peaked)
 
+    def merge(self, catalog):
+        for i in range(catalog.size):
+            self.add_candidate(catalog.candidates[i])
+
     def get_peaked(self):
         return np.where(self.peaked)[0]
 
