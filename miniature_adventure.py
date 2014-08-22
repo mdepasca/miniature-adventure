@@ -41,12 +41,19 @@ if __name__ == "__main__":
 
     parser.add_argument(
         # "-d", 
-        "--distance-metric", dest="distMetric",
+        "--distance-matrix", dest="distMatrix",
         action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
         It is use to build a diffusion map (see Coifman & Lafon (2006) \
         and Lafon & Lee (2006)).")
 
+    parser.add_argument(
+        "--diffuse", dest="diffuse",
+        action="store_true",
+        help="Computes the diffusion map coefficients. Run together or after \
+        --distance-matrix option. Uses `diffusionMap` R package developed \
+        by Joseph Richards.")
+    
     parser.add_argument(
         "--training-directory", dest="dirData",
         default="train_data" + os.sep + "DES_BLIND+HOSTZ",
@@ -173,7 +180,7 @@ if __name__ == "__main__":
         util.dump_pkl('tmp_catalog.pkl', catalog)
         util.dump_pkl('tml_model_list.pkl', modelList)
 
-    if args.distMetric:
+    if args.distMatrix:
         """Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
@@ -225,12 +232,12 @@ if __name__ == "__main__":
                 for j in range(catalog.size):
                     if j < i:
                         # filling matrix elements below the diagonal
-                        Pymatrix[i, j] = Pymatrix[j, i]
+                        Pymatrix[i, j] += Pymatrix[j, i]
                         continue # jump to the next iteration of the loop
 
                     if j == i:
                         # filling elements on the distance matrix diagonal
-                        Pymatrix[i, j] = 0.
+                        Pymatrix[i, j] += 0.
                         continue
 
                     if catalog.candidates[j].lcsDict[b].badCurve \
@@ -242,7 +249,7 @@ if __name__ == "__main__":
                         #         j, catalog.candidates[j].SNID, b) + \
                         #         'Bad Curve: set big distance.'
                         # print bcolors.txtrst
-                        Pymatrix[i, j] = bigDistance
+                        Pymatrix[i, j] += bigDistance
                         continue
 
 
@@ -261,7 +268,7 @@ if __name__ == "__main__":
                     # maximum values are at opposite sides
                     if (iElMax == 0 and jElMax == jElSize-1) \
                     or (iElMax == iElSize-1 and jElMax == 0):
-                        Pymatrix[i, j] = bigDistance
+                        Pymatrix[i, j] += bigDistance
                         # print bcolors.WARNING
                         # print indent + \
                         #     "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
@@ -278,7 +285,7 @@ if __name__ == "__main__":
                     #         catalog.candidates[i].SNID, b,
                     #         j, catalog.candidates[j].SNID, b)
 
-                    Pymatrix[i, j] = catalog.candidates[i].get_distance(
+                    Pymatrix[i, j] += catalog.candidates[i].get_distance(
                         catalog.candidates[j], 
                         b, reset_masks=True)
                     # else:
@@ -294,8 +301,10 @@ if __name__ == "__main__":
                     #     print bcolors.txtrst
                 pbar.update(i+1)
             pbar.finish()
-            # Create R matrix 
-            Rmatrix = ro.Matrix(Pymatrix)
+
+        # Create R matrix
+        Rmatrix = ro.Matrix(Pymatrix)
+        dmap = diffusionMap.diffuse(Rmatrix, neigen=)
 
             # print bcolors.OKGREEN 
             # print indent + "---------------"
@@ -352,8 +361,8 @@ if __name__ == "__main__":
                     r[b] += 1
 
                 if not data.badCurve:
-                    dictAx[b][r[b], c[b]].scatter(data.mjd, data.flux, s=2, 
-                        label=str(candidate.SNID), c='black')
+                    dictAx[b][r[b], c[b]].scatter(data.mjd, data.flux, s=5, 
+                        label=str(candidate.SNID), c='black', marker='x')
 
                     dictAx[b][r[b], c[b]].errorbar(data.mjd, data.flux,
                         data.fluxErr, fmt=None, color='black', ecolor='black')
