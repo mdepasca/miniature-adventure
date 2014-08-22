@@ -7,7 +7,8 @@ import cPickle
 import gzip 
 import GPy 
 import classes 
-import time 
+import time
+from os import path
 import argparse
 import matplotlib.pyplot as plt
 from cStringIO import StringIO
@@ -91,7 +92,7 @@ def dump_pkl(filePath, dataStruct):
     i = 0
     while whileOn:
         try:
-            with open(filePath):
+            with path.exist(filePath):
                 i += 1
                 pklIdx = filePath.rfind('.pkl')
                 if i > 1: pklIdx -= 3
