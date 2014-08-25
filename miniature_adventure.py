@@ -4,6 +4,7 @@ import sys
 import time
 
 import numpy as np
+from scipy import signal
 from matplotlib import pyplot as plt
 
 import GPy
@@ -19,7 +20,7 @@ from rpy2.robjects.numpy2ri import numpy2ri
 # Activate automatic conversion of ndarray to R objects
 ro.conversion.py2ri = numpy2ri
 
-from progressbar import ProgressBar, SimpleProgress
+from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar
 
 if __name__ == "__main__":
     # Parsing input from command line
@@ -53,7 +54,7 @@ if __name__ == "__main__":
         help="Computes the diffusion map coefficients. Run together or after \
         --distance-matrix option. Uses `diffusionMap` R package developed \
         by Joseph Richards.")
-    
+
     parser.add_argument(
         "--training-directory", dest="dirData",
         default="train_data" + os.sep + "DES_BLIND+HOSTZ",
@@ -76,7 +77,8 @@ if __name__ == "__main__":
     os.system("clear")
     indent = "          "
     KERN_RATQUAD = "RatQuad"
-    modelList = np.zeros(0, dtype=np.object)
+    # modelList = np.zeros(0, dtype=np.object)
+
     # should be possible to change the next two variables
     # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     # args.dirFit = "fit_data" + os.sep
@@ -126,7 +128,7 @@ if __name__ == "__main__":
         # optimize_restarts parallel using multiprocessing
         catalog = cls.CandidatesCatalog()
         start = 0
-        stop = 21
+        stop = 101
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + vecCandidates[i])
@@ -156,7 +158,7 @@ if __name__ == "__main__":
                     sys.stdout = saveOut
                     fout.close()
 
-                    modelList = np.append(modelList, GPModel)
+                    # modelList = np.append(modelList, GPModel)
 
                     candidateFit.set_lightcurve(b, 
                         predMjd.reshape(predMjd.size),
@@ -178,21 +180,24 @@ if __name__ == "__main__":
         sys.stderr = saveErr
         ferr.close()
         util.dump_pkl('tmp_catalog.pkl', catalog)
-        util.dump_pkl('tml_model_list.pkl', modelList)
+        # util.dump_pkl('tml_model_list.pkl', modelList)
 
     if args.distMatrix:
         """Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
-        if not args.fitting:
-            print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog.pkl')
-
-        bigDistance = 1.01
         print "\n" + indent + bcolors.undwht + \
             "[2] * Calculate distances between lightcurves ..." + \
             bcolors.txtrst
+
+        if not args.fitting:
+            print indent + 'Loading catalog from dump file ...'
+            catalog = util.open_pkl('tmp_catalog(6).pkl')
+            
+        bigDistance = 1.01
+        
+        # Importing R package diffusionMap
         diffusionMap = importr('diffusionMap')
         
         peakIdx = np.nonzero(catalog.peaked)[0]
@@ -201,24 +206,49 @@ if __name__ == "__main__":
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
-        # pbar = ProgressBar().start()
+        widgets = [indent, Percentage(), ' ', 
+               Bar(marker='#',left='[',right=']'),
+               ' ', ETA()]
+        pbar = ProgressBar(widgets=widgets).start()
         for i in nopeakIdx:
+            # print i
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
-                ccMax[k] = np.argmax(np.correlate(
+                ycorr = signal.correlate(
                     catalog.candidates[i].normalized_flux('r'),
-                    catalog.candidates[j].normalized_flux('r')
-                    ))
-                k += 1
-            # pbar.update(i+1)
-            catalog.candidates[i].r.ccMaxFluxIndex(round(ccMax.mean()))
-            
-        # pbar.finish()   
-        # raise SystemExit
+                    catalog.candidates[j].normalized_flux('r')#,
+                    # mode='same'
+                    )
+                xcorr = np.arange(ycorr.size)
+                lags = xcorr - (
+                    catalog.candidates[i].normalized_flux('r').size-1
+                    )
+                distancePerLag = (
+                    catalog.candidates[i].r.shiftedMjd[-1] - \
+                    catalog.candidates[i].r.shiftedMjd[0])/float(
+                                        catalog.candidates[i].r.shiftedMjd.size
+                                        )
+                offsets = -lags*distancePerLag
+                # raise SystemExit
+                ccMax[k] = offsets[np.argmax(ycorr)]#np.argmax(ycorr)
 
+                # print ccMax.size
+                k += 1
+            pbar.update(i+1)
+            # raise SystemExit
+            for b in catalog.candidates[i].lcsDict.keys():
+                catalog.candidates[i].lcsDict[b].shiftedMjd = np.ma.subtract(
+                    catalog.candidates[i].lcsDict[b].shiftedMjd, ccMax.mean())
+            # catalog.candidates[i].r.ccMaxFluxIndex(round(ccMax.mean()))
+            
+        pbar.finish()   
+        # raise SystemExit
+        # print indent + '... done!'
+
+        print indent + 'Calculating distances ...'
         for b in catalog.candidates[0].lcsDict.keys():
-            # creating R matrix
+            # creating numpy matrix
             Pymatrix = np.zeros((catalog.size, catalog.size),
                 dtype=np.float32)
             print bcolors.OKGREEN 
@@ -226,7 +256,7 @@ if __name__ == "__main__":
             print indent + "Band {:<} ...".format(b)
             print indent + "-------------" 
             print bcolors.txtrst
-            pbar = ProgressBar(maxval=catalog.size).start()
+            pbar = ProgressBar(widgets=widgets, maxval=catalog.size).start()
             for i in range(catalog.size):
                 iElSize = catalog.candidates[i].lcsDict[b].size
                 for j in range(catalog.size):
@@ -251,8 +281,6 @@ if __name__ == "__main__":
                         # print bcolors.txtrst
                         Pymatrix[i, j] += bigDistance
                         continue
-
-
 
                     jElSize = catalog.candidates[j].lcsDict[b].size
                     # getting index of maximum 
@@ -302,31 +330,43 @@ if __name__ == "__main__":
                 pbar.update(i+1)
             pbar.finish()
 
-        # Create R matrix
-        Rmatrix = ro.Matrix(Pymatrix)
-        dmap = diffusionMap.diffuse(Rmatrix, neigen=)
-
             # print bcolors.OKGREEN 
             # print indent + "---------------"
             # print indent + "Band {:<} done.".format(b)
             # print indent + "---------------" 
             # print bcolors.txtrst
+        # Create R matrix
+        Rmatrix = ro.Matrix(Pymatrix)
+        util.dump_pkl('Rmatrix.pkl', Rmatrix)
+
+
+    if args.diffuse:
+        if 'Rmatrix' not in globals():
+            print indent + 'Loading catalog from dump file ...'
+            Rmatrix = util.open_pkl('Rmatrix.pkl')
+
+        dmap = diffusionMap.diffuse(Rmatrix, neigen=5)
+        
 
     if args.plot:
         if 'catalog' not in globals():
             print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog(2).pkl')
+            catalog = util.open_pkl('tmp_catalog(6).pkl')
+            print indent + '... done!'
             vecCandidates = np.genfromtxt(
                 args.dirData+os.sep+fNameCandidatesList, dtype=None)
             # modelList = util.open_pkl('tml_model_list(1).pkl')
 
-        fig_g, ax_g = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+        print indent + 'Plotting ...'
+        nrows = 5
+        ncols = 5
+        fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
                     tight_layout=True)
-        fig_r, ax_r = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+        fig_r, ax_r = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
                     tight_layout=True)
-        fig_i, ax_i = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+        fig_i, ax_i = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
                     tight_layout=True)
-        fig_z, ax_z = plt.subplots(nrows=5, ncols=5, figsize=(16.5, 11.7), 
+        fig_z, ax_z = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
                     tight_layout=True)
 
         dictFig = {'g':fig_g, 
@@ -348,46 +388,97 @@ if __name__ == "__main__":
              'r':0,
              'i':0,
              'z':0}
-        for i in range(catalog.size):
+
+        for b in dictFig.keys():
+            dictFig[b].suptitle('band {:<1}'.format(b))
+
+        for i in range(nrows*ncols):
             # getting the data from file
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + vecCandidates[i])
 
-            for b in catalog.candidates[0].lcsDict.keys():
+            for b in dictAx.keys():
                 data = candidate.lcsDict[b]
                 fit = catalog.candidates[i].lcsDict[b]
+                fit_r = catalog.candidates[i].lcsDict['r']
+                data.set_shifted_mjd(fit_r.mjd[fit_r.max_flux_index])
+                
                 if c[b] > 4:
                     c[b] = 0
                     r[b] += 1
 
+                xlim = dictAx[b][r[b], c[b]].get_xlim()
+                ylim = dictAx[b][r[b], c[b]].get_ylim()
                 if not data.badCurve:
-                    dictAx[b][r[b], c[b]].scatter(data.mjd, data.flux, s=5, 
-                        label=str(candidate.SNID), c='black', marker='x')
-
-                    dictAx[b][r[b], c[b]].errorbar(data.mjd, data.flux,
-                        data.fluxErr, fmt=None, color='black', ecolor='black')
-
                     bottom = data.flux.min() - np.median(data.fluxErr)
                     up = data.flux.max() + np.median(data.fluxErr)
                     dictAx[b][r[b], c[b]].set_ylim(bottom, up)
 
-                    dictAx[b][r[b], c[b]].fill_between(fit.mjd, 
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
                         fit.flux+fit.fluxErr, fit.flux, 
                         where=(fit.flux+fit.fluxErr)>fit.flux,
                         facecolor='red', alpha=0.4, linewidth=0.5)
-                    dictAx[b][r[b], c[b]].fill_between(fit.mjd, 
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
                         fit.flux-fit.fluxErr, fit.flux, 
                         where=(fit.flux-fit.fluxErr)<fit.flux,
                         facecolor='red', alpha=0.4, linewidth=0.5)
 
-                    dictAx[b][r[b], c[b]].plot(fit.mjd, fit.flux, 'red')
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
+                        fit.flux+2*fit.fluxErr, fit.flux, 
+                        where=(fit.flux+2*fit.fluxErr)>fit.flux+fit.fluxErr,
+                        facecolor='red', alpha=0.2, linewidth=0.5)
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
+                        fit.flux-2*fit.fluxErr, fit.flux, 
+                        where=(fit.flux-2*fit.fluxErr)<fit.flux+fit.fluxErr,
+                        facecolor='red', alpha=0.2, linewidth=0.5)
+
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
+                        fit.flux+3*fit.fluxErr, fit.flux, 
+                        where=(fit.flux+3*fit.fluxErr)>fit.flux+2*fit.fluxErr,
+                        facecolor='red', alpha=0.1, linewidth=0.5)
+                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
+                        fit.flux-3*fit.fluxErr, fit.flux, 
+                        where=(fit.flux-3*fit.fluxErr)<fit.flux-2*fit.fluxErr,
+                        facecolor='red', alpha=0.1, linewidth=0.5)
+
+                    dictAx[b][r[b], c[b]].plot(fit.shiftedMjd, fit.flux, 
+                        color='#7f0000', 
+                        linewidth=2)
+
+                    dictAx[b][r[b], c[b]].scatter(data.shiftedMjd, data.flux, 
+                        s=10, label=str(candidate.SNID), c='black', marker='x')
+
+                    dictAx[b][r[b], c[b]].errorbar(data.shiftedMjd, data.flux,
+                        data.fluxErr, fmt=None, color='black', ecolor='black')
+
+                    
+                    if not catalog.candidates[i].peaked:
+                        
+                        # draw an arrow on hestimated max position
+                        mjdMax = fit_r.shiftedMjd[fit_r.max_flux_index]
+                        dictAx[b][r[b], c[b]].annotate('', 
+                            xy=(mjdMax, 0.7*ylim[1]), xycoords='data',
+                            xytext=(0, 30), textcoords='offset points',
+                            arrowprops=dict(arrowstyle='->', color='green')                            
+                            )
+                        # print mjdMax
+                        # dictAx[b][r[b], c[b]].arrow(
+                        #     catalog.candidates[i].lcsDict['r'].max_flux_index,
+                        #     0.98*ylim[1],
+                        #     0, -0.10*(ylim[1]-ylim[0]))
+
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
+                else:
+                    dictAx[b][r[b], c[b]].annotate(
+                        str(candidate.SNID) + " BAD CURVE",
+                        (np.mean(xlim), np.mean(ylim))
+                        )
                 c[b] += 1
                 
         for b in dictFig.keys():
             dictFig[b].savefig('test_band_{:<1}.pdf'.format(b), dpi=300)
 
-
+        plt.close('all')
     print "\n" + indent \
         + "The process took {:5.3f} secs.".format(time.time()-start_time)
