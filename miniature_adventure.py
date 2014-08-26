@@ -75,6 +75,7 @@ if __name__ == "__main__":
         "--plot", dest="plot",
         action="store_true",
         help="Save on `pdf` file the plot of fitting curve over data.")
+
     args = parser.parse_args()
 else:
     pass
