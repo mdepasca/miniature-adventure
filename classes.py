@@ -49,7 +49,6 @@ class LightCurve():
     badCurve = False
     shifted_mjd = np.zeros(0)
     # max from cross-correlation
-    __ccMaxFluxIndex = None
     def __init__(self, band):
         self.band = band
         self.mjd = np.ma.zeros(0, dtype=np.float32)
@@ -89,7 +88,7 @@ class LightCurve():
 
     def set_shifted_mjd(self, distance):
         """
-        Construct shifted_mjd, by subtracting 'distance' from 'self.flux'
+        Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
         self.shiftedMjd = np.ma.subtract(self.mjd, distance)
     
@@ -128,6 +127,9 @@ class LightCurve():
     def reset_mask(self):
         if (np.nonzero(self.mjd.mask)[0].size > 0) and (not self.badCurve):
             self.mjd.mask = np.zeros(self.size)
+
+        if (np.nonzero(self.mjd.mask)[0].size > 0) and (not self.badCurve):
+            self.shiftedMjd.mask = np.zeros(self.size)
         
         if (np.nonzero(self.flux.mask)[0].size > 0) and (not self.badCurve): 
             self.flux.mask = np.zeros(self.size)
@@ -135,24 +137,12 @@ class LightCurve():
         if (np.nonzero(self.fluxErr.mask)[0].size > 0) and (not self.badCurve):  
             self.fluxErr.mask = np.zeros(self.size)
 
-    def ccMaxFluxIndex(self, value):
-        """
-        To use only with non-peaked lcs in r band
-        """
-        if value in set([0, self.mjd.size-1]):
-            raise IndexError("index out of range")
-        
-        self.__ccMaxFluxIndex = value
-
     @property
     def max_flux_index(self):
         """
         Return the index of the maximum flux
         """
-        if self.__ccMaxFluxIndex != None:
-            return self.__ccMaxFluxIndex
-        else:
-            return np.argmax(self.flux)
+        return np.argmax(self.flux)
 
     @property
     def size(self):
@@ -252,6 +242,7 @@ class Supernova():
 
 
 class SupernovaFit():
+    ccMjdMaxFlux = -100
     def __init__(self, SNID, 
         SNType=None, RADeg=None, decDeg=None, MWEBV=None, 
         zSpec=None, zSpecErr=None,
@@ -294,18 +285,17 @@ class SupernovaFit():
         self.lcsDict[band].set_badCurve()
 
     def shift_mjds(self):
-        try:
-            # max_flux_index takes care of __ccMaxFluxIndex
-            mjdrMax = self.r.mjd[self.r.max_flux_index]
-            
-            for b in self.lcsDict.keys():
-                if self.lcsDict[b].badCurve:
-                    continue
-                self.lcsDict[b].set_shifted_mjd(mjdrMax)
-        except:
-            print "Candidate {:<d} ".format(self.SNID) + \
-            "has no maximum in r-band."
-
+        """ Shifts mjd attribute of each lc according to flux maximum 
+        in r band for peaked lcsself.
+        """
+        
+        mjdrMax = self.r.mjd[self.r.max_flux_index]
+        
+        for b in self.lcsDict.keys():
+            if self.lcsDict[b].badCurve:
+                continue
+            self.lcsDict[b].set_shifted_mjd(mjdrMax)
+    
     def reset_masks(self):
         for b in self.lcsDict.keys():
             self.lcsDict[b].reset_mask()
@@ -344,6 +334,22 @@ class SupernovaFit():
     def set_peaked(self):
         self.peaked = True
 
+    # def ccMjdMaxFlux(self, value):
+    #     """
+    #     To use only with non-peaked lcs in r band
+    #     """
+    #     # if (value < 0) or (value > self.mjd.size-1):
+    #     #     raise IndexError("index out of range")
+    #     if self.peaked == False:
+    #         self.__ccMjdMaxFlux = value
+    #     else:
+    #         print 'Peaked lightcurve, value not set!!!'
+
+    # def get_ccMjdMaxFlux(self):
+    #     if self.peaked:
+    #         raise TypeError('Lightcurve is peaked!')
+    #     return self.__ccMjdMaxFlux
+
     @property
     def peaked(self):
         return self.peaked
@@ -355,7 +361,8 @@ class SupernovaFit():
         if type(band) is not str:
             raise TypeError
         distance = -99
-        
+        bigDistance = 1.01
+
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
 
@@ -364,13 +371,6 @@ class SupernovaFit():
             np.abs(self.lcsDict[band].shiftedMjd))#[0][0]
         idxCandidateMax = np.argmin(
                 np.abs(candidate.lcsDict[band].shiftedMjd))#[0][0]
-        # print idxSelfMax,idxCandidateMax
-        # these checks on maximum positions should be done outside the function
-        # 
-        # (at least the first that sets distance to a big value)
-        # 
-        # First check: the lc are set as `not peacked` but we check if the 
-        # 
 
         if sizeSelf >= sizeCandidate:
             bigger = self.lcsDict[band].shiftedMjd.view()
@@ -396,27 +396,31 @@ class SupernovaFit():
         candidate.lcsDict[band].fluxErr.mask = \
                     candidate.lcsDict[band].shiftedMjd.mask            
 
-        # calculating min a max overlapping MJD
-        minMjd = min(self.lcsDict[band].shiftedMjd.compressed()[0],
-            candidate.lcsDict[band].shiftedMjd.compressed()[0])
+        if (self.lcsDict[band].shiftedMjd.compressed().size == 0) \
+        and (candidate.lcsDict[band].shiftedMjd.compressed().size == 0):
+            distance = bigDistance
+        else:
+            # calculating min a max overlapping MJD
+            minMjd = min(self.lcsDict[band].shiftedMjd.compressed()[0],
+                candidate.lcsDict[band].shiftedMjd.compressed()[0])
 
-        maxMjd = max(self.lcsDict[band].shiftedMjd.compressed()[-1],
-            candidate.lcsDict[band].shiftedMjd.compressed()[-1])
+            maxMjd = max(self.lcsDict[band].shiftedMjd.compressed()[-1],
+                candidate.lcsDict[band].shiftedMjd.compressed()[-1])
 
-        # calculating the distance
-        distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
-                    np.ma.divide(
-                        np.ma.power(
-                            np.ma.subtract(
-                                self.normalized_flux(band),
-                                candidate.normalized_flux(band)
-                                ), 2), 
-                        np.ma.add(
-                            np.ma.power(self.normalized_error(band), 2), 
-                            np.ma.power(candidate.normalized_error(band), 2)
+            # calculating the distance
+            distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
+                        np.ma.divide(
+                            np.ma.power(
+                                np.ma.subtract(
+                                    self.normalized_flux(band),
+                                    candidate.normalized_flux(band)
+                                    ), 2), 
+                            np.ma.add(
+                                np.ma.power(self.normalized_error(band), 2), 
+                                np.ma.power(candidate.normalized_error(band), 2)
+                            )
                         )
-                    )
-                ))
+                    ))
 
         if reset_masks:
             self.reset_masks()
@@ -489,7 +493,7 @@ class SupernovaFit():
 
 
 class CandidatesCatalog():
-    """Used to store in R.A.M. the list of fit to candidates lightcurves.
+    """Used to store in memory the list of fit to candidates lightcurves.
     Structure inspired from SupernovaeCatalog
 
     candidate: array of Supernova objects
