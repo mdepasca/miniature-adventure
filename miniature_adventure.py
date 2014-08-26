@@ -28,12 +28,18 @@ if __name__ == "__main__":
         description = "SN lightcurve fitter and classifier.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument(
-        # "-f", 
+    group = parser.add_mutually_exclusive_group()
+
+    group.add_argument(
         "--fit", dest="fit",
         action="store_true",
         help="Fit lightcurves with Gaussian processes method.")
 
+    group.add_argument(
+        "--fit-training", dest="fitTraining",
+        action="store_true",
+        help="Fit lightcurves from the training set \
+        with Gaussian processes method.")
     # parser.add_argument(
     #     "-z", "--zero-point", dest="zeroPoint",
     #     action="store_true",
@@ -337,6 +343,7 @@ if __name__ == "__main__":
             # print indent + "Band {:<} done.".format(b)
             # print indent + "---------------" 
             # print bcolors.txtrst
+        
         # Create R matrix
         Rmatrix = ro.Matrix(Pymatrix)
         util.dump_pkl('Rmatrix.pkl', Rmatrix)
@@ -348,7 +355,11 @@ if __name__ == "__main__":
             print indent + 'Loading catalog from dump file ...'
             Rmatrix = util.open_pkl('Rmatrix.pkl')
 
-        dmap = diffusionMap.diffuse(Rmatrix, neigen=5)
+        if 'diffusionMap' not in globals():
+            diffusionMap = importr('diffusionMap')
+
+        ndim = ro.r.attributes(Rmatrix)[0][0]
+        dmap = diffusionMap.diffuse(Rmatrix, neigen=ndim-1)
         
 
     if args.plot:
@@ -363,6 +374,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
+        offset = nrows*ncols # 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
                     tight_layout=True)
         fig_r, ax_r = plt.subplots(nrows=nrows, ncols=ncols, figsize=(16.5, 11.7), 
@@ -393,9 +405,9 @@ if __name__ == "__main__":
              'z':0}
 
         for b in dictFig.keys():
+            dictFig[b].subplots_adjust(top=0.8)
             dictFig[b].suptitle('band {:<1}'.format(b))
 
-        offset = nrows*ncols
         for i in range(nrows*ncols):
             # getting the data from file
             candidate = util.get_sn_from_file(
@@ -466,8 +478,9 @@ if __name__ == "__main__":
 
                     
                     if not catalog.candidates[offset+i].peaked:
-                        print catalog.candidates[offset+i].ccMjdMaxFlux, \
-                            offset+i
+                        pass
+                        # print catalog.candidates[offset+i].ccMjdMaxFlux, \
+                        #     offset+i
                         # draw an arrow on hestimated max position
                         # print data.shiftedMjd[data.shiftedMjd==0]
                         # mjdMax = data.shiftedMjd[data.shiftedMjd==0]
