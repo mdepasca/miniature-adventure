@@ -99,11 +99,15 @@ if __name__ == "__main__":
     print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
-    if args.fit:
+    if args.fit or args.fitTraining:
         # Perform fitting
 
         # Relevant input data
-        print "\n" + indent + "[1] * Fit lightcurves ..."
+        if args.fit:
+            print "\n" + indent + "[1] * Fit lightcurves ..."
+        if args.fitTraining:
+            print "\n" + indent + "[1] * Fit lightcurves from training set ..."
+
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
         print "\n" + indent + "List of candidates contained in: " \
@@ -134,10 +138,18 @@ if __name__ == "__main__":
         # optimize_restarts parallel using multiprocessing
         catalog = cls.CandidatesCatalog()
         start = 0
-        stop = 101
+        stop = 1000
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + vecCandidates[i])
+                args.dirData + os.sep + vecCandidates[i]
+                )
+
+            if args.fitTraining:
+                # if SN type is not provided, skip to the next item
+                if candidate.SNTypeInt == -9:
+                    continue
+                else:
+                    print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
             candidateFit = cls.SupernovaFit(candidate.SNID)
 
             for b in candidate.lcsDict.keys():
@@ -164,8 +176,6 @@ if __name__ == "__main__":
                     sys.stdout = saveOut
                     fout.close()
 
-                    # modelList = np.append(modelList, GPModel)
-
                     candidateFit.set_lightcurve(b, 
                         predMjd.reshape(predMjd.size),
                         predFlux.reshape(predFlux.size), 
@@ -185,8 +195,11 @@ if __name__ == "__main__":
 
         sys.stderr = saveErr
         ferr.close()
-        util.dump_pkl('tmp_catalog.pkl', catalog)
-        # util.dump_pkl('tml_model_list.pkl', modelList)
+        if args.fit:
+            util.dump_pkl('tmp_catalog.pkl', catalog)
+        if args.fitTraining:
+            util.dump_pkl('tmp_train_catalog.pkl', catalog)
+        
 
     if args.distMatrix:
         """Calculate distance between fitted lightcurves.
