@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         # "-f", 
-        "--fitting", dest="fitting",
+        "--fit", dest="fit",
         action="store_true",
         help="Fit lightcurves with Gaussian processes method.")
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
-    if args.fitting:
+    if args.fit:
         # Perform fitting
 
         # Relevant input data
@@ -191,9 +191,9 @@ if __name__ == "__main__":
             "[2] * Calculate distances between lightcurves ..." + \
             bcolors.txtrst
 
-        if not args.fitting:
+        if not args.fit:
             print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog(6).pkl')
+            catalog = util.open_pkl('tmp_catalog.pkl')
             
         bigDistance = 1.01
         
@@ -238,9 +238,11 @@ if __name__ == "__main__":
             pbar.update(i+1)
             # raise SystemExit
             for b in catalog.candidates[i].lcsDict.keys():
-                catalog.candidates[i].lcsDict[b].shiftedMjd = np.ma.subtract(
+                catalog.candidates[i].lcsDict[b].shiftedMjd = np.ma.add(
                     catalog.candidates[i].lcsDict[b].shiftedMjd, ccMax.mean())
-            # catalog.candidates[i].r.ccMaxFluxIndex(round(ccMax.mean()))
+            catalog.candidates[i].ccMjdMaxFlux = ccMax.mean()
+            # print ccMax.mean()
+            # print catalog.candidates[i].get_ccMjdMaxFlux()
             
         pbar.finish()   
         # raise SystemExit
@@ -338,6 +340,7 @@ if __name__ == "__main__":
         # Create R matrix
         Rmatrix = ro.Matrix(Pymatrix)
         util.dump_pkl('Rmatrix.pkl', Rmatrix)
+        util.dump_pkl('tmp_catalog.pkl', catalog)
 
 
     if args.diffuse:
@@ -351,11 +354,11 @@ if __name__ == "__main__":
     if args.plot:
         if 'catalog' not in globals():
             print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog(6).pkl')
+            catalog = util.open_pkl('tmp_catalog.pkl')
             print indent + '... done!'
             vecCandidates = np.genfromtxt(
                 args.dirData+os.sep+fNameCandidatesList, dtype=None)
-            # modelList = util.open_pkl('tml_model_list(1).pkl')
+           
 
         print indent + 'Plotting ...'
         nrows = 5
@@ -392,16 +395,17 @@ if __name__ == "__main__":
         for b in dictFig.keys():
             dictFig[b].suptitle('band {:<1}'.format(b))
 
+        offset = nrows*ncols
         for i in range(nrows*ncols):
             # getting the data from file
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + vecCandidates[i])
+                args.dirData + os.sep + vecCandidates[offset+i])
 
             for b in dictAx.keys():
                 data = candidate.lcsDict[b]
-                fit = catalog.candidates[i].lcsDict[b]
-                fit_r = catalog.candidates[i].lcsDict['r']
-                data.set_shifted_mjd(fit_r.mjd[fit_r.max_flux_index])
+                fit = catalog.candidates[offset+i].lcsDict[b]
+                fit.shiftedMjd.mask = np.zeros(fit.shiftedMjd.size)
+                fit_r = catalog.candidates[offset+i].lcsDict['r']
                 
                 if c[b] > 4:
                     c[b] = 0
@@ -410,6 +414,15 @@ if __name__ == "__main__":
                 xlim = dictAx[b][r[b], c[b]].get_xlim()
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
                 if not data.badCurve:
+                    if catalog.candidates[offset+i].peaked:
+                        # print 'qq'
+                        data.set_shifted_mjd(
+                            fit_r.mjd[fit_r.max_flux_index])
+                    else:
+                        data.set_shifted_mjd(
+                            fit_r.mjd[fit_r.max_flux_index])
+                        data.shiftedMjd += catalog.candidates[offset+i].ccMjdMaxFlux
+
                     bottom = data.flux.min() - np.median(data.fluxErr)
                     up = data.flux.max() + np.median(data.fluxErr)
                     dictAx[b][r[b], c[b]].set_ylim(bottom, up)
@@ -452,20 +465,18 @@ if __name__ == "__main__":
                         data.fluxErr, fmt=None, color='black', ecolor='black')
 
                     
-                    if not catalog.candidates[i].peaked:
-                        
+                    if not catalog.candidates[offset+i].peaked:
+                        print catalog.candidates[offset+i].ccMjdMaxFlux, \
+                            offset+i
                         # draw an arrow on hestimated max position
-                        mjdMax = fit_r.shiftedMjd[fit_r.max_flux_index]
-                        dictAx[b][r[b], c[b]].annotate('', 
-                            xy=(mjdMax, 0.7*ylim[1]), xycoords='data',
-                            xytext=(0, 30), textcoords='offset points',
-                            arrowprops=dict(arrowstyle='->', color='green')                            
-                            )
+                        # print data.shiftedMjd[data.shiftedMjd==0]
+                        # mjdMax = data.shiftedMjd[data.shiftedMjd==0]
                         # print mjdMax
-                        # dictAx[b][r[b], c[b]].arrow(
-                        #     catalog.candidates[i].lcsDict['r'].max_flux_index,
-                        #     0.98*ylim[1],
-                        #     0, -0.10*(ylim[1]-ylim[0]))
+                        # dictAx[b][r[b], c[b]].annotate('', 
+                        #     xy=(mjdMax, 0.7*ylim[1]), xycoords='data',
+                        #     xytext=(0, 30), textcoords='offset points',
+                        #     arrowprops=dict(arrowstyle='->', color='green')                            
+                        #     )
 
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
