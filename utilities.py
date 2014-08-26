@@ -88,17 +88,16 @@ def open_pkl(filePath):
 def dump_pkl(filePath, dataStruct):
     # print '>>> Dumping data structure into: ' + filePath
     # ERROR_STATE = 0
-    whileOn = True
-    i = 0
-    while whileOn:
-        try:
-            with path.exist(filePath):
-                i += 1
-                pklIdx = filePath.rfind('.pkl')
-                if i > 1: pklIdx -= 3
-                filePath = filePath[0:pklIdx] + '({:<1}).pkl'.format(i)
-        except IOError:
-            whileOn = False            
+    # whileOn = True
+    # i = 0
+    # while whileOn:
+    #     if path.exists(filePath):
+    #             i += 1
+    #             pklIdx = filePath.rfind('.pkl')
+    #             if i > 1: pklIdx -= 3
+    #             filePath = filePath[0:pklIdx] + '({:<1}).pkl'.format(i)
+    #     else:
+    #         whileOn = False            
 
     fileHandler = open(filePath,'w')
         
