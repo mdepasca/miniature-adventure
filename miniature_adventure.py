@@ -33,21 +33,21 @@ if __name__ == "__main__":
     group.add_argument(
         "--fit", dest="fit",
         action="store_true",
-        help="Fit lightcurves with Gaussian processes method.")
+        help="Fit lightcurves with Gaussian processes method."
+        )
 
     group.add_argument(
         "--fit-training", dest="fitTraining",
         action="store_true",
         help="Fit lightcurves from the training set \
-        with Gaussian processes method.")
-    # parser.add_argument(
-    #     "-z", "--zero-point", dest="zeroPoint",
-    #     action="store_true",
-    #     help="Set zero point in time. For each object it is the time, in MJD, \
-    #     of maximum observed in r-band (tailored on simulated data from SNANA).")
+        with Gaussian processes method."
+        )
+    
+    # group.add_argument(
+    #     "-t", dest=""
+    #     )
 
     parser.add_argument(
-        # "-d", 
         "--distance-matrix", dest="distMatrix",
         action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
@@ -62,25 +62,41 @@ if __name__ == "__main__":
         by Joseph Richards.")
 
     parser.add_argument(
+        "--train", dest="train",
+        action="store_true",
+        help="Train the classifier - Random Forest. Uses `randomForest` R \
+        package.")
+
+    parser.add_argument(
+        "--classify", dest="classify",
+        action="store_true")
+
+    parser.add_argument(
         "--training-directory", dest="dirData",
         default="train_data" + os.sep + "DES_BLIND+HOSTZ",
         help="Path to directory containing training data.")
 
     parser.add_argument(
-        "--fitting-directory", dest="dirFit",
-        default="fit_data" + os.sep,
-        help="Path to directory in which to save fitting results.")
+        "--fit-file", dest="fitFile",
+        default="tmp_catalog.pkl",
+        help="Path to file in which to dump fitting results.")
 
     parser.add_argument(
         "--plot", dest="plot",
         action="store_true",
         help="Save on `pdf` file the plot of fitting curve over data.")
 
+    parser.add_argument(
+        "-f", "--file",
+        help="")
+
     args = parser.parse_args()
 else:
     pass
     
 if __name__ == "__main__":
+    start = 0
+    stop = 9
     os.system("clear")
     indent = "          "
     KERN_RATQUAD = "RatQuad"
@@ -138,8 +154,7 @@ if __name__ == "__main__":
         # 
         # optimize_restarts parallel using multiprocessing
         catalog = cls.CandidatesCatalog()
-        start = 0
-        stop = 1000
+        
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + vecCandidates[i]
@@ -151,6 +166,7 @@ if __name__ == "__main__":
                     continue
                 else:
                     print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
+
             candidateFit = cls.SupernovaFit(candidate.SNID)
 
             for b in candidate.lcsDict.keys():
@@ -162,42 +178,51 @@ if __name__ == "__main__":
                 # test_prior should be deleted as option. Prior too weak.
                 # 
                 # Fitting Lightcurve
-                if (not candidate.lcsDict[b].badCurve) and \
-                    (flux.size >= 3):
-                    saveOut = sys.stdout
-                    fout = open('out.log', 'w')
-                    # fout = open('/dev/null', 'w')
-                    sys.stdout = fout
 
-                    
-                    predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                    phase, flux, errFlux, 
-                                                    kern, n_restarts=10, 
-                                                    test_length=True)
-                    sys.stdout = saveOut
-                    fout.close()
-
-                    candidateFit.set_lightcurve(b, 
-                        predMjd.reshape(predMjd.size),
-                        predFlux.reshape(predFlux.size), 
-                        predErr.reshape(predErr.size))
-                    
-                    print indent + \
-                        "{:<} {:<} {:<}".format(i, candidate.SNID, b)
-                else:
+                if (candidate.lcsDict[b].badCurve) or (flux.size <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
                         bcolors.txtrst
+                    continue
+
+                # if (not candidate.lcsDict[b].badCurve) and \
+                #     (flux.size >= 3):
+                saveOut = sys.stdout
+                fout = open('out.log', 'w')
+                # fout = open('/dev/null', 'w')
+                sys.stdout = fout
+
+                
+                predMjd, predFlux, predErr, GPModel = util.gp_fit(
+                                                phase, flux, errFlux, 
+                                                kern, n_restarts=10, 
+                                                test_length=True)
+                sys.stdout = saveOut
+                fout.close()
+
+                candidateFit.set_lightcurve(b, 
+                    predMjd.reshape(predMjd.size),
+                    predFlux.reshape(predFlux.size), 
+                    predErr.reshape(predErr.size))
+                
+                print indent + \
+                    "{:<} {:<} {:<}".format(i, candidate.SNID, b)
+                # else:
+                #     candidateFit.lcsDict[b].badCurve = True
+                #     print indent + bcolors.FAIL + \
+                #         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
+                #         bcolors.txtrst
                                 
             # Setting phase 0 point to phase or r maximum
-            candidateFit.shift_mjds()    
-            catalog.add_candidate(candidateFit)
+            if candidateFit.r.badCurve is False:
+                candidateFit.shift_mjds()    
+                catalog.add_candidate(candidateFit)
 
         sys.stderr = saveErr
         ferr.close()
         if args.fit:
-            util.dump_pkl('tmp_catalog.pkl', catalog)
+            util.dump_pkl(args.fitFile, catalog)
         if args.fitTraining:
             util.dump_pkl('tmp_train_catalog.pkl', catalog)
         
@@ -214,6 +239,7 @@ if __name__ == "__main__":
         if not args.fit:
             print indent + 'Loading catalog from dump file ...'
             catalog = util.open_pkl('tmp_catalog.pkl')
+            # catalog = util.open_pkl('tmp_train_catalog.pkl')
             
         bigDistance = 1.01
         
@@ -362,24 +388,39 @@ if __name__ == "__main__":
         Rmatrix = ro.Matrix(Pymatrix)
         util.dump_pkl('Rmatrix.pkl', Rmatrix)
         util.dump_pkl('tmp_catalog.pkl', catalog)
+        # util.dump_pkl('Rmatrix_train.pkl', Rmatrix)
+        # util.dump_pkl('tmp_train_catalog.pkl', catalog)
+
 
 
     if args.diffuse:
         if 'Rmatrix' not in globals():
             print indent + 'Loading catalog from dump file ...'
             Rmatrix = util.open_pkl('Rmatrix.pkl')
+            # Rmatrix = util.open_pkl('Rmatrix_train.pkl')
 
         if 'diffusionMap' not in globals():
             diffusionMap = importr('diffusionMap')
 
         ndim = ro.r.attributes(Rmatrix)[0][0]
-        dmap = diffusionMap.diffuse(Rmatrix, neigen=ndim-1)
+        dmap = diffusionMap.diffuse(Rmatrix, neigen=5)
+        util.dump_pkl('tmp_diffusion_map.pkl', dmap)
+        
+
+    if args.train:
+        randomForest = importr('randomForest')
+        if 'dmap' not in globals():
+            print indent + 'Loading catalog from dump file ...'
+            dmap = util.open_pkl('tmp_diffusion_map.pkl')
+
+        dmap_rf = randomForest.randomForest(dmap)
         
 
     if args.plot:
         if 'catalog' not in globals():
             print indent + 'Loading catalog from dump file ...'
             catalog = util.open_pkl('tmp_catalog.pkl')
+            # catalog = util.open_pkl('tmp_train_catalog.pkl')
             print indent + '... done!'
             vecCandidates = np.genfromtxt(
                 args.dirData+os.sep+fNameCandidatesList, dtype=None)
@@ -441,7 +482,6 @@ if __name__ == "__main__":
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
                 if not data.badCurve:
                     if catalog.candidates[offset+i].peaked:
-                        # print 'qq'
                         data.set_shifted_mjd(
                             fit_r.mjd[fit_r.max_flux_index])
                     else:
