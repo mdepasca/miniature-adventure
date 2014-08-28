@@ -171,8 +171,8 @@ if __name__ == "__main__":
                 else:
                     print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
 
-            candidateFit = cls.SupernovaFit(candidate.SNID)
-
+            # candidateFit = cls.SupernovaFit(candidate.SNID)
+            candidateFit = cls.SupernovaFit(candidate)
             for b in candidate.lcsDict.keys():
 
                 phase = candidate.lcsDict[b].mjd
