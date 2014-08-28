@@ -429,32 +429,75 @@ class SupernovaFit():
         return distance
 
 
-    def save_on_txt(self, fileName):
+    def save_on_txt(self, fileName, survey="DES"):
         t = Table(masked=True)
-        colNames = [["MJD_r_band", "{0:5.0f}"],
-                    ["FLUX_g", "{0:10.5f}"], ["FLUX_ERR_g", "{0:10.5f}"],
-                    ["FLUX_r", "{0:10.5f}"], ["FLUX_ERR_r", "{0:10.5f}"],
-                    ["FLUX_i", "{0:10.5f}"], ["FLUX_ERR_i", "{0:10.5f}"],
-                    ["FLUX_z", "{0:10.5f}"], ["FLUX_ERR_z", "{0:10.5f}"]]
+        # colNames = [["MJD_r_band", "{0:5.0f}"],
+        #             ["SHIFTED_MJD_r_band", "{0:5.0f}"],
+        #             ["FLUX_g", "{0:10.5f}"], ["FLUX_ERR_g", "{0:10.5f}"],
+        #             ["FLUX_r", "{0:10.5f}"], ["FLUX_ERR_r", "{0:10.5f}"],
+        #             ["FLUX_i", "{0:10.5f}"], ["FLUX_ERR_i", "{0:10.5f}"],
+        #             ["FLUX_z", "{0:10.5f}"], ["FLUX_ERR_z", "{0:10.5f}"]]
+        colNames = [["MJD", "{0:9.3f}"], ["BAND", "{:s}"],
+                    ["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"]]
 
-        for c in range(len(colNames)):
-            col = MaskedColumn(np.zeros(self.r.mjd.size),
-                name=colNames[c][0],
-                format=colNames[c][1],
-                dtype=np.float, fill_value=-9,
-                mask=np.zeros(self.r.mjd.size))
-            t.add_column(col)
-
-        t["MJD_r_band"] = self.r.mjd
+        # t["MJD_r_band"] = self.r.mjd
+        # t["SHIFTED_MJD_r_band"] = self.r.shiftedMjd
         for b in self.lcsDict.keys():
             if self.lcsDict[b].badCurve:
-                t["FLUX_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
-                t["FLUX_ERR_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
-                t["FLUX_{:<1}".format(b)].format = "{}"
-                t["FLUX_ERR_{:<1}".format(b)].format = "{}"
+                # t["FLUX_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
+                # t["FLUX_ERR_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
+                continue
+                # t["FLUX_{:<1}".format(b)].format = "{}"
+                # t["FLUX_ERR_{:<1}".format(b)].format = "{}"
+            # else:
+                # create an array per band, with same length of mjd_band
+                #
+                # and containing band name in each element (will be band flag)
+                #
+                # merge all arrays, order them by mjd, save on table
+            if 'bandArr' not in locals():
+                bandArr = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                bandArr[:] = b
+                mjd = self.lcsDict[b].mjd
+                flux = self.lcsDict[b].flux
+                fluxErr = self.lcsDict[b].fluxErr
             else:
-                t["FLUX_{:<1}".format(b)] = self.lcsDict[b].flux
-                t["FLUX_ERR_{:<1}".format(b)] = self.lcsDict[b].fluxErr
+                tmp = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                tmp[:] = b
+                bandArr = np.concatenate((bandArr, tmp))
+                mjd = np.concatenate((mjd, self.lcsDict[b].mjd))
+                flux = np.concatenate((flux, self.lcsDict[b].flux))
+                fluxErr = np.concatenate((fluxErr, self.lcsDict[b].fluxErr))
+
+        mjdArgsort = np.argsort(mjd)
+        mjd = mjd[mjdArgsort]
+        flux = flux[mjdArgsort]
+        fluxErr = fluxErr[mjdArgsort]
+        bandArr = bandArr[mjdArgsort]
+
+        for c in range(len(colNames)):
+            if colNames[c][0] == "BAND":
+                col = MaskedColumn(np.zeros(mjd.size),
+                    name=colNames[c][0],
+                    format=colNames[c][1],
+                    dtype=np.str, fill_value='-',
+                    mask=np.zeros(mjd.size)
+                    )
+            else:
+                col = MaskedColumn(np.zeros(mjd.size),
+                    name=colNames[c][0],
+                    format=colNames[c][1],
+                    dtype=np.float, fill_value=-9,
+                    mask=np.zeros(mjd.size))
+            t.add_column(col)
+
+        t["MJD"] = mjd
+        t["BAND"] = bandArr
+        t["FLUX"] = flux
+        t["FLUX_ERR"] = fluxErr
+
+                # t["FLUX_{:<1}".format(b)] = self.lcsDict[b].flux
+                # t["FLUX_ERR_{:<1}".format(b)] = self.lcsDict[b].fluxErr
 
         t.filled()
 
@@ -465,26 +508,27 @@ class SupernovaFit():
                 time.gmtime().tm_year,
                 time.gmtime().tm_hour, time.gmtime().tm_min, 
                 time.gmtime().tm_sec))
-        fOut.write("# SNID: {:>10d}\n".format(self.SNID))
+        fOut.write("# SURVEY:  {:<}\n".format(survey))
+        fOut.write("# SNID:    {:>10d}\n".format(self.SNID))
 
         if self.SNType :
-            fOut.write("# SNType: {:>d}\n".format(self.SNType))
+            fOut.write("# SNTYPE: {:>d}\n".format(self.SNType))
         if self.RADeg :
-            fOut.write("# RADeg: {:>9.6f}\n".format(self.RADeg))
+            fOut.write("# RA:     {:>9.6f} deg\n".format(self.RADeg))
         if self.decDeg :
-            fOut.write("# decDeg: {:>9.6f}\n".format(self.decDeg))
+            fOut.write("# DECL:   {:>9.6f} deg\n".format(self.decDeg))
         if self.MWEBV :
-            fOut.write("# MWEBV: {:>6.4f}\n".format(self.MWEBV))
+            fOut.write("# MWEBV:  {:>6.4f}\n".format(self.MWEBV))
         if self.zSpec :
-            fOut.write("# zSpec: {:>6.4f}\n".format(self.zSpec))
-        if self.zSpecErr:
-            fOut.write("# zSpecErr: {:>6.4f}\n".format(self.zSpec))
+            fOut.write("# REDSHIFT_SPEC:  {:>6.4f} +- {:>6.4f}\n".format(
+                self.zSpec, self.zSpecErr
+                ))
         if self.hostGalaxyID :
-            fOut.write("# hostGalaxyID: {:>d}\n".format(self.hostGalaxyID))
+            fOut.write("# HOST_GALAXY_GALID: {:>d}\n".format(self.hostGalaxyID))
         if self.zPhotHost :
-            fOut.write("# zPhotHost: {:>6.4f}\n".format(self.zPhotHost))
-        if self.zPhotHostErr :
-            fOut.write("# zPhotHostErr: {:>6.4f}\n".format(self.zPhotHostErr))
+            fOut.write("# HOST_GALAXY_PHOTO-Z:  {:>6.4f} +- {:>6.4f}\n".format(
+                self.zPhotHost, self.zPhotHostErr
+                ))
 
         ascii.write(t, output=fOut, delimiter='  ', 
             format='fixed_width_two_line')
