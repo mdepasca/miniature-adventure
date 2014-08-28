@@ -1,5 +1,6 @@
 import argparse
 import os
+from  os import path
 import sys
 import time
 
@@ -43,10 +44,6 @@ if __name__ == "__main__":
         with Gaussian processes method."
         )
     
-    # group.add_argument(
-    #     "-t", dest=""
-    #     )
-
     parser.add_argument(
         "--distance-matrix", dest="distMatrix",
         action="store_true",
@@ -77,8 +74,12 @@ if __name__ == "__main__":
         help="Path to directory containing training data.")
 
     parser.add_argument(
+        "--fit-directory", dest="dirFit",
+        default="train_data" + os.sep + "DES_BLIND+HOSTZ_FIT",
+        help="Path to directory containing fitted data.")
+
+    parser.add_argument(
         "--fit-file", dest="fitFile",
-        default="tmp_catalog.pkl",
         help="Path to file in which to dump fitting results.")
 
     parser.add_argument(
@@ -97,8 +98,11 @@ else:
 if __name__ == "__main__":
     start = 0
     stop = 9
-    os.system("clear")
     indent = "          "
+    os.system("clear")
+    if not os.path.exists(path.abspath(args.dirFit)):
+        os.makedirs(path.abspath(args.dirFit))
+    
     KERN_RATQUAD = "RatQuad"
     # modelList = np.zeros(0, dtype=np.object)
 
@@ -216,15 +220,17 @@ if __name__ == "__main__":
                                 
             # Setting phase 0 point to phase or r maximum
             if candidateFit.r.badCurve is False:
-                candidateFit.shift_mjds()    
-                catalog.add_candidate(candidateFit)
+                candidateFit.shift_mjds()
+                candidateFit.save_on_txt(args.dirFit+os.sep+ \
+                    path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
+                # catalog.add_candidate(candidateFit)
 
         sys.stderr = saveErr
         ferr.close()
-        if args.fit:
+        if args.fitFile:
             util.dump_pkl(args.fitFile, catalog)
-        if args.fitTraining:
-            util.dump_pkl('tmp_train_catalog.pkl', catalog)
+        # if args.fitTraining:
+        #     util.dump_pkl('tmp_train_catalog.pkl', catalog)
         
 
     if args.distMatrix:
