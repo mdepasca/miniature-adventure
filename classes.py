@@ -243,10 +243,31 @@ class Supernova():
 
 class SupernovaFit():
     ccMjdMaxFlux = -100
-    def __init__(self, SNID, 
-        SNType=None, RADeg=None, decDeg=None, MWEBV=None, 
-        zSpec=None, zSpecErr=None,
-        hostGalaxyID=None, zPhotHost=None, zPhotHostErr=None):
+    # def __init__(self, SNID, 
+    #     SNType=None, RADeg=None, decDeg=None, MWEBV=None, 
+    #     zSpec=None, zSpecErr=None,
+    #     hostGalaxyID=None, zPhotHost=None, zPhotHostErr=None):
+    #     self.g = LightCurve("g")
+    #     self.r = LightCurve("r")
+    #     self.i = LightCurve("i")
+    #     self.z = LightCurve("z")
+    #     self.lcsDict = {"g":self.g, 
+    #                     "r":self.r, 
+    #                     "i":self.i, 
+    #                     "z":self.z}
+    #     self.peaked = False
+    #     self.SNID = SNID
+    #     self.SNType = SNType 
+    #     self.RADeg = RADeg 
+    #     self.decDeg = decDeg 
+    #     self.MWEBV = MWEBV 
+    #     self.zSpec = zSpec 
+    #     self.zSpecErr = zSpecErr
+    #     self.hostGalaxyID = hostGalaxyID 
+    #     self.zPhotHost = zPhotHost 
+    #     self.zPhotHostErr = zPhotHostErr 
+    def __init__(self, supernova):
+        # check on supernova type HAS TO BE ADDED
         self.g = LightCurve("g")
         self.r = LightCurve("r")
         self.i = LightCurve("i")
@@ -256,16 +277,19 @@ class SupernovaFit():
                         "i":self.i, 
                         "z":self.z}
         self.peaked = False
-        self.SNID = SNID
-        self.SNType = SNType 
-        self.RADeg = RADeg 
-        self.decDeg = decDeg 
-        self.MWEBV = MWEBV 
-        self.zSpec = zSpec 
-        self.zSpecErr = zSpecErr
-        self.hostGalaxyID = hostGalaxyID 
-        self.zPhotHost = zPhotHost 
-        self.zPhotHostErr = zPhotHostErr 
+        self.SNID = supernova.SNID
+        self.SNTypeInt = supernova.SNTypeInt
+        self.RADeg = supernova.RADeg 
+        self.decDeg = supernova.decDeg 
+        self.MWEBV = supernova.MWEBV 
+        self.zSpec = supernova.zSpec
+        if hasattr(supernova, 'zSpecErr'):
+            self.zSpecErr = supernova.zSpecErr
+        else:
+            self.zSpecErr = None
+        self.hostGalaxyID = supernova.hostGalaxyID 
+        self.zPhotHost = supernova.zPhotHost 
+        self.zPhotHostErr = supernova.zPhotHostErr 
 
     def set_lightcurve(self, band, mjd, flux, fluxErr):
         self.lcsDict[band].mjd = np.ma.asarray(mjd, dtype=np.float32)
@@ -509,10 +533,10 @@ class SupernovaFit():
                 time.gmtime().tm_hour, time.gmtime().tm_min, 
                 time.gmtime().tm_sec))
         fOut.write("# SURVEY:  {:<}\n".format(survey))
-        fOut.write("# SNID:    {:>10d}\n".format(self.SNID))
+        fOut.write("# SNID:  {:<d}\n".format(self.SNID))
 
-        if self.SNType :
-            fOut.write("# SNTYPE: {:>d}\n".format(self.SNType))
+        if self.SNTypeInt :
+            fOut.write("# SNTYPE: {:>d}\n".format(self.SNTypeInt))
         if self.RADeg :
             fOut.write("# RA:     {:>9.6f} deg\n".format(self.RADeg))
         if self.decDeg :
@@ -529,6 +553,12 @@ class SupernovaFit():
             fOut.write("# HOST_GALAXY_PHOTO-Z:  {:>6.4f} +- {:>6.4f}\n".format(
                 self.zPhotHost, self.zPhotHostErr
                 ))
+        fOut.write("\n\n\n\n")
+        fOut.write("# ======================================\n")
+        fOut.write("# LIGHT CURVE FIT USING GAUSSIAN PROCESS\n")
+        fOut.write("#\n")
+        fOut.write("# NOBS: {:<}\n".format(mjd.size))
+
 
         ascii.write(t, output=fOut, delimiter='  ', 
             format='fixed_width_two_line')
