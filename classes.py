@@ -191,11 +191,12 @@ class Supernova():
                         'z':self.z}
         
         for line in lines:
+
             if len(line) > 3 and line[0] != "#":
                 
                 tag = line.split(":")[0]
                 data = line.split(":")[-1].split()
-                
+                   
                 if tag == "OBS":
                     mjd = float(data[0])
                     passband = data[1]
@@ -233,6 +234,8 @@ class Supernova():
                 elif tag == "HOST_GALAXY_PHOTO-Z":
                     self.zPhotHost = float(data[0])
                     self.zPhotHostErr = float(data[2])
+                elif tag == "MJD_MAX_FLUX-CCF":
+                    self.ccMjdMaxFlux = float(data[0])
 
         for b in self.lcsDict.keys():
             self.lcsDict[b].set_badCurve()
@@ -255,12 +258,15 @@ class SupernovaFit():
                         "i":self.i, 
                         "z":self.z}
         self.peaked = False
+        if hasattr(supernova, 'ccMjdMaxFlux'):
+            self.ccMjdMaxFlux = supernova.ccMjdMaxFlux
         self.SNID = supernova.SNID
         self.SNTypeInt = supernova.SNTypeInt
         self.RADeg = supernova.RADeg 
         self.decDeg = supernova.decDeg 
         self.MWEBV = supernova.MWEBV 
-        self.zSpec = supernova.zSpec
+        if hasattr(supernova, 'zSpec'):
+            self.zSpec = supernova.zSpec
         if hasattr(supernova, 'zSpecErr'):
             self.zSpecErr = supernova.zSpecErr
         else:
@@ -433,7 +439,11 @@ class SupernovaFit():
 
     def save_on_txt(self, fileName, survey="DES"):
         t = Table(masked=True)
-        colNames = [["MJD", "{0:9.3f}"], ["BAND", "{:s}"],
+        # OBS is used to reproduce original SNPhotCC files can be deleted 
+        #
+        # provided to change init method of Supernova class
+        colNames = [["OBS", "{:4s}"],
+                    ["MJD", "{0:9.3f}"], ["BAND", "{:s}"], ["FIELD", "{:6s}"],
                     ["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"]]
 
         bandArr = np.empty(0)
@@ -466,8 +476,14 @@ class SupernovaFit():
         fluxErr = fluxErr[mjdArgsort]
         bandArr = bandArr[mjdArgsort]
 
+        """
+        Adding and setting column to Table
+        """
+
         for c in range(len(colNames)):
-            if colNames[c][0] == "BAND":
+            if colNames[c][0] == "BAND" \
+            or colNames[c][0] == "OBS" \
+            or colNames[c][0] == "FIELD":
                 col = MaskedColumn(np.zeros(mjd.size),
                     name=colNames[c][0],
                     format=colNames[c][1],
@@ -482,6 +498,14 @@ class SupernovaFit():
                     mask=np.zeros(mjd.size))
             t.add_column(col)
 
+        """
+        Initializing columns
+        """
+
+        t["OBS"] = np.empty(mjd.size, dtype=np.str)
+        t["OBS"][:] = "OBS:"
+        t["FIELD"] = np.empty(mjd.size, dtype=np.str)
+        t["FIELD"][:] = "NULL"
         t["MJD"] = mjd
         t["BAND"] = bandArr
         t["FLUX"] = flux
@@ -496,29 +520,32 @@ class SupernovaFit():
                 time.gmtime().tm_year,
                 time.gmtime().tm_hour, time.gmtime().tm_min, 
                 time.gmtime().tm_sec))
-        fOut.write("# SURVEY:  {:<}\n".format(survey))
-        fOut.write("# SNID:  {:<d}\n".format(self.SNID))
+        fOut.write("SURVEY:  {:<}\n".format(survey))
+        fOut.write("SNID:  {:<d}\n".format(self.SNID))
 
-        if self.SNTypeInt :
-            fOut.write("# SNTYPE: {:>d}\n".format(self.SNTypeInt))
-        if self.RADeg :
-            fOut.write("# RA:     {:>9.6f} deg\n".format(self.RADeg))
-        if self.decDeg :
-            fOut.write("# DECL:   {:>9.6f} deg\n".format(self.decDeg))
-        if self.MWEBV :
-            fOut.write("# MWEBV:  {:>6.4f}\n".format(self.MWEBV))
-        if self.zSpec :
-            fOut.write("# REDSHIFT_SPEC:  {:>6.4f} +- {:>6.4f}\n".format(
-                self.zSpec, self.zSpecErr
-                ))
-        if self.hostGalaxyID :
-            fOut.write("# HOST_GALAXY_GALID: {:>d}\n".format(self.hostGalaxyID))
-        if self.zPhotHost :
-            fOut.write("# HOST_GALAXY_PHOTO-Z:  {:>6.4f} +- {:>6.4f}\n".format(
+        # if self.SNTypeInt :
+        fOut.write("SNTYPE: {:>d}\n".format(self.SNTypeInt))
+        # if self.RADeg :
+        fOut.write("RA:     {:>9.6f} deg\n".format(self.RADeg))
+        # if self.decDeg :
+        fOut.write("DECL:   {:>9.6f} deg\n".format(self.decDeg))
+        # if self.MWEBV :
+        fOut.write("MWEBV:  {:>6.4f}\n".format(self.MWEBV))
+        if hasattr(self, "zSpec"):
+            if self.zSpec:
+                fOut.write("REDSHIFT_SPEC:  {:>6.4f} +- {:>6.4f}\n".format(
+                    self.zSpec, self.zSpecErr
+                    ))
+            else:
+                fOut.write("REDSHIFT_SPEC: -9.0000 +- 9.0000\n")
+        if hasattr(self, "hostGalaxyID"):
+            fOut.write("HOST_GALAXY_GALID: {:>d}\n".format(self.hostGalaxyID))
+        if hasattr(self, "zPhotHost"):
+            fOut.write("HOST_GALAXY_PHOTO-Z:  {:>6.4f} +- {:>6.4f}\n".format(
                 self.zPhotHost, self.zPhotHostErr
                 ))
-        if self.ccMjdMaxFlux:
-            fOut.write("# MJD_MAX_FLUX-CCF:  {9.3f}".format(self.ccMjdMaxFlux))
+        if self.ccMjdMaxFlux > 0:
+            fOut.write("MJD_MAX_FLUX-CCF:  {:>9.3f}".format(self.ccMjdMaxFlux))
         fOut.write("\n\n\n\n")
         fOut.write("# ======================================\n")
         fOut.write("# LIGHT CURVE FIT USING GAUSSIAN PROCESS\n")
