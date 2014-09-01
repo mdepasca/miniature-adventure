@@ -1,7 +1,7 @@
 import argparse
 import os
 from  os import path
-import commands
+import subprocess
 import sys
 import time
 # garbage collector
@@ -96,6 +96,9 @@ if __name__ == "__main__":
         help="")
 
     args = parser.parse_args()
+
+
+    bands = ['g', 'r', 'i', 'z']
 else:
     pass
     
@@ -126,9 +129,13 @@ if __name__ == "__main__":
     print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
-    if args.fit or args.fitTraining:
-        # Perform fitting
 
+    """
+
+    PERFORM LCs FITTING
+
+    """
+    if args.fit or args.fitTraining:
         # Relevant input data
         if args.fit:
             print "\n" + indent + "[1] * Fit lightcurves ..."
@@ -227,7 +234,7 @@ if __name__ == "__main__":
                                 
             # Setting phase 0 point to phase or r maximum
             if candidateFit.r.badCurve is False:
-                candidateFit.shift_mjds()
+                # candidateFit.shift_mjds()
                 candidateFit.save_on_txt(args.dirFit+os.sep+ \
                     path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
                 # catalog.add_candidate(candidateFit)
@@ -248,36 +255,42 @@ if __name__ == "__main__":
         # if args.fitTraining:
         #     util.dump_pkl('tmp_train_catalog.pkl', catalog)
         
+    """
+    
+    Calculating distance matrix
+    
+    """
 
     if args.distMatrix:
-        # getting file list from directory
-        #
-        # File are sorted by SNID
-        lsDir = commands.getoutput(args.dirFit+os.sep)
-        lsDir.sort()
-        peakIdx = np.loadtxt('peaked.dat')
-        nopeakIdx = np.loadtxt('nopeaked.dat')
-        """Calculate distance between fitted lightcurves.
+        """
+        Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
+        # getting file list from directory
+        #
+        # File are sorted by SNID
+        p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirFit+os.sep)
+        lsDir = p.stdout.read()
+        lsDir = lsDir.split('\n')
+        lsDir.sort()
+        lsDir.remove('')
+
+        
+        peakIdx = np.loadtxt('peaked.dat')
+        nopeakIdx = np.loadtxt('nopeaked.dat')
+
+
         print "\n" + indent + bcolors.undwht + \
             "[2] * Calculate distances between lightcurves ..." + \
             bcolors.txtrst
 
-        # if not args.fit:
-        #     print indent + 'Loading catalog from dump file ...'
-        #     catalog = util.open_pkl('tmp_catalog.pkl')
-            # catalog = util.open_pkl('tmp_train_catalog.pkl')
-            
         bigDistance = 1.01
         
         # Importing R package diffusionMap
         diffusionMap = importr('diffusionMap')
         
-        # peakIdx = np.nonzero(catalog.peaked)[0]
-        # nopeakIdx = np.where(catalog.peaked == False)[0]
-
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
@@ -285,22 +298,34 @@ if __name__ == "__main__":
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
         pbar = ProgressBar(widgets=widgets).start()
+
+        """
+
+        PERFORMING CROSS-CORRELATION 
+
+        """
         for i in nopeakIdx:
             # READ DATA FROM FILE
-            tmpSN = util.get_sn_from_file(lsDir[i])
-            notPeaked = SupernovaFit(tmpSN)
+            tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDir[i])
+            notPeaked = cls.SupernovaFit(tmpSN)
             for b in tmpSN.lcsDict.keys():
-                notPeaked.set_lightcurve(b, tmpSN.mjd, tmpSN.flux, tmpSN.fluxErr)
-            # print i
+                notPeaked.set_lightcurve(b, 
+                    tmpSN.lcsDict[k].mjd,
+                    tmpSN.lcsDict[k].flux,
+                    tmpSN.lcsDict[k].fluxErr
+                    )
+            
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
                 # READ DATA FROM FILE
-                tmpSN = util.get_sn_from_file(lsDir[j])
-                peaked = SupernovaFit(tmpSN)
+                tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDir[j])
+                peaked = cls.SupernovaFit(tmpSN)
                 for b in tmpSN.lcsDict.keys():
-                    notPeaked.set_lightcurve(b, tmpSN.mjd, tmpSN.flux, 
-                        tmpSN.fluxErr
+                    notPeaked.set_lightcurve(b,
+                        tmpSN.lcsDict[k].mjd,
+                        tmpSN.lcsDict[k].flux, 
+                        tmpSN.lcsDict[k].fluxErr
                         )
 
                 ycorr = signal.correlate(
@@ -325,21 +350,27 @@ if __name__ == "__main__":
                 k += 1
             pbar.update(i+1)
             # raise SystemExit
-            for b in notPeaked.lcsDict.keys():
-                notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
-                    notPeaked.lcsDict[b].shiftedMjd, ccMax.mean())
+            # for b in notPeaked.lcsDict.keys():
+            #     notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
+            #         notPeaked.lcsDict[b].shiftedMjd, ccMax.mean())
             notPeaked.ccMjdMaxFlux = ccMax.mean()
             # print ccMax.mean()
             # print catalog.candidates[i].get_ccMjdMaxFlux()
-            
+            notPeaked.save_on_txt(lsDir[i])
         pbar.finish()   
         # raise SystemExit
         # print indent + '... done!'
 
+        """
+
+        CALCULATING DISTANCE MATRIX
+
+        """
+
         print indent + 'Calculating distances ...'
-        for b in catalog.candidates[0].lcsDict.keys():
+        for b in bands:
             # creating numpy matrix
-            Pymatrix = np.zeros((catalog.size, catalog.size),
+            Pymatrix = np.zeros((len(lsDir), len(lsDir)),
                 dtype=np.float32)
 
             print bcolors.OKGREEN 
@@ -347,21 +378,37 @@ if __name__ == "__main__":
             print indent + "Band {:<} ...".format(b)
             print indent + "-------------" 
             print bcolors.txtrst
-            pbar = ProgressBar(widgets=widgets, maxval=catalog.size).start()
+            pbar = ProgressBar(widgets=widgets, maxval=len(lsDir)).start()
 
-            for i in range(catalog.size):
+            for i in range(len(lsDir)):
 
-                tmpSN = util.get_sn_from_file(lsDir[i])
-                iCandidate = SupernovaFit(tmpSN)
+                """
+                Reading in i-candidate
+                """
+                tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDir[i])
+                iCandidate = cls.SupernovaFit(tmpSN)
                 
                 for k in tmpSN.lcsDict.keys():
-                    iCandidate.set_lightcurve(k, tmpSN.mjd, tmpSN.flux, 
-                        tmpSN.fluxErr
+                    # set_lightcurve set also if the lc is peaked or not
+                    iCandidate.set_lightcurve(k, 
+                        tmpSN.lcsDict[k].mjd,
+                        tmpSN.lcsDict[k].flux,
+                        tmpSN.lcsDict[k].fluxErr
                         )
+
+                """
+                Shifting mjds in i-candidate
+                """
+                iCandidate.shift_mjds()
+                if iCandidate.peaked == False:
+                    iCandidate.lcsDict[b].shiftedMjd = np.ma.add(
+                            iCandidate.lcsDict[b].shiftedMjd, 
+                            iCandidate.ccMjdMaxFlux
+                            )
 
                 iElSize = iCandidate.lcsDict[b].size
                 # iElSize = catalog.candidates[i].lcsDict[b].size
-                for j in range(catalog.size):
+                for j in range(len(lsDir)):
                     if j < i:
                         # filling matrix elements below the diagonal
                         Pymatrix[i, j] += Pymatrix[j, i]
@@ -372,12 +419,27 @@ if __name__ == "__main__":
                         Pymatrix[i, j] += 0.
                         continue
 
-                    tmpSN = util.get_sn_from_file(lsDir[j])
-                    jCandidate = SupernovaFit(tmpSN)
+                    """
+                    Reading in j-candidate
+                    """
+                    tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDir[j])
+                    jCandidate = cls.SupernovaFit(tmpSN)
                     for k in tmpSN.lcsDict.keys():
-                        jCandidate.set_lightcurve(k, tmpSN.mjd, tmpSN.flux, 
-                            tmpSN.fluxErr
+                        jCandidate.set_lightcurve(k, 
+                            tmpSN.lcsDict[k].mjd, 
+                            tmpSN.lcsDict[k].flux, 
+                            tmpSN.lcsDict[k].fluxErr
                             )
+
+                    """
+                    Shifting mjds in i-candidate
+                    """
+                    jCandidate.shift_mjds()
+                    if jCandidate.peaked == False:
+                        jCandidate.lcsDict[b].shiftedMjd = np.ma.add(
+                                iCandidate.lcsDict[b].shiftedMjd, 
+                                iCandidate.ccMjdMaxFlux
+                                )
                     if jCandidate.lcsDict[b].badCurve \
                     or iCandidate.lcsDict[b].badCurve:
                         # print bcolors.WARNING
@@ -391,6 +453,7 @@ if __name__ == "__main__":
                         continue
 
                     jElSize = jCandidate.lcsDict[b].size
+
                     # getting index of maximum 
                     # 
                     # shiftedMjd is = to zero at the r maximum
@@ -447,7 +510,7 @@ if __name__ == "__main__":
         # Create R matrix
         Rmatrix = ro.Matrix(Pymatrix)
         util.dump_pkl('Rmatrix.pkl', Rmatrix)
-        util.dump_pkl('tmp_catalog.pkl', catalog)
+        # util.dump_pkl('tmp_catalog.pkl', catalog)
         # util.dump_pkl('Rmatrix_train.pkl', Rmatrix)
         # util.dump_pkl('tmp_train_catalog.pkl', catalog)
 
