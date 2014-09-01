@@ -356,7 +356,7 @@ if __name__ == "__main__":
             notPeaked.ccMjdMaxFlux = ccMax.mean()
             # print ccMax.mean()
             # print catalog.candidates[i].get_ccMjdMaxFlux()
-            notPeaked.save_on_txt(lsDir[i])
+            notPeaked.save_on_txt(args.dirFit+os.sep+lsDir[i])
         pbar.finish()   
         # raise SystemExit
         # print indent + '... done!'
@@ -514,6 +514,11 @@ if __name__ == "__main__":
         # util.dump_pkl('Rmatrix_train.pkl', Rmatrix)
         # util.dump_pkl('tmp_train_catalog.pkl', catalog)
 
+    """
+
+    CALCULATING DIFFUSION MAP
+
+    """
 
 
     if args.diffuse:
@@ -530,6 +535,12 @@ if __name__ == "__main__":
         util.dump_pkl('tmp_diffusion_map.pkl', dmap)
         
 
+    """
+
+    TRAINING RANDOM FOREST CLASSIFIER
+
+    """
+
     if args.train:
         randomForest = importr('randomForest')
         if 'dmap' not in globals():
@@ -538,6 +549,12 @@ if __name__ == "__main__":
 
         dmap_rf = randomForest.randomForest(dmap)
         
+
+    """
+
+    PLOT OBSERVATION AND FIT
+
+    """
 
     if args.plot:
         if 'catalog' not in globals():
