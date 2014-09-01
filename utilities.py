@@ -291,7 +291,7 @@ def reshape_for_GPy(vec):
 
 
 def gp_fit(
-    X, Y, errY, kernel, n_restarts=0, 
+    X, Y, errY, kernel, n_restarts=0, parallel=True,
     test_length=False,
     test_prior=False,
     verbose=False):
@@ -314,17 +314,18 @@ def gp_fit(
     gpModel['.*Gaussian_noise'] = errY
 
     # Block to capture unwanted output from .constrain_fixed() function
-    with Capturing() as output:
-        [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
-         for i in range(X.size)]
+    # with Capturing() as output:
+    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
+         for i in range(X.size)
+         ]
 
     if test_length:
         np.random.RandomState
         length = np.random.uniform(low=medXStep, high=maxXStep)
         if verbose:
             print "  Randomized lengthscale {:<5.3f}".format(length)
-        with Capturing() as output:
-            gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
+        # with Capturing() as output:
+        gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
     elif test_prior:
         prior = GPy.core.parameterization.priors.Gamma(1, 20)
         gpModel['.*lengthscale'].set_prior(prior, warning=False)
@@ -332,18 +333,18 @@ def gp_fit(
         pass
 
     if n_restarts > 0:
+        # optimize_restart is from GPy/core/model.py
         gpModel.optimize_restarts(num_restarts=n_restarts,
-                                    parallel=True,
+                                    parallel=parallel,
                                     verbose=False,
                                     robust=True,
                                     messages=False)
     else:
         gpModel.optimize(optimizer='scg')
 
-    # predX = reshape_for_GPy(np.arange(round(X.min()), round(X.max()), 1))
     predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1.))
-    # predX = reshape_for_GPy(np.linspace(round(X.min()), round(X.max()), num=100))
 
+    # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
     return predX, meanY, var, gpModel
 
