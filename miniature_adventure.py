@@ -242,8 +242,8 @@ if __name__ == "__main__":
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
         np.savetxt('nopeaked.dat', nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
-        if args.fitFile:
-            util.dump_pkl(args.fitFile, catalog)
+        # if args.fitFile:
+        #     util.dump_pkl(args.fitFile, catalog)
 
         # if args.fitTraining:
         #     util.dump_pkl('tmp_train_catalog.pkl', catalog)
@@ -290,7 +290,7 @@ if __name__ == "__main__":
             tmpSN = util.get_sn_from_file(lsDir[i])
             notPeaked = SupernovaFit(tmpSN)
             for b in tmpSN.lcsDict.keys():
-                notPeaked.set_lightcurve(b, tmpSN.mj, tmpSN.flux, tmpSN.fluxErr)
+                notPeaked.set_lightcurve(b, tmpSN.mjd, tmpSN.flux, tmpSN.fluxErr)
             # print i
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
@@ -299,7 +299,7 @@ if __name__ == "__main__":
                 tmpSN = util.get_sn_from_file(lsDir[j])
                 peaked = SupernovaFit(tmpSN)
                 for b in tmpSN.lcsDict.keys():
-                    notPeaked.set_lightcurve(b, tmpSN.mj, tmpSN.flux, 
+                    notPeaked.set_lightcurve(b, tmpSN.mjd, tmpSN.flux, 
                         tmpSN.fluxErr
                         )
 
@@ -341,14 +341,26 @@ if __name__ == "__main__":
             # creating numpy matrix
             Pymatrix = np.zeros((catalog.size, catalog.size),
                 dtype=np.float32)
+
             print bcolors.OKGREEN 
             print indent + "-------------"
             print indent + "Band {:<} ...".format(b)
             print indent + "-------------" 
             print bcolors.txtrst
             pbar = ProgressBar(widgets=widgets, maxval=catalog.size).start()
+
             for i in range(catalog.size):
-                iElSize = catalog.candidates[i].lcsDict[b].size
+
+                tmpSN = util.get_sn_from_file(lsDir[i])
+                iCandidate = SupernovaFit(tmpSN)
+                
+                for k in tmpSN.lcsDict.keys():
+                    iCandidate.set_lightcurve(k, tmpSN.mjd, tmpSN.flux, 
+                        tmpSN.fluxErr
+                        )
+
+                iElSize = iCandidate.lcsDict[b].size
+                # iElSize = catalog.candidates[i].lcsDict[b].size
                 for j in range(catalog.size):
                     if j < i:
                         # filling matrix elements below the diagonal
@@ -360,8 +372,14 @@ if __name__ == "__main__":
                         Pymatrix[i, j] += 0.
                         continue
 
-                    if catalog.candidates[j].lcsDict[b].badCurve \
-                    or catalog.candidates[i].lcsDict[b].badCurve:
+                    tmpSN = util.get_sn_from_file(lsDir[j])
+                    jCandidate = SupernovaFit(tmpSN)
+                    for k in tmpSN.lcsDict.keys():
+                        jCandidate.set_lightcurve(k, tmpSN.mjd, tmpSN.flux, 
+                            tmpSN.fluxErr
+                            )
+                    if jCandidate.lcsDict[b].badCurve \
+                    or iCandidate.lcsDict[b].badCurve:
                         # print bcolors.WARNING
                         # print indent + \
                         #     "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
@@ -372,15 +390,15 @@ if __name__ == "__main__":
                         Pymatrix[i, j] += bigDistance
                         continue
 
-                    jElSize = catalog.candidates[j].lcsDict[b].size
+                    jElSize = jCandidate.lcsDict[b].size
                     # getting index of maximum 
                     # 
                     # shiftedMjd is = to zero at the r maximum
                     iElMax = np.argmin(np.abs(
-                        catalog.candidates[i].lcsDict[b].shiftedMjd
+                        iCandidate.lcsDict[b].shiftedMjd
                             ))
                     jElMax = np.argmin(np.abs(
-                        catalog.candidates[j].lcsDict[b].shiftedMjd
+                        jCandidate.lcsDict[b].shiftedMjd
                         ))
 
                     # maximum values are at opposite sides
@@ -390,8 +408,8 @@ if __name__ == "__main__":
                         # print bcolors.WARNING
                         # print indent + \
                         #     "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i, 
-                        #         catalog.candidates[i].SNID, b,
-                        #         j, catalog.candidates[j].SNID, b) + \
+                        #         iCandidate.SNID, b,
+                        #         j, jCandidate.SNID, b) + \
                         #         'Max at opposite sides: set big distance.'
                         # print bcolors.txtrst
                         continue
@@ -400,18 +418,18 @@ if __name__ == "__main__":
                     # and (jElMax not in set([0, jElSize-1]))):
                     # print indent + \
                     #     "{:<} {:<} {:<} -> {:<} {:<} {:<}".format(i,
-                    #         catalog.candidates[i].SNID, b,
-                    #         j, catalog.candidates[j].SNID, b)
+                    #         iCandidate.SNID, b,
+                    #         j, jCandidate.SNID, b)
 
-                    Pymatrix[i, j] += catalog.candidates[i].get_distance(
-                        catalog.candidates[j], 
+                    Pymatrix[i, j] += iCandidate.get_distance(
+                        jCandidate, 
                         b, reset_masks=True)
                     # else:
                     #     print bcolors.WARNING
                     #     print indent + \
                     #         "{:<} {:<} {:<} -> {:<} {:<} {:<} ".format(i, 
-                    #             catalog.candidates[i].SNID, b,
-                    #             j, catalog.candidates[j].SNID, b) + \
+                    #             iCandidate.SNID, b,
+                    #             j, jCandidate.SNID, b) + \
                     #         'Perform cross-correlation to estimate maximum ' + \
                     #         'position: {:<} | {:<}'.format(iElMax, jElMax) + \
                     #         ' - Temp fix: set big distance'
