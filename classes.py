@@ -243,29 +243,7 @@ class Supernova():
 
 class SupernovaFit():
     ccMjdMaxFlux = -100
-    # def __init__(self, SNID, 
-    #     SNType=None, RADeg=None, decDeg=None, MWEBV=None, 
-    #     zSpec=None, zSpecErr=None,
-    #     hostGalaxyID=None, zPhotHost=None, zPhotHostErr=None):
-    #     self.g = LightCurve("g")
-    #     self.r = LightCurve("r")
-    #     self.i = LightCurve("i")
-    #     self.z = LightCurve("z")
-    #     self.lcsDict = {"g":self.g, 
-    #                     "r":self.r, 
-    #                     "i":self.i, 
-    #                     "z":self.z}
-    #     self.peaked = False
-    #     self.SNID = SNID
-    #     self.SNType = SNType 
-    #     self.RADeg = RADeg 
-    #     self.decDeg = decDeg 
-    #     self.MWEBV = MWEBV 
-    #     self.zSpec = zSpec 
-    #     self.zSpecErr = zSpecErr
-    #     self.hostGalaxyID = hostGalaxyID 
-    #     self.zPhotHost = zPhotHost 
-    #     self.zPhotHostErr = zPhotHostErr 
+
     def __init__(self, supernova):
         # check on supernova type HAS TO BE ADDED
         self.g = LightCurve("g")
@@ -455,31 +433,20 @@ class SupernovaFit():
 
     def save_on_txt(self, fileName, survey="DES"):
         t = Table(masked=True)
-        # colNames = [["MJD_r_band", "{0:5.0f}"],
-        #             ["SHIFTED_MJD_r_band", "{0:5.0f}"],
-        #             ["FLUX_g", "{0:10.5f}"], ["FLUX_ERR_g", "{0:10.5f}"],
-        #             ["FLUX_r", "{0:10.5f}"], ["FLUX_ERR_r", "{0:10.5f}"],
-        #             ["FLUX_i", "{0:10.5f}"], ["FLUX_ERR_i", "{0:10.5f}"],
-        #             ["FLUX_z", "{0:10.5f}"], ["FLUX_ERR_z", "{0:10.5f}"]]
         colNames = [["MJD", "{0:9.3f}"], ["BAND", "{:s}"],
                     ["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"]]
 
-        # t["MJD_r_band"] = self.r.mjd
-        # t["SHIFTED_MJD_r_band"] = self.r.shiftedMjd
+        bandArr = np.empty(0)
+        mjd = np.empty(0)
+        flux = np.empty(0)
+        fluxErr = np.empty(0)
+        mjdArgsort = np.empty(0)
+
         for b in self.lcsDict.keys():
             if self.lcsDict[b].badCurve:
-                # t["FLUX_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
-                # t["FLUX_ERR_{:<1}".format(b)].mask = np.ones(self.r.mjd.size)
                 continue
-                # t["FLUX_{:<1}".format(b)].format = "{}"
-                # t["FLUX_ERR_{:<1}".format(b)].format = "{}"
-            # else:
-                # create an array per band, with same length of mjd_band
-                #
-                # and containing band name in each element (will be band flag)
-                #
-                # merge all arrays, order them by mjd, save on table
-            if 'bandArr' not in locals():
+
+            if bandArr.size == 0:
                 bandArr = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
                 bandArr[:] = b
                 mjd = self.lcsDict[b].mjd
@@ -520,9 +487,6 @@ class SupernovaFit():
         t["FLUX"] = flux
         t["FLUX_ERR"] = fluxErr
 
-                # t["FLUX_{:<1}".format(b)] = self.lcsDict[b].flux
-                # t["FLUX_ERR_{:<1}".format(b)] = self.lcsDict[b].fluxErr
-
         t.filled()
 
         fOut = open(fileName, 'w')
@@ -558,7 +522,6 @@ class SupernovaFit():
         fOut.write("# LIGHT CURVE FIT USING GAUSSIAN PROCESS\n")
         fOut.write("#\n")
         fOut.write("# NOBS: {:<}\n".format(mjd.size))
-
 
         ascii.write(t, output=fOut, delimiter='  ', 
             format='fixed_width_two_line')

@@ -206,7 +206,7 @@ if __name__ == "__main__":
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
-                                                parallel=False,
+                                                parallel=False, # this solves soome memory leakage. The execution speed is not affected...
                                                 test_length=False)#True)
                 sys.stdout = saveOut
                 fout.close()
@@ -287,24 +287,35 @@ if __name__ == "__main__":
         pbar = ProgressBar(widgets=widgets).start()
         for i in nopeakIdx:
             # READ DATA FROM FILE
+            tmpSN = util.get_sn_from_file(lsDir[i])
+            notPeaked = SupernovaFit(tmpSN)
+            for b in tmpSN.lcsDict.keys():
+                notPeaked.set_lightcurve(b, tmpSN.mj, tmpSN.flux, tmpSN.fluxErr)
             # print i
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
                 # READ DATA FROM FILE
+                tmpSN = util.get_sn_from_file(lsDir[j])
+                peaked = SupernovaFit(tmpSN)
+                for b in tmpSN.lcsDict.keys():
+                    notPeaked.set_lightcurve(b, tmpSN.mj, tmpSN.flux, 
+                        tmpSN.fluxErr
+                        )
+
                 ycorr = signal.correlate(
-                    catalog.candidates[i].normalized_flux('r'),
-                    catalog.candidates[j].normalized_flux('r')#,
+                    notPeaked.normalized_flux('r'),
+                    peaked.normalized_flux('r')#,
                     # mode='same'
                     )
                 xcorr = np.arange(ycorr.size)
                 lags = xcorr - (
-                    catalog.candidates[i].normalized_flux('r').size-1
+                    notPeaked.normalized_flux('r').size-1
                     )
                 distancePerLag = (
-                    catalog.candidates[i].r.shiftedMjd[-1] - \
-                    catalog.candidates[i].r.shiftedMjd[0])/float(
-                                        catalog.candidates[i].r.shiftedMjd.size
+                    notPeaked.r.shiftedMjd[-1] - \
+                    notPeaked.r.shiftedMjd[0])/float(
+                                        notPeaked.r.shiftedMjd.size
                                         )
                 offsets = -lags*distancePerLag
                 # raise SystemExit
@@ -314,10 +325,10 @@ if __name__ == "__main__":
                 k += 1
             pbar.update(i+1)
             # raise SystemExit
-            for b in catalog.candidates[i].lcsDict.keys():
-                catalog.candidates[i].lcsDict[b].shiftedMjd = np.ma.add(
-                    catalog.candidates[i].lcsDict[b].shiftedMjd, ccMax.mean())
-            catalog.candidates[i].ccMjdMaxFlux = ccMax.mean()
+            for b in notPeaked.lcsDict.keys():
+                notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
+                    notPeaked.lcsDict[b].shiftedMjd, ccMax.mean())
+            notPeaked.ccMjdMaxFlux = ccMax.mean()
             # print ccMax.mean()
             # print catalog.candidates[i].get_ccMjdMaxFlux()
             
