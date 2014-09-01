@@ -1,8 +1,11 @@
 import argparse
 import os
 from  os import path
+import commands
 import sys
 import time
+# garbage collector
+import gc
 
 import numpy as np
 from scipy import signal
@@ -24,6 +27,7 @@ ro.conversion.py2ri = numpy2ri
 from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar
 
 if __name__ == "__main__":
+    # gc.set_debug(gc.DEBUG_LEAK)
     # Parsing input from command line
     parser = argparse.ArgumentParser(
         description = "SN lightcurve fitter and classifier.",
@@ -100,6 +104,8 @@ if __name__ == "__main__":
     stop = 9
     indent = "          "
     os.system("clear")
+    peakIdx = np.empty(0)
+    nopeakIdx = np.empty(0)
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
     
@@ -148,16 +154,15 @@ if __name__ == "__main__":
         kern = GPy.kern.RBF(1)
     
         # Redirecting stderr output to file
-        saveErr = sys.stderr
-        ferr = open('error.log', 'w')
-        sys.stderr = ferr
+        # saveErr = sys.stderr
+        # ferr = open('error.log', 'w')
+        # sys.stderr = ferr
 
         # Fitting single lightcurves 
         #
         # THIS PIECE NEEDS TO BE PARALLELIZED
         # 
         # optimize_restarts parallel using multiprocessing
-        catalog = cls.CandidatesCatalog()
         
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
@@ -173,7 +178,7 @@ if __name__ == "__main__":
 
             # candidateFit = cls.SupernovaFit(candidate.SNID)
             candidateFit = cls.SupernovaFit(candidate)
-            for b in candidate.lcsDict.keys():
+            for b in candidate.lcsDict.keys(): 
 
                 phase = candidate.lcsDict[b].mjd
                 flux = candidate.lcsDict[b].flux
@@ -201,7 +206,8 @@ if __name__ == "__main__":
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
-                                                test_length=True)
+                                                parallel=False,
+                                                test_length=False)#True)
                 sys.stdout = saveOut
                 fout.close()
 
@@ -209,6 +215,7 @@ if __name__ == "__main__":
                     predMjd.reshape(predMjd.size),
                     predFlux.reshape(predFlux.size), 
                     predErr.reshape(predErr.size))
+                
                 
                 print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
@@ -224,16 +231,32 @@ if __name__ == "__main__":
                 candidateFit.save_on_txt(args.dirFit+os.sep+ \
                     path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
                 # catalog.add_candidate(candidateFit)
+            if candidateFit.peaked:
+                peakIdx = np.append(peakIdx, i)
+            else:
+                nopeakIdx = np.append(nopeakIdx, i)
 
-        sys.stderr = saveErr
-        ferr.close()
+        # sys.stderr = saveErr
+        # ferr.close()
+        np.savetxt('peaked.dat', peakIdx,
+            header='Indexes of fitted LCs with r maximum.', fmt='%d')
+        np.savetxt('nopeaked.dat', nopeakIdx,
+            header='Indexes of fitted LCs without an r maximum.', fmt='%d')
         if args.fitFile:
             util.dump_pkl(args.fitFile, catalog)
+
         # if args.fitTraining:
         #     util.dump_pkl('tmp_train_catalog.pkl', catalog)
         
 
     if args.distMatrix:
+        # getting file list from directory
+        #
+        # File are sorted by SNID
+        lsDir = commands.getoutput(args.dirFit+os.sep)
+        lsDir.sort()
+        peakIdx = np.loadtxt('peaked.dat')
+        nopeakIdx = np.loadtxt('nopeaked.dat')
         """Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
@@ -242,9 +265,9 @@ if __name__ == "__main__":
             "[2] * Calculate distances between lightcurves ..." + \
             bcolors.txtrst
 
-        if not args.fit:
-            print indent + 'Loading catalog from dump file ...'
-            catalog = util.open_pkl('tmp_catalog.pkl')
+        # if not args.fit:
+        #     print indent + 'Loading catalog from dump file ...'
+        #     catalog = util.open_pkl('tmp_catalog.pkl')
             # catalog = util.open_pkl('tmp_train_catalog.pkl')
             
         bigDistance = 1.01
@@ -252,8 +275,8 @@ if __name__ == "__main__":
         # Importing R package diffusionMap
         diffusionMap = importr('diffusionMap')
         
-        peakIdx = np.nonzero(catalog.peaked)[0]
-        nopeakIdx = np.where(catalog.peaked == False)[0]
+        # peakIdx = np.nonzero(catalog.peaked)[0]
+        # nopeakIdx = np.where(catalog.peaked == False)[0]
 
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
@@ -263,10 +286,12 @@ if __name__ == "__main__":
                ' ', ETA()]
         pbar = ProgressBar(widgets=widgets).start()
         for i in nopeakIdx:
+            # READ DATA FROM FILE
             # print i
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
+                # READ DATA FROM FILE
                 ycorr = signal.correlate(
                     catalog.candidates[i].normalized_flux('r'),
                     catalog.candidates[j].normalized_flux('r')#,
