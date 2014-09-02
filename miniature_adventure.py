@@ -104,7 +104,7 @@ else:
     
 if __name__ == "__main__":
     start = 0
-    stop = 9
+    stop = 25
     indent = "          "
     os.system("clear")
     peakIdx = np.empty(0)
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
                                                 parallel=False, # this solves soome memory leakage. The execution speed is not affected...
-                                                test_length=False)#True)
+                                                test_length=True)
                 sys.stdout = saveOut
                 fout.close()
 
@@ -280,8 +280,12 @@ if __name__ == "__main__":
         lsDirFit.sort()
         lsDirFit.remove('')
         
-        peakIdx = np.loadtxt('peaked.dat')
-        nopeakIdx = np.loadtxt('nopeaked.dat')
+        peakIdx = np.loadtxt('peaked.dat', dtype=np.int)
+        tmp = np.loadtxt('nopeaked.dat', dtype=np.int)
+        if tmp.size == 1:
+            nopeakIdx = np.asarray([tmp])
+        else:    
+            nopeakIdx = np.asarray(tmp)
 
         print "\n" + indent + bcolors.undwht + \
             "[2] * Calculate distances between lightcurves ..." + \
@@ -310,7 +314,9 @@ if __name__ == "__main__":
             READ DATA FROM FILE 
             in Supernova object
             """
-            tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[i])
+            tmpSN = util.get_sn_from_file(
+                args.dirFit+os.sep+lsDirFit[i]
+                )
             """
             create SupernovaFit object
             """
@@ -321,14 +327,20 @@ if __name__ == "__main__":
                     tmpSN.lcsDict[l].flux,
                     tmpSN.lcsDict[l].fluxErr
                     )
-            
+            """
+            Shifting mjds in not-peaked
+            """
+            notPeaked.shift_mjds()
+
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
                 """
                 READ DATA FROM FILE
                 """
-                tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[j])
+                tmpSN = util.get_sn_from_file(
+                    args.dirFit+os.sep+lsDirFit[j]
+                    )
                 peaked = cls.SupernovaFit(tmpSN)
                 for l in tmpSN.lcsDict.keys():
                     peaked.set_lightcurve(l,
@@ -336,6 +348,10 @@ if __name__ == "__main__":
                         tmpSN.lcsDict[l].flux, 
                         tmpSN.lcsDict[l].fluxErr
                         )
+                """
+                Shifting mjds in peaked
+                """
+                peaked.shift_mjds()
 
                 ycorr = signal.correlate(
                     notPeaked.normalized_flux('r'),
@@ -536,15 +552,11 @@ if __name__ == "__main__":
                 cwd=args.dirFit+os.sep
                 )
             lsDirFit = p.stdout.read()
-            lsDirFit = lsDir.split('\n')
+            lsDirFit = lsDirFit.split('\n')
             lsDirFit.sort()
             lsDirFit.remove('')
 
         if 'catalog' not in globals():
-            # print indent + 'Loading catalog from dump file ...'
-            # catalog = util.open_pkl('tmp_catalog.pkl')
-            # # catalog = util.open_pkl('tmp_train_catalog.pkl')
-            # print indent + '... done!'
             vecCandidates = np.genfromtxt(
                 args.dirData+os.sep+fNameCandidatesList, dtype=None)
            
@@ -552,7 +564,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = nrows*ncols # 0
+        offset = 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -630,8 +642,7 @@ if __name__ == "__main__":
                         fit.ccMjdMaxFlux
                         )
                 fit_b = fit.lcsDict[b]
-                # fit = catalog.candidates[offset+i].lcsDict[b]
-                # fit.shiftedMjd.mask = np.zeros(fit.shiftedMjd.size) #Useless anyway?
+
                 fit_r = fit.lcsDict['r']
                 
                 if c[b] > 4:
@@ -641,46 +652,46 @@ if __name__ == "__main__":
                 xlim = dictAx[b][r[b], c[b]].get_xlim()
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
                 if not data.badCurve:
-                    if catalog.candidates[offset+i].peaked:
+                    if fit.peaked:
                         data.set_shifted_mjd(
                             fit_r.mjd[fit_r.max_flux_index])
                     else:
                         data.set_shifted_mjd(
                             fit_r.mjd[fit_r.max_flux_index])
-                        data.shiftedMjd += catalog.candidates[offset+i].ccMjdMaxFlux
+                        data.shiftedMjd += fit.ccMjdMaxFlux
 
                     bottom = data.flux.min() - np.median(data.fluxErr)
                     up = data.flux.max() + np.median(data.fluxErr)
                     dictAx[b][r[b], c[b]].set_ylim(bottom, up)
 
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux+fit.fluxErr, fit.flux, 
-                        where=(fit.flux+fit.fluxErr)>fit.flux,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux+fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+fit_b.fluxErr)>fit_b.flux,
                         facecolor='red', alpha=0.4, linewidth=0.5)
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux-fit.fluxErr, fit.flux, 
-                        where=(fit.flux-fit.fluxErr)<fit.flux,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux-fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux-fit_b.fluxErr)<fit_b.flux,
                         facecolor='red', alpha=0.4, linewidth=0.5)
 
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux+2*fit.fluxErr, fit.flux, 
-                        where=(fit.flux+2*fit.fluxErr)>fit.flux+fit.fluxErr,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux+2*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+2*fit_b.fluxErr)>fit_b.flux+fit_b.fluxErr,
                         facecolor='red', alpha=0.2, linewidth=0.5)
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux-2*fit.fluxErr, fit.flux, 
-                        where=(fit.flux-2*fit.fluxErr)<fit.flux+fit.fluxErr,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux-2*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux-2*fit_b.fluxErr)<fit_b.flux+fit_b.fluxErr,
                         facecolor='red', alpha=0.2, linewidth=0.5)
 
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux+3*fit.fluxErr, fit.flux, 
-                        where=(fit.flux+3*fit.fluxErr)>fit.flux+2*fit.fluxErr,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux+3*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+3*fit_b.fluxErr)>fit_b.flux+2*fit_b.fluxErr,
                         facecolor='red', alpha=0.1, linewidth=0.5)
-                    dictAx[b][r[b], c[b]].fill_between(fit.shiftedMjd, 
-                        fit.flux-3*fit.fluxErr, fit.flux, 
-                        where=(fit.flux-3*fit.fluxErr)<fit.flux-2*fit.fluxErr,
+                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                        fit_b.flux-3*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux-3*fit_b.fluxErr)<fit_b.flux-2*fit_b.fluxErr,
                         facecolor='red', alpha=0.1, linewidth=0.5)
 
-                    dictAx[b][r[b], c[b]].plot(fit.shiftedMjd, fit.flux, 
+                    dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
                         color='#7f0000', 
                         linewidth=2)
 
@@ -691,27 +702,18 @@ if __name__ == "__main__":
                         data.fluxErr, fmt=None, color='black', ecolor='black')
 
                     
-                    if not catalog.candidates[offset+i].peaked:
+                    if not fit.peaked:
                         pass
-                        # print catalog.candidates[offset+i].ccMjdMaxFlux, \
-                        #     offset+i
-                        # draw an arrow on hestimated max position
-                        # print data.shiftedMjd[data.shiftedMjd==0]
-                        # mjdMax = data.shiftedMjd[data.shiftedMjd==0]
-                        # print mjdMax
-                        # dictAx[b][r[b], c[b]].annotate('', 
-                        #     xy=(mjdMax, 0.7*ylim[1]), xycoords='data',
-                        #     xytext=(0, 30), textcoords='offset points',
-                        #     arrowprops=dict(arrowstyle='->', color='green')                            
-                        #     )
 
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
                 else:
-                    dictAx[b][r[b], c[b]].annotate(
-                        str(candidate.SNID) + " BAD CURVE",
-                        (np.mean(xlim), np.mean(ylim))
-                        )
+                    label = str(candidate.SNID)+" BAD CURVE"
+                    dictAx[b][r[b], c[b]].plot([0, 1], [0, 1], color='red',
+                        label=label)
+                    dictAx[b][r[b], c[b]].plot([0, 1], [1, 0], color='red')
+                    dictAx[b][r[b], c[b]].legend(
+                        loc='best', framealpha=0.3, fontsize='10')
                 c[b] += 1
                 
         for b in dictFig.keys():
