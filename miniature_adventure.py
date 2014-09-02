@@ -444,8 +444,8 @@ if __name__ == "__main__":
                     jCandidate.shift_mjds()
                     if jCandidate.peaked == False:
                         jCandidate.lcsDict[b].shiftedMjd = np.ma.add(
-                                iCandidate.lcsDict[b].shiftedMjd, 
-                                iCandidate.ccMjdMaxFlux
+                                jCandidate.lcsDict[b].shiftedMjd, 
+                                jCandidate.ccMjdMaxFlux
                                 )
                     if jCandidate.lcsDict[b].badCurve \
                     or iCandidate.lcsDict[b].badCurve:
@@ -599,25 +599,40 @@ if __name__ == "__main__":
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + vecCandidates[offset+i])
 
-            for b in dictAx.keys():
-                data = candidate.lcsDict[b]
-                """
-                reading fit data from file
-                """
-                tmpSN = util.get_sn_from_file(
+            """
+            reading fit data from file
+            """
+            tmpSN = util.get_sn_from_file(
                     args.dirFit+os.sep+lsDirFit[offset+i]
                     )
-                fit = cls.SupernovaFit(tmpSN)
-                for l in tmpSN.lcsDict.keys():
-                    fit.set_lightcurve(l,
-                        tmpSN.lcsDict[l].mjd,
-                        tmpSN.lcsDict[l].flux, 
-                        tmpSN.lcsDict[l].fluxErr
-                        )
+            """
+            Initializing SupernovaFit object
+            """
+            fit = cls.SupernovaFit(tmpSN)
+            for l in tmpSN.lcsDict.keys():
+                fit.set_lightcurve(l,
+                    tmpSN.lcsDict[l].mjd,
+                    tmpSN.lcsDict[l].flux, 
+                    tmpSN.lcsDict[l].fluxErr
+                    )
+            fit.shift_mjds()
+            
 
+            for b in dictAx.keys():
+                data = candidate.lcsDict[b]
+
+                """
+                Fixing shiftedMjd for not-peaked LCs
+                """
+                if fit.peaked == False:
+                    fit.lcsDict[b].shiftedMjd = np.ma.add(
+                        fit.lcsDict[b].shiftedMjd, 
+                        fit.ccMjdMaxFlux
+                        )
+                fit_b = fit.lcsDict[b]
                 # fit = catalog.candidates[offset+i].lcsDict[b]
-                fit.shiftedMjd.mask = np.zeros(fit.shiftedMjd.size)
-                fit_r = catalog.candidates[offset+i].lcsDict['r']
+                # fit.shiftedMjd.mask = np.zeros(fit.shiftedMjd.size) #Useless anyway?
+                fit_r = fit.lcsDict['r']
                 
                 if c[b] > 4:
                     c[b] = 0
