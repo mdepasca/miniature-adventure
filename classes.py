@@ -544,8 +544,8 @@ class SupernovaFit():
             fOut.write("HOST_GALAXY_PHOTO-Z:  {:>6.4f} +- {:>6.4f}\n".format(
                 self.zPhotHost, self.zPhotHostErr
                 ))
-        if self.ccMjdMaxFlux != 0:
-            fOut.write("MJD_MAX_FLUX-CCF:  {:>9.3f}".format(self.ccMjdMaxFlux))
+        # if self.ccMjdMaxFlux != 0:
+        fOut.write("MJD_MAX_FLUX-CCF:  {:>9.3f}".format(self.ccMjdMaxFlux))
         fOut.write("\n\n\n\n")
         fOut.write("# ======================================\n")
         fOut.write("# LIGHT CURVE FIT USING GAUSSIAN PROCESS\n")
