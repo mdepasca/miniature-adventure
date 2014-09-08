@@ -292,10 +292,7 @@ if __name__ == "__main__":
             bcolors.txtrst
 
         bigDistance = 1.01
-        
-        # Importing R package diffusionMap
-        diffusionMap = importr('diffusionMap')
-        
+                
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
