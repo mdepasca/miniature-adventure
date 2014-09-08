@@ -103,8 +103,8 @@ else:
     pass
     
 if __name__ == "__main__":
-    start = 0
-    stop = 25
+    start = 13000
+    stop = 15000
     indent = "          "
     os.system("clear")
     peakIdx = np.empty(0)
@@ -299,16 +299,17 @@ if __name__ == "__main__":
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
-        widgets = [indent, Percentage(), ' ', 
+        widgets = [indent, Percentage(), ' ',
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
-        pbar = ProgressBar(widgets=widgets).start()
+        pbar = ProgressBar(widgets=widgets, maxval=len(nopeakIdx)).start()
 
         """
 
         PERFORMING CROSS-CORRELATION 
 
         """
+        z = 0 # goes on nopeakIdx to index the progress bar
         for i in nopeakIdx:
             """
             READ DATA FROM FILE 
@@ -373,7 +374,8 @@ if __name__ == "__main__":
 
                 # print ccMax.size
                 k += 1
-            pbar.update(i+1)
+            pbar.update(z+1)
+            z += 1
             # raise SystemExit
             # for b in notPeaked.lcsDict.keys():
             #     notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
