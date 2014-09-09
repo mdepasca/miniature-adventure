@@ -3,6 +3,7 @@ import os
 from  os import path
 import subprocess
 import sys
+import socket
 import time
 # garbage collector
 import gc
@@ -103,8 +104,8 @@ else:
     pass
     
 if __name__ == "__main__":
-    start = 13000
-    stop = 15000
+    start = 0
+    stop = 5
     indent = "          "
     os.system("clear")
     peakIdx = np.empty(0)
@@ -245,15 +246,38 @@ if __name__ == "__main__":
 
         # sys.stderr = saveErr
         # ferr.close()
-        np.savetxt('peaked.dat', peakIdx,
+        whileOn = True
+        i = 0
+        filePath = 'peaked_{:<}.dat'.format(socket.gethostname())
+        while whileOn:
+            if path.exists(filePath):
+                    i += 1
+                    pklIdx = filePath.rfind('.dat')
+                    filePath = filePath[0:6] + '_{:<}({:<d}).txt'.format(
+                        socket.gethostname(),
+                        i
+                        )
+            else:
+                whileOn = False    
+        np.savetxt(filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
-        np.savetxt('nopeaked.dat', nopeakIdx,
-            header='Indexes of fitted LCs without an r maximum.', fmt='%d')
-        # if args.fitFile:
-        #     util.dump_pkl(args.fitFile, catalog)
 
-        # if args.fitTraining:
-        #     util.dump_pkl('tmp_train_catalog.pkl', catalog)
+        whileOn = True
+        i = 0
+        filePath = 'nopeaked_{:<}.dat'.format(socket.gethostname())
+        while whileOn:
+            if path.exists(filePath):
+                    i += 1
+                    pklIdx = filePath.rfind('.dat')
+                    filePath = filePath[0:8] + '_{:<}({:<d}).txt'.format(
+                        socket.gethostname(),
+                        i
+                        )
+            else:
+                whileOn = False    
+        np.savetxt(filePath, nopeakIdx,
+            header='Indexes of fitted LCs without an r maximum.', fmt='%d')
+        
         
     """
     
