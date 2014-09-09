@@ -253,7 +253,7 @@ if __name__ == "__main__":
             if path.exists(filePath):
                     i += 1
                     pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:6] + '_{:<}({:<d}).txt'.format(
+                    filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
                         socket.gethostname(),
                         i
                         )
@@ -269,7 +269,7 @@ if __name__ == "__main__":
             if path.exists(filePath):
                     i += 1
                     pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:8] + '_{:<}({:<d}).txt'.format(
+                    filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
                         socket.gethostname(),
                         i
                         )
@@ -277,7 +277,7 @@ if __name__ == "__main__":
                 whileOn = False    
         np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
-        
+
         
     """
     
@@ -304,8 +304,10 @@ if __name__ == "__main__":
         lsDirFit.sort()
         lsDirFit.remove('')
         
-        peakIdx = np.loadtxt('peaked.dat', dtype=np.int)
-        tmp = np.loadtxt('nopeaked.dat', dtype=np.int)
+        filePath = 'peaked_{:<}_FULL.dat'.format(socket.gethostname())
+        peakIdx = np.loadtxt(filePath, dtype=np.int)
+        filePath = 'nopeaked_{:<}_FULL.dat'.format(socket.gethostname())
+        tmp = np.loadtxt(filePath, dtype=np.int)
         if tmp.size == 1:
             nopeakIdx = np.asarray([tmp])
         else:    
