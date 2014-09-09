@@ -200,6 +200,81 @@ def flux_error_to_mag_error(fluxErr, flux):
 
     return magErr
 
+def rewrite_file(fileName):
+    """Rewrites files produced after fit of old code version.
+    It removes `#` at beginning of the first 10 lines, leaving as it is the
+    first line.
+    If necessary it adds `MJD_MAX_FLUX-CCF:      0.000`.
+    Adds trivial column `OBS`.
+    """
+
+    inFile = file(fileName, 'r')
+    lines = inFile.readlines()
+    inFile.close()
+
+    outFile = open(fileName, 'w')
+
+    line = ''
+    for i in range(len(lines)):
+        if i == 0:
+            outFile.write(lines[i])
+            continue
+        if i > 0 and i < 10:
+            if i == 7 and ('REDSHIFT_SPEC:' not in lines[i]):
+                line = 'REDSHIFT_SPEC: -9.0000 +- 9.0000\n'
+                outFile.write(line)    
+            
+            line = lines[i]
+            line = line[2:]
+            outFile.write(line)
+            continue
+
+        if i == 10:
+            if lines[i] != '\n': 
+                outFile.write(lines[i])
+            else:
+                line = 'MJD_MAX_FLUX-CCF:      0.000\n'
+                outFile.write(line)
+                outFile.write(lines[i])
+                print i, lines[i]
+            continue
+
+        # empty space between details and table
+        if lines[i] == '\n' and i > 10:
+            outFile.write(lines[i])
+            print i, lines[i]
+            continue
+
+        if lines[i][0] == '#':
+            outFile.write(lines[i])
+            continue
+        
+        if 'MJD' in lines[i]:
+            if 'FIELD' not in lines[i]:
+                line = lines[i][0:15] + '   FIELD' + lines[i][15:]
+            if 'OBS' not in lines[i]:
+                line = lines[i]
+                line =  ' OBS  ' + line
+            outFile.write(line)
+            continue
+
+        if '----' in lines[i]:
+            line = lines[i][0:15] + '  ------' + lines[i][15:]
+            line = '----  ' + line
+            outFile.write(line)
+            continue
+
+
+        line = lines[i][0:15] + '  NULL  ' + lines[i][15:]
+        line = 'OBS:  ' + line
+        outFile.write(line)
+
+    outFile.close()
+
+
+
+
+
 
 def mag_to_flux(mag, limMag=False):
     """
