@@ -517,7 +517,7 @@ if __name__ == "__main__":
 
         ndim = ro.r.attributes(Rmatrix)[0][0]
         dmap = diffusionMap.diffuse(Rmatrix, neigen=5)
-        util.dump_pkl('tmp_diffusion_map.pkl', dmap)
+        util.dump_pkl('diffusion_map.pkl', dmap)
         
 
     """
