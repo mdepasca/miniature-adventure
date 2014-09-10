@@ -246,11 +246,11 @@ if __name__ == "__main__":
                 # candidateFit.shift_mjds()
                 candidateFit.save_on_txt(args.dirFit+os.sep+ \
                     path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
-                # catalog.add_candidate(candidateFit)
-            if candidateFit.peaked:
-                peakIdx = np.append(peakIdx, i)
-            else:
-                nopeakIdx = np.append(nopeakIdx, i)
+                
+                if candidateFit.peaked:
+                    peakIdx = np.append(peakIdx, i)
+                else:
+                    nopeakIdx = np.append(nopeakIdx, i)
 
         # sys.stderr = saveErr
         # ferr.close()
