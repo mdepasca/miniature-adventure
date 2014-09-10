@@ -347,6 +347,8 @@ if __name__ == "__main__":
             # tmpSN = util.get_sn_from_file(
             #     args.dirFit + os.sep + lsDirFit[i]
             #     )
+            if tmpSN.r.badCurve:
+                continue
             """
             create SupernovaFit object
             """
@@ -373,6 +375,8 @@ if __name__ == "__main__":
                 # tmpSN = util.get_sn_from_file(
                 #     args.dirFit + os.sep + lsDirFit[j]
                 #     )
+                if tmpSN.r.badCurve:
+                    continue
                 peaked = cls.SupernovaFit(tmpSN)
                 for l in tmpSN.lcsDict.keys():
                     peaked.set_lightcurve(l,
