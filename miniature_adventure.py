@@ -50,6 +50,14 @@ if __name__ == "__main__":
         )
     
     parser.add_argument(
+        "--cross-correlation", dest="crossCor",
+        action="store_true",
+        help="Performs cross correlation between non peaked lcs (with maximum in \
+            r-band at one of the MJD extremes) and all the peaked lcs. Produces \
+            an estimate for maximum in r-band. VERY TIME CONSUMING."
+        )
+
+    parser.add_argument(
         "--distance-matrix", dest="distMatrix",
         action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
@@ -278,21 +286,14 @@ if __name__ == "__main__":
         np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
+    """
+
+    PERFORMING CROSS-CORRELATION 
+
+    """
+
         
-    """
-    
-    Calculating distance matrix
-    
-    """
-
-    if args.distMatrix:
-        """
-        Calculate distance between fitted lightcurves.
-        Distance values are saved in a R matrix. This will be used by the R 
-        package `diffusionMap` through rpy2 Python package.
-        """
-
-
+    if args.crossCor:
         """
         getting file list from directory
         File are sorted by SNID.
@@ -326,20 +327,15 @@ if __name__ == "__main__":
         print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
-        widgets = [indent, Percentage(), ' ',
-               Bar(marker='#',left='[',right=']'),
-               ' ', ETA()]
-
-        """
-
-        PERFORMING CROSS-CORRELATION 
-
-        """
         z = 0 # goes on nopeakIdx to index the progress bar
         start = 0
         end = 825
         for i in nopeakIdx[start:end]:
             z = 0
+            ccIndent = "{: ^10d}".format(i)#  "          "
+            widgets = [ccIndent, Percentage(), ' ',
+               Bar(marker='#',left='[',right=']'),
+               ' ', ETA()]
             pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
             #print 'Unpeaked {:<d}'.format(i)
             """
@@ -430,17 +426,25 @@ if __name__ == "__main__":
             """
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
-        pbar.finish()   
-        print 'CC ended!'
-        raise SystemExit
+            pbar.finish()
+        # print 'CC ended!'
+        # raise SystemExit
         # print indent + '... done!'
 
+    """
+
+    CALCULATING DISTANCE MATRIX
+
+    """
+    if args.distMatrix:
         """
-
-        CALCULATING DISTANCE MATRIX
-
+        Calculate distance between fitted lightcurves.
+        Distance values are saved in a R matrix. This will be used by the R 
+        package `diffusionMap` through rpy2 Python package.
         """
-
+        widgets = [indent, Percentage(), ' ',
+               Bar(marker='#',left='[',right=']'),
+               ' ', ETA()]
         print indent + 'Calculating distances ...'
         for b in bands:
             # creating numpy matrix
