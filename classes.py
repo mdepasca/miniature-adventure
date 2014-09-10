@@ -212,7 +212,7 @@ class Supernova():
                         elif passband == "z":
                             self.z.add_data_point(mjd, flux, fluxErr)
                         else:
-                            print "Filter not recognized: {:<5}".format(passband)
+                            print "Filter not recognized: {:<}".format(passband)
                 elif tag == "SNID":
                     self.SNID = int(data[0])
                 elif tag == "SNTYPE":
@@ -281,16 +281,19 @@ class SupernovaFit():
         self.lcsDict[band].fluxErr = np.ma.asarray(fluxErr, 
             dtype=np.float32)
 
-        if (band == 'r') \
-            and self.r.max_flux_index not in set([0, -1, self.r.size-1]):
-                self.set_peaked()
-
-        # setting the masks
-        self.lcsDict[band].mjd.mask = np.zeros(mjd.size)
-        self.lcsDict[band].flux.mask = np.zeros(flux.size)
-        self.lcsDict[band].fluxErr.mask = np.zeros(fluxErr.size)
-
         self.lcsDict[band].set_badCurve()
+
+        if not self.lcsDict[badCurve].badCurve:
+            if (band == 'r') \
+                and self.r.max_flux_index not in set([0, -1, self.r.size-1]):
+                    self.set_peaked()
+
+            # setting the masks
+            self.lcsDict[band].mjd.mask = np.zeros(mjd.size)
+            self.lcsDict[band].flux.mask = np.zeros(flux.size)
+            self.lcsDict[band].fluxErr.mask = np.zeros(fluxErr.size)
+
+
 
     def shift_mjds(self):
         """ Shifts mjd attribute of each lc according to flux maximum 
