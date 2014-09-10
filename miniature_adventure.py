@@ -431,7 +431,8 @@ if __name__ == "__main__":
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
         pbar.finish()   
-        # raise SystemExit
+        print 'CC ended!'
+        raise SystemExit
         # print indent + '... done!'
 
         """
