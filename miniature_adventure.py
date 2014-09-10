@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
                 # print ccMax.size
                 k += 1
-                print 
+                
                 pbar.update(z+1)
                 z += 1
             # raise SystemExit
