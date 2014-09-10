@@ -200,6 +200,17 @@ def flux_error_to_mag_error(fluxErr, flux):
 
     return magErr
 
+
+def index_to_filename(indexList, inFileName, outFileName):
+    """Filters inFileName to outFileName according to indexList
+    """
+    inFile = file(inFileName, "r")
+    lines = inFile.readlines()
+    inFile.close()
+    outFileList = lines[indexList]
+    np.savetxt(outFileName, outFileList)
+
+
 def rewrite_file(fileName):
     """Rewrites files produced after fit of old code version.
     It removes `#` at beginning of the first 10 lines, leaving as it is the
