@@ -283,7 +283,7 @@ class SupernovaFit():
 
         self.lcsDict[band].set_badCurve()
 
-        if not self.lcsDict[badCurve].badCurve:
+        if not self.lcsDict[band].badCurve:
             if (band == 'r') \
                 and self.r.max_flux_index not in set([0, -1, self.r.size-1]):
                     self.set_peaked()
