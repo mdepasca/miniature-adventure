@@ -75,12 +75,12 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--training-directory", dest="dirData",
-        default="train_data"  +  os.sep  +  "DES_BLIND + HOSTZ",
+        default="train_data" + os.sep + "DES_BLIND+HOSTZ",
         help="Path to directory containing training data.")
 
     parser.add_argument(
         "--fit-directory", dest="dirFit",
-        default="train_data"  +  os.sep  +  "DES_BLIND + HOSTZ_FIT",
+        default="train_data" + os.sep + "DES_BLIND+HOSTZ_FIT",
         help="Path to directory containing fitted data.")
 
     parser.add_argument(
@@ -117,17 +117,17 @@ if __name__ == "__main__":
     # modelList = np.zeros(0, dtype=np.object)
 
     # should be possible to change the next two variables
-    # args.dirData = "train_data"  +  os.sep  +  "DES_BLIND + HOSTZ"
-    # args.dirFit = "fit_data"  +  os.sep
-    fNameCandidatesList = "DES_BLIND + HOSTZ.LIST"
+    # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
+    # args.dirFit = "fit_data" + os.sep
+    fNameCandidatesList = "DES_BLIND+HOSTZ.LIST"
 
-    print indent  +  bcolors.bldpur  +  "* * * * * * * * * * * * * * *"
-    print indent  +  "*    Miniature Adventure    *"
-    print indent  +  "*    -------------------    *"
-    print indent  +  "*    lightcurves fitting    *"
-    print indent  +  "*             and           *"
-    print indent  +  "*      SN classification    *"
-    print indent  +  "* * * * * * * * * * * * * * *"  +  bcolors.txtrst
+    print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
+    print indent + "*    Miniature Adventure    *"
+    print indent + "*    -------------------    *"
+    print indent + "*    lightcurves fitting    *"
+    print indent + "*             and           *"
+    print indent + "*      SN classification    *"
+    print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
 
@@ -139,24 +139,24 @@ if __name__ == "__main__":
     if args.fit or args.fitTraining:
         # Relevant input data
         if args.fit:
-            print "\n"  +  indent  +  "[1] * Fit lightcurves ..."
+            print "\n" + indent + "[1] * Fit lightcurves ..."
         if args.fitTraining:
-            print "\n"  +  indent  +  "[1] * Fit lightcurves from training set ..."
+            print "\n" + indent + "[1] * Fit lightcurves from training set ..."
 
-        print "\n"  +  indent  +  \
-            "Data directory: "  +  os.curdir  +  args.dirData  +  os.sep
-        print "\n"  +  indent  +  "List of candidates contained in: " \
-             +  os.curdir  +  args.dirData  +  os.sep  +  fNameCandidatesList
+        print "\n" + indent + \
+            "Data directory: " + os.curdir + args.dirData + os.sep
+        print "\n" + indent + "List of candidates contained in: " \
+            + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
         vecCandidates = np.genfromtxt(
-                args.dirData + os.sep + fNameCandidatesList, dtype=None)
+                args.dirData+os.sep+fNameCandidatesList, dtype=None)
         # tenPercent = vecCandidates.size / 10
         # const = 0
-        print "\n"  +  indent \
-             +  "Number of candidates = {:<d}".format(vecCandidates.size)
+        print "\n" + indent \
+            + "Number of candidates = {:<d}".format(vecCandidates.size)
 
-        print "\n"  +  indent \
-             +  "Data are fitted using GP with Radial Basis Function kernel."
+        print "\n" + indent \
+            + "Data are fitted using GP with Radial Basis Function kernel."
 
         # kern = GPy.kern.RatQuad(1)
         kern = GPy.kern.RBF(1)
@@ -174,7 +174,7 @@ if __name__ == "__main__":
         
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
-                args.dirData  +  os.sep  +  vecCandidates[i]
+                args.dirData + os.sep + vecCandidates[i]
                 )
 
             if args.fitTraining:
@@ -182,7 +182,7 @@ if __name__ == "__main__":
                 if candidate.SNTypeInt == -9:
                     continue
                 else:
-                    print indent  +  'SN type code {:<}'.format(candidate.SNTypeInt) 
+                    print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
 
             # candidateFit = cls.SupernovaFit(candidate.SNID)
             candidateFit = cls.SupernovaFit(candidate)
@@ -198,8 +198,8 @@ if __name__ == "__main__":
 
                 if (candidate.lcsDict[b].badCurve) or (flux.size <= 3):
                     candidateFit.lcsDict[b].badCurve = True
-                    print indent  +  bcolors.FAIL  +  \
-                        "{:<} {:<} {:<}".format(i, candidate.SNID, b)  +  \
+                    print indent + bcolors.FAIL + \
+                        "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
                         bcolors.txtrst
                     continue
 
@@ -225,19 +225,19 @@ if __name__ == "__main__":
                     predErr.reshape(predErr.size))
                 
                 
-                print indent  +  \
+                print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                 # else:
                 #     candidateFit.lcsDict[b].badCurve = True
-                #     print indent  +  bcolors.FAIL  +  \
-                #         "{:<} {:<} {:<}".format(i, candidate.SNID, b)  +  \
+                #     print indent + bcolors.FAIL + \
+                #         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
                 #         bcolors.txtrst
                                 
             # Setting phase 0 point to phase or r maximum
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
-                candidateFit.save_on_txt(args.dirFit + os.sep +  \
-                    path.splitext(vecCandidates[i])[0] + "_FIT.DAT")
+                candidateFit.save_on_txt(args.dirFit+os.sep+ \
+                    path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
                 # catalog.add_candidate(candidateFit)
             if candidateFit.peaked:
                 peakIdx = np.append(peakIdx, i)
@@ -251,9 +251,9 @@ if __name__ == "__main__":
         filePath = 'peaked_{:<}.dat'.format(socket.gethostname())
         while whileOn:
             if path.exists(filePath):
-                    i  + = 1
+                    i += 1
                     pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:6]  +  '_{:<}({:<d}).dat'.format(
+                    filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
                         socket.gethostname(),
                         i
                         )
@@ -267,9 +267,9 @@ if __name__ == "__main__":
         filePath = 'nopeaked_{:<}.dat'.format(socket.gethostname())
         while whileOn:
             if path.exists(filePath):
-                    i  + = 1
+                    i += 1
                     pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:8]  +  '_{:<}({:<d}).dat'.format(
+                    filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
                         socket.gethostname(),
                         i
                         )
@@ -301,8 +301,8 @@ if __name__ == "__main__":
         dirData. It is then filtered using the above variables.
         """
         p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData + os.sep)
-            # cwd=args.dirFit + os.sep)
+            cwd=args.dirData+os.sep)
+            # cwd=args.dirFit+os.sep)
         lsDirData = p.stdout.read()
         lsDirData = lsDirData.split('\n')
         lsDirData.sort()
@@ -317,13 +317,13 @@ if __name__ == "__main__":
         else:    
             nopeakIdx = np.asarray(tmp)
 
-        print "\n"  +  indent  +  bcolors.undwht  +  \
-            "[2] * Calculate distances between lightcurves ..."  +  \
+        print "\n" + indent + bcolors.undwht + \
+            "[2] * Calculate distances between lightcurves ..." + \
             bcolors.txtrst
 
         bigDistance = 1.01
                 
-        print '\n'  +  indent  +  \
+        print '\n' + indent + \
         'Performing cross-correlation on non peaked lightcurves ...'
 
         widgets = [indent, Percentage(), ' ',
@@ -345,7 +345,7 @@ if __name__ == "__main__":
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             tmpSN = util.get_sn_from_file(filePath)
             # tmpSN = util.get_sn_from_file(
-            #     args.dirFit + os.sep + lsDirFit[i]
+            #     args.dirFit+os.sep+lsDirFit[i]
             #     )
             if tmpSN.r.badCurve:
                 continue
@@ -373,7 +373,7 @@ if __name__ == "__main__":
                 filePath = args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 tmpSN = util.get_sn_from_file(filePath)
                 # tmpSN = util.get_sn_from_file(
-                #     args.dirFit + os.sep + lsDirFit[j]
+                #     args.dirFit+os.sep+lsDirFit[j]
                 #     )
                 if tmpSN.r.badCurve:
                     continue
@@ -408,9 +408,9 @@ if __name__ == "__main__":
                 ccMax[k] = offsets[np.argmax(ycorr)]#np.argmax(ycorr)
 
                 # print ccMax.size
-                k  + = 1
-            pbar.update(z + 1)
-            z  + = 1
+                k += 1
+            pbar.update(z+1)
+            z += 1
             # raise SystemExit
             # for b in notPeaked.lcsDict.keys():
             #     notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
@@ -424,7 +424,7 @@ if __name__ == "__main__":
             notPeaked.save_on_txt(filePath)
         pbar.finish()   
         # raise SystemExit
-        # print indent  +  '... done!'
+        # print indent + '... done!'
 
         """
 
@@ -432,16 +432,16 @@ if __name__ == "__main__":
 
         """
 
-        print indent  +  'Calculating distances ...'
+        print indent + 'Calculating distances ...'
         for b in bands:
             # creating numpy matrix
             Pymatrix = np.zeros((len(lsDirFit), len(lsDirFit)),
                 dtype=np.float32)
 
             print bcolors.OKGREEN 
-            print indent  +  "-------------"
-            print indent  +  "Band {:<} ...".format(b)
-            print indent  +  "-------------" 
+            print indent + "-------------"
+            print indent + "Band {:<} ...".format(b)
+            print indent + "-------------" 
             print bcolors.txtrst
             pbar = ProgressBar(widgets=widgets, maxval=len(lsDirFit)).start()
 
@@ -450,7 +450,7 @@ if __name__ == "__main__":
                 """
                 Reading in i-candidate
                 """
-                tmpSN = util.get_sn_from_file(args.dirFit + os.sep + lsDirFit[i])
+                tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[i])
                 iCandidate = cls.SupernovaFit(tmpSN)
                 
                 for l in tmpSN.lcsDict.keys():
@@ -475,18 +475,18 @@ if __name__ == "__main__":
                 for j in range(len(lsDirFit)):
                     if j < i:
                         # filling matrix elements below the diagonal
-                        Pymatrix[i, j]  + = Pymatrix[j, i]
+                        Pymatrix[i, j] += Pymatrix[j, i]
                         continue # jump to the next iteration of the loop
 
                     if j == i:
                         # filling elements on the distance matrix diagonal
-                        Pymatrix[i, j]  + = 0.
+                        Pymatrix[i, j] += 0.
                         continue
 
                     """
                     Reading in j-candidate
                     """
-                    tmpSN = util.get_sn_from_file(args.dirFit + os.sep + lsDirFit[j])
+                    tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[j])
                     jCandidate = cls.SupernovaFit(tmpSN)
                     for l in tmpSN.lcsDict.keys():
                         jCandidate.set_lightcurve(l, 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
                                 )
                     if jCandidate.lcsDict[b].badCurve \
                     or iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i, j]  + = bigDistance
+                        Pymatrix[i, j] += bigDistance
                         continue
 
                     jElSize = jCandidate.lcsDict[b].size
@@ -524,15 +524,15 @@ if __name__ == "__main__":
                     # maximum values are at opposite sides
                     if (iElMax == 0 and jElMax == jElSize-1) \
                     or (iElMax == iElSize-1 and jElMax == 0):
-                        Pymatrix[i, j]  + = bigDistance
+                        Pymatrix[i, j] += bigDistance
                         continue
 
 
-                    Pymatrix[i, j]  + = iCandidate.get_distance(
+                    Pymatrix[i, j] += iCandidate.get_distance(
                         jCandidate, 
                         b, reset_masks=True)
 
-                pbar.update(i + 1)
+                pbar.update(i+1)
             pbar.finish()
 
         """
@@ -550,7 +550,7 @@ if __name__ == "__main__":
 
     if args.diffuse:
         if 'Rmatrix' not in globals():
-            print indent  +  'Loading catalog from dump file ...'
+            print indent + 'Loading catalog from dump file ...'
             Rmatrix = util.open_pkl('Rmatrix.pkl')
             # Rmatrix = util.open_pkl('Rmatrix_train.pkl')
 
@@ -571,7 +571,7 @@ if __name__ == "__main__":
     if args.train:
         randomForest = importr('randomForest')
         if 'dmap' not in globals():
-            print indent  +  'Loading catalog from dump file ...'
+            print indent + 'Loading catalog from dump file ...'
             dmap = util.open_pkl('tmp_diffusion_map.pkl')
 
         dmap_rf = randomForest.randomForest(dmap)
@@ -590,7 +590,7 @@ if __name__ == "__main__":
         """
         if "lsDirFit" not in globals():
             p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-                cwd=args.dirFit + os.sep
+                cwd=args.dirFit+os.sep
                 )
             lsDirFit = p.stdout.read()
             lsDirFit = lsDirFit.split('\n')
@@ -599,10 +599,10 @@ if __name__ == "__main__":
 
         if 'catalog' not in globals():
             vecCandidates = np.genfromtxt(
-                args.dirData + os.sep + fNameCandidatesList, dtype=None)
+                args.dirData+os.sep+fNameCandidatesList, dtype=None)
            
 
-        print indent  +  'Plotting ...'
+        print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
         offset = 0
@@ -650,13 +650,13 @@ if __name__ == "__main__":
         for i in range(nrows*ncols):
             # getting the data from file
             candidate = util.get_sn_from_file(
-                args.dirData  +  os.sep  +  vecCandidates[offset + i])
+                args.dirData + os.sep + vecCandidates[offset+i])
 
             """
             reading fit data from file
             """
             tmpSN = util.get_sn_from_file(
-                    args.dirFit + os.sep + lsDirFit[offset + i]
+                    args.dirFit+os.sep+lsDirFit[offset+i]
                     )
             """
             Initializing SupernovaFit object
@@ -688,7 +688,7 @@ if __name__ == "__main__":
                 
                 if c[b] > 4:
                     c[b] = 0
-                    r[b]  + = 1
+                    r[b] += 1
 
                 xlim = dictAx[b][r[b], c[b]].get_xlim()
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
@@ -699,15 +699,15 @@ if __name__ == "__main__":
                     else:
                         data.set_shifted_mjd(
                             fit_r.mjd[fit_r.max_flux_index])
-                        data.shiftedMjd  + = fit.ccMjdMaxFlux
+                        data.shiftedMjd += fit.ccMjdMaxFlux
 
                     bottom = data.flux.min() - np.median(data.fluxErr)
-                    up = data.flux.max()  +  np.median(data.fluxErr)
+                    up = data.flux.max() + np.median(data.fluxErr)
                     dictAx[b][r[b], c[b]].set_ylim(bottom, up)
 
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux + fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux + fit_b.fluxErr)>fit_b.flux,
+                        fit_b.flux+fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+fit_b.fluxErr)>fit_b.flux,
                         facecolor='red', alpha=0.4, linewidth=0.5)
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
                         fit_b.flux-fit_b.fluxErr, fit_b.flux, 
@@ -715,17 +715,17 @@ if __name__ == "__main__":
                         facecolor='red', alpha=0.4, linewidth=0.5)
 
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux + 2*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux + 2*fit_b.fluxErr)>fit_b.flux + fit_b.fluxErr,
+                        fit_b.flux+2*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+2*fit_b.fluxErr)>fit_b.flux+fit_b.fluxErr,
                         facecolor='red', alpha=0.2, linewidth=0.5)
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
                         fit_b.flux-2*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux-2*fit_b.fluxErr)<fit_b.flux + fit_b.fluxErr,
+                        where=(fit_b.flux-2*fit_b.fluxErr)<fit_b.flux+fit_b.fluxErr,
                         facecolor='red', alpha=0.2, linewidth=0.5)
 
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux + 3*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux + 3*fit_b.fluxErr)>fit_b.flux + 2*fit_b.fluxErr,
+                        fit_b.flux+3*fit_b.fluxErr, fit_b.flux, 
+                        where=(fit_b.flux+3*fit_b.fluxErr)>fit_b.flux+2*fit_b.fluxErr,
                         facecolor='red', alpha=0.1, linewidth=0.5)
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
                         fit_b.flux-3*fit_b.fluxErr, fit_b.flux, 
@@ -749,17 +749,17 @@ if __name__ == "__main__":
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
                 else:
-                    label = str(candidate.SNID) + " BAD CURVE"
+                    label = str(candidate.SNID)+" BAD CURVE"
                     dictAx[b][r[b], c[b]].plot([0, 1], [0, 1], color='red',
                         label=label)
                     dictAx[b][r[b], c[b]].plot([0, 1], [1, 0], color='red')
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
-                c[b]  + = 1
+                c[b] += 1
                 
         for b in dictFig.keys():
             dictFig[b].savefig('test_band_{:<1}.pdf'.format(b), dpi=300)
 
         plt.close('all')
-    print "\n"  +  indent \
-         +  "The process took {:5.3f} secs.".format(time.time()-start_time)
+    print "\n" + indent \
+        + "The process took {:5.3f} secs.".format(time.time()-start_time)
