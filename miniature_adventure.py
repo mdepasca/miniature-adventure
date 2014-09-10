@@ -369,7 +369,7 @@ if __name__ == "__main__":
             k = 0 # goes on ccMax
             for j in peakIdx:
                 print 'Peaked {:<d} - Elapsed time {:5.3f} sec'.format(
-                    j, time.time-start_time
+                    j, (time.time()-start_time)
                     )
                 """
                 READ DATA FROM FILE
