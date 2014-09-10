@@ -329,7 +329,6 @@ if __name__ == "__main__":
         widgets = [indent, Percentage(), ' ',
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
-        # pbar = ProgressBar(widgets=widgets, maxval=len(nopeakIdx)).start()
 
         """
 
@@ -337,8 +336,12 @@ if __name__ == "__main__":
 
         """
         z = 0 # goes on nopeakIdx to index the progress bar
-        for i in nopeakIdx:
-            print 'Unpeaked {:<d}'.format(i)
+        start = 0
+        end = 825
+        for i in nopeakIdx[start:end]:
+            z = 0
+            pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
+            #print 'Unpeaked {:<d}'.format(i)
             """
             READ DATA FROM FILE 
             in Supernova object
@@ -368,9 +371,9 @@ if __name__ == "__main__":
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
-                print 'Peaked {:<d} - Elapsed time {:5.3f} sec'.format(
-                    j, (time.time()-start_time)
-                    )
+                # print 'Unpeak {:<d} Peak {:<d} - Elap time {:5.3f} sec'.format(
+                #     i, j, (time.time()-start_time)
+                #     )
                 """
                 READ DATA FROM FILE
                 """
@@ -414,8 +417,8 @@ if __name__ == "__main__":
                 # print ccMax.size
                 k += 1
                 print 
-            # pbar.update(z+1)
-            z += 1
+                pbar.update(z+1)
+                z += 1
             # raise SystemExit
             # for b in notPeaked.lcsDict.keys():
             #     notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
