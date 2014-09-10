@@ -338,7 +338,7 @@ if __name__ == "__main__":
         """
         z = 0 # goes on nopeakIdx to index the progress bar
         for i in nopeakIdx:
-            print i
+            print 'Unpeaked {:<d}'.format(i)
             """
             READ DATA FROM FILE 
             in Supernova object
@@ -368,6 +368,9 @@ if __name__ == "__main__":
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
+                print 'Peaked {:<d} - Elapsed time {:5.3f} sec'.format(
+                    j, time.time-start_time
+                    )
                 """
                 READ DATA FROM FILE
                 """
@@ -410,6 +413,7 @@ if __name__ == "__main__":
 
                 # print ccMax.size
                 k += 1
+                print 
             # pbar.update(z+1)
             z += 1
             # raise SystemExit
