@@ -145,6 +145,37 @@ if __name__ == "__main__":
 
     """
     if args.fit or args.fitTraining:
+        whileOn = True
+        i = 0
+        filePath = 'PEAKED_{:<}.LIST'.format(socket.gethostname())
+        while whileOn:
+            if path.exists(filePath):
+                    i += 1
+                    pklIdx = filePath.rfind('.LIST')
+                    filePath = filePath[0:6] + '_{:<}({:<d}).LIST'.format(
+                        socket.gethostname(),
+                        i
+                        )
+            else:
+                whileOn = False    
+        fPeaked = file(filePath, 'w')
+
+        whileOn = True
+        i = 0
+        filePath = 'NOPEAKED_{:<}.LIST'.format(socket.gethostname())
+        while whileOn:
+            if path.exists(filePath):
+                    i += 1
+                    pklIdx = filePath.rfind('.LIST')
+                    filePath = filePath[0:8] + '_{:<}({:<d}).LIST'.format(
+                        socket.gethostname(),
+                        i
+                        )
+            else:
+                whileOn = False    
+        fNopeaked = file(filePath, 'w')
+
+
         # Relevant input data
         if args.fit:
             print "\n" + indent + "[1] * Fit lightcurves ..."
@@ -244,14 +275,19 @@ if __name__ == "__main__":
             # Setting phase 0 point to phase or r maximum
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
-                candidateFit.save_on_txt(args.dirFit+os.sep+ \
-                    path.splitext(vecCandidates[i])[0]+"_FIT.DAT")
+                filePath = args.dirFit + os.sep + \
+                    path.splitext(vecCandidates[i])[0] + "_FIT.DAT"
+                candidateFit.save_on_txt(filePath)
                 
                 if candidateFit.peaked:
                     peakIdx = np.append(peakIdx, i)
+                    fPeaked.write('{:<}\n'.format(filePath))
                 else:
                     nopeakIdx = np.append(nopeakIdx, i)
+                    fNopeaked.write('{:<}\n'.format(filePath))
 
+        fPeaked.close()
+        fNopeaked.close()
         # sys.stderr = saveErr
         # ferr.close()
         whileOn = True
