@@ -207,8 +207,9 @@ def index_to_filename(indexList, inFileName, outFileName):
     inFile = file(inFileName, "r")
     lines = inFile.readlines()
     inFile.close()
-    outFileList = lines[indexList]
-    np.savetxt(outFileName, outFileList)
+    npLines = np.array(lines, dtype=np.str)
+    outFileList = npLines[indexList]
+    np.savetxt(outFileName, outFileList, fmt='%s', newline='')
 
 
 def rewrite_file(fileName):
