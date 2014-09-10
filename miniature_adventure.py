@@ -329,7 +329,7 @@ if __name__ == "__main__":
         widgets = [indent, Percentage(), ' ',
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
-        pbar = ProgressBar(widgets=widgets, maxval=len(nopeakIdx)).start()
+        # pbar = ProgressBar(widgets=widgets, maxval=len(nopeakIdx)).start()
 
         """
 
@@ -338,6 +338,7 @@ if __name__ == "__main__":
         """
         z = 0 # goes on nopeakIdx to index the progress bar
         for i in nopeakIdx:
+            print i
             """
             READ DATA FROM FILE 
             in Supernova object
@@ -409,7 +410,7 @@ if __name__ == "__main__":
 
                 # print ccMax.size
                 k += 1
-            pbar.update(z+1)
+            # pbar.update(z+1)
             z += 1
             # raise SystemExit
             # for b in notPeaked.lcsDict.keys():
