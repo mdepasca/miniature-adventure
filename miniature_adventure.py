@@ -337,6 +337,15 @@ if __name__ == "__main__":
         full list of files. For this reason the list of files it is queried on
         dirData. It is then filtered using the above variables.
         """
+        start = 0
+        end = 825
+        print "\n" + indent + bcolors.undwht + \
+            "[2] * Calculate cross-correlation of not peaked- with \
+            peaked-lcs ..." + \
+            bcolors.txtrst
+
+        print "\n" + indent + "Interval [{:<},{:<})".format(start, end)
+
         p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirData+os.sep)
             # cwd=args.dirFit+os.sep)
@@ -353,19 +362,12 @@ if __name__ == "__main__":
             nopeakIdx = np.asarray([tmp])
         else:    
             nopeakIdx = np.asarray(tmp)
-
-        print "\n" + indent + bcolors.undwht + \
-            "[2] * Calculate distances between lightcurves ..." + \
-            bcolors.txtrst
-
-        bigDistance = 1.01
                 
-        print '\n' + indent + \
-        'Performing cross-correlation on non peaked lightcurves ...'
+        # print '\n' + indent + \
+        # 'Performing cross-correlation on non peaked lightcurves ...'
 
         z = 0 # goes on nopeakIdx to index the progress bar
-        start = 0
-        end = 825
+        
         for i in nopeakIdx[start:end]:
             z = 0
             ccIndent = "{: ^10d}".format(i)#  "          "
@@ -482,6 +484,12 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
+        print "\n" + indent + bcolors.undwht + \
+            "[3] * Calculate distances between lightcurves ..." + \
+            bcolors.txtrst
+
+        bigDistance = 1.01
+
         widgets = [indent, Percentage(), ' ',
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
