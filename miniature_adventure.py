@@ -253,7 +253,7 @@ if __name__ == "__main__":
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
-                                                parallel=False, # this solves soome memory leakage. The execution speed is not affected...
+                                                parallel=False, # this solves some memory leakage. The execution speed is not affected...
                                                 test_length=True)
                 sys.stdout = saveOut
                 fout.close()
@@ -316,7 +316,7 @@ if __name__ == "__main__":
                     filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
                         socket.gethostname(),
                         i
-                        )
+                        )   
             else:
                 whileOn = False    
         np.savetxt(filePath, nopeakIdx,
@@ -379,7 +379,10 @@ if __name__ == "__main__":
             in Supernova object
             """
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
-            tmpSN = util.get_sn_from_file(filePath)
+            try:
+                tmpSN = util.get_sn_from_file(filePath)
+            except IOError:
+                continue
             # tmpSN = util.get_sn_from_file(
             #     args.dirFit+os.sep+lsDirFit[i]
             #     )
@@ -410,7 +413,10 @@ if __name__ == "__main__":
                 READ DATA FROM FILE
                 """
                 filePath = args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
-                tmpSN = util.get_sn_from_file(filePath)
+                try:
+                    tmpSN = util.get_sn_from_file(filePath)
+                except IOError:
+                    continue
                 # tmpSN = util.get_sn_from_file(
                 #     args.dirFit+os.sep+lsDirFit[j]
                 #     )
@@ -430,8 +436,7 @@ if __name__ == "__main__":
 
                 ycorr = signal.correlate(
                     notPeaked.normalized_flux('r'),
-                    peaked.normalized_flux('r')#,
-                    # mode='same'
+                    peaked.normalized_flux('r')
                     )
                 xcorr = np.arange(ycorr.size)
                 lags = xcorr - (
@@ -446,7 +451,6 @@ if __name__ == "__main__":
                 # raise SystemExit
                 ccMax[k] = offsets[np.argmax(ycorr)]#np.argmax(ycorr)
 
-                # print ccMax.size
                 k += 1
                 
                 pbar.update(z+1)
