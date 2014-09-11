@@ -361,10 +361,9 @@ if __name__ == "__main__":
             nopeakIdx = np.asarray([tmp])
         else:    
             nopeakIdx = np.asarray(tmp)
-                
-        # print '\n' + indent + \
-        # 'Performing cross-correlation on non peaked lightcurves ...'
-
+        
+        filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
+        reWrite = file(filePath, 'w')
         z = 0 # goes on nopeakIdx to index the progress bar
         
         for i in nopeakIdx[start:end]:
@@ -468,7 +467,9 @@ if __name__ == "__main__":
             """
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
+            reWrite.write(filePath+'\n')
             pbar.finish()
+        reWrite.close()
         # print 'CC ended!'
         # raise SystemExit
         # print indent + '... done!'
