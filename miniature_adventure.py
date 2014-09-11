@@ -340,9 +340,8 @@ if __name__ == "__main__":
         start = 0
         end = 825
         print "\n" + indent + bcolors.undwht + \
-            "[2] * Calculate cross-correlation of not peaked- with \
-            peaked-lcs ..." + \
-            bcolors.txtrst
+            "[2] * Calculate cross-correlation of not peaked- with " + \
+            "peaked-lcs ..." +  bcolors.txtrst
 
         print "\n" + indent + "Interval [{:<},{:<})".format(start, end)
 
@@ -370,10 +369,11 @@ if __name__ == "__main__":
         
         for i in nopeakIdx[start:end]:
             z = 0
-            ccIndent = "{: ^10d}".format(i)#  "          "
+            ccIndent = "ID:{: ^7d}".format(i)#  "          "
             widgets = [ccIndent, Percentage(), ' ',
                Bar(marker='#',left='[',right=']'),
                ' ', ETA()]
+            print "Progress: {:<d}".format(np.where(nopeakIdx == i)[0][0])
             pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
             #print 'Unpeaked {:<d}'.format(i)
             """
