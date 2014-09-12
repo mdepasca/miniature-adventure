@@ -364,12 +364,11 @@ if __name__ == "__main__":
         
         filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(filePath, 'w')
-        z = 0 # goes on nopeakIdx to index the progress bar
         
         for i in nopeakIdx[start:end]:
             prog = 0
-            z = 0
-            #print 'Unpeaked {:<d}'.format(i)
+            z = 0 # goes on peakIdx to index the progress bar
+            
             """
             READ DATA FROM FILE 
             in Supernova object
@@ -388,9 +387,7 @@ if __name__ == "__main__":
                 pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
             except IOError:
                 continue
-            # tmpSN = util.get_sn_from_file(
-            #     args.dirFit+os.sep+lsDirFit[i]
-            #     )
+            
             if tmpSN.r.badCurve:
                 continue
             """
@@ -411,9 +408,6 @@ if __name__ == "__main__":
             ccMax = np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
-                # print 'Unpeak {:<d} Peak {:<d} - Elap time {:5.3f} sec'.format(
-                #     i, j, (time.time()-start_time)
-                #     )
                 """
                 READ DATA FROM FILE
                 """
@@ -422,9 +416,7 @@ if __name__ == "__main__":
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
                     continue
-                # tmpSN = util.get_sn_from_file(
-                #     args.dirFit+os.sep+lsDirFit[j]
-                #     )
+                
                 if tmpSN.r.badCurve:
                     continue
                 peaked = cls.SupernovaFit(tmpSN)
@@ -439,6 +431,9 @@ if __name__ == "__main__":
                 """
                 peaked.shift_mjds()
 
+                """
+                Performing cross-correlation
+                """
                 ycorr = signal.correlate(
                     notPeaked.normalized_flux('r'),
                     peaked.normalized_flux('r')
@@ -454,29 +449,26 @@ if __name__ == "__main__":
                                         )
                 offsets = -lags*distancePerLag
                 # raise SystemExit
-                ccMax[k] = offsets[np.argmax(ycorr)]#np.argmax(ycorr)
+                ccMax[k] = offsets[np.argmax(ycorr)]
 
                 k += 1
                 
                 pbar.update(z+1)
                 z += 1
-            # raise SystemExit
-            # for b in notPeaked.lcsDict.keys():
-            #     notPeaked.lcsDict[b].shiftedMjd = np.ma.add(
-            #         notPeaked.lcsDict[b].shiftedMjd, ccMax.mean())
+
             notPeaked.ccMjdMaxFlux = ccMax.mean()
             """
-            rewriting file of not peaked lc to include information on maximum
+            re-writing file of not peaked lc to include information on maximum
             position from CC.
             """
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
+
             reWrite.write(filePath+'\n')
             pbar.finish()
         reWrite.close()
-        # print 'CC ended!'
-        # raise SystemExit
-        # print indent + '... done!'
+        print 'CC ended!'
+        
 
     """
 
