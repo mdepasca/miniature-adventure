@@ -73,38 +73,6 @@ class bcolors:
     ENDC = '\033[0m'
 
 
-def open_pkl(filePath):
-    # print '>>> Loading pkl file from: ' + filePath
-    # elTime = time.time()
-    
-    fileHandler = open(filePath,'r')
-    data = cPickle.load(fileHandler)
-    fileHandler.close()
-
-    # elTime -= time.time()
-    # print '>>> Done in ' + str(abs(elTime)) + ' secs'
-    return data
-
-def dump_pkl(filePath, dataStruct):
-    # print '>>> Dumping data structure into: ' + filePath
-    # ERROR_STATE = 0
-    # whileOn = True
-    # i = 0
-    # while whileOn:
-    #     if path.exists(filePath):
-    #             i += 1
-    #             pklIdx = filePath.rfind('.pkl')
-    #             if i > 1: pklIdx -= 3
-    #             filePath = filePath[0:pklIdx] + '({:<1}).pkl'.format(i)
-    #     else:
-    #         whileOn = False            
-
-    fileHandler = open(filePath,'w')
-        
-    cPickle.dump(dataStruct, fileHandler)
-    fileHandler.close()
-
-
 if __name__ == '__main__':
     """
     Parsing input of parameters for test.
@@ -156,6 +124,40 @@ if __name__ == '__main__':
 else:
     # the file has been imported as a module
     pass
+
+
+def open_pkl(filePath):
+    # print '>>> Loading pkl file from: ' + filePath
+    # elTime = time.time()
+    
+    fileHandler = open(filePath,'r')
+    data = cPickle.load(fileHandler)
+    fileHandler.close()
+
+    # elTime -= time.time()
+    # print '>>> Done in ' + str(abs(elTime)) + ' secs'
+    return data
+
+
+def dump_pkl(filePath, dataStruct):
+    # print '>>> Dumping data structure into: ' + filePath
+    # ERROR_STATE = 0
+    # whileOn = True
+    # i = 0
+    # while whileOn:
+    #     if path.exists(filePath):
+    #             i += 1
+    #             pklIdx = filePath.rfind('.pkl')
+    #             if i > 1: pklIdx -= 3
+    #             filePath = filePath[0:pklIdx] + '({:<1}).pkl'.format(i)
+    #     else:
+    #         whileOn = False            
+
+    fileHandler = open(filePath,'w')
+        
+    cPickle.dump(dataStruct, fileHandler)
+    fileHandler.close()
+
 
 def flux_to_mag(flux, limFlux=False):
     """
@@ -282,11 +284,6 @@ def rewrite_file(fileName):
         outFile.write(line)
 
     outFile.close()
-
-
-
-
-
 
 def mag_to_flux(mag, limMag=False):
     """
