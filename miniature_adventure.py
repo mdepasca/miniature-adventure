@@ -367,13 +367,8 @@ if __name__ == "__main__":
         z = 0 # goes on nopeakIdx to index the progress bar
         
         for i in nopeakIdx[start:end]:
+            prog = 0
             z = 0
-            ccIndent = "ID:{: ^7d}".format(i)#  "          "
-            widgets = [ccIndent, Percentage(), ' ',
-               Bar(marker='#',left='[',right=']'),
-               ' ', ETA()]
-            print "Progress: {:<d}".format(np.where(nopeakIdx == i)[0][0])
-            pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
             #print 'Unpeaked {:<d}'.format(i)
             """
             READ DATA FROM FILE 
@@ -382,6 +377,15 @@ if __name__ == "__main__":
             filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             try:
                 tmpSN = util.get_sn_from_file(filePath)
+
+                print "Progress: {:<d}".format(prog)
+                prog += 1
+                
+                ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)#  "          "
+                widgets = [ccIndent, Percentage(), ' ',
+                   Bar(marker='#',left='[',right=']'),
+                   ' ', ETA()]
+                pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
             except IOError:
                 continue
             # tmpSN = util.get_sn_from_file(
