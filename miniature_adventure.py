@@ -363,7 +363,7 @@ if __name__ == "__main__":
             nopeakIdx = np.asarray(tmp)
         
         filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
-        reWrite = file(filePath, 'w')
+        reWrite = open(filePath, 'w')
         z = 0 # goes on nopeakIdx to index the progress bar
         
         for i in nopeakIdx[start:end]:
@@ -380,7 +380,7 @@ if __name__ == "__main__":
 
                 print "Progress: {:<d}".format(prog)
                 prog += 1
-                
+
                 ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)#  "          "
                 widgets = [ccIndent, Percentage(), ' ',
                    Bar(marker='#',left='[',right=']'),
