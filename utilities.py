@@ -203,10 +203,26 @@ def flux_error_to_mag_error(fluxErr, flux):
     return magErr
 
 
+def create_file(indexList, outFilePath):
+    # indexArr = np.loadtxt(indexFile, dtype=np.int)
+    outFile = open(outFilePath, 'w')
+    
+    for i in indexList:
+        filePath = 'train_data/DES_BLIND+HOSTZ_FIT/' + \
+            'DES_SN{:0<6d}_FIT.DAT'.format(i)
+        try:
+            f = open(filePath, 'r')
+
+            outFile.write(filePath+'\n')
+        except IOError:
+            continue
+
+    outFile.close()
+
 def index_to_filename(indexList, inFileName, outFileName):
     """Filters inFileName to outFileName according to indexList
     """
-    inFile = file(inFileName, "r")
+    inFile = open(inFileName, "r")
     lines = inFile.readlines()
     inFile.close()
     npLines = np.array(lines, dtype=np.str)
