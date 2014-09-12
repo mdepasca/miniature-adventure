@@ -159,42 +159,6 @@ def dump_pkl(filePath, dataStruct):
     fileHandler.close()
 
 
-def flux_to_mag(flux, limFlux=False):
-    """
-    Converts fluxes to magnitudes using the following law (from Kessler+2010):
-        flux = 10^(-0.4 * m + 11) => m = -2.5 * (log_10(flux) - 11)
-    If the flux is below the limit of the instrument, returns the 
-    corresponding limiting magnitude.
-
-    INPUT:
-        flux: numpy array of fluxes
-        limFlux: specifies the limiting flux
-        
-    OUTPUT:
-        mag: magnitude-converted fluxes
-    """
-
-    if limFlux:
-        limMag = -2.5 * (-11 + np.log10(limFlux))
-
-        # applying the mask to detection below the limiting flux
-        maFlux = ma.masked_where(flux < limFlux, flux)
-        
-        # to avoid warnings due to values passed to np.log10
-        # fluxMask = maFlux.mask
-        # maMag = -2.5 * (-11.0 + np.log10(ma.filled(maFlux,1)))
-        maMag = -2.5 * (-11.0 + np.log10(maFlux))
-        
-        mag = ma.filled(maMag, limMag)
-    else:
-        if flux > 0:
-            mag = -2.5 * (-11 + np.log10(flux))
-        else:
-            mag = None
-
-    return mag
-
-
 def flux_error_to_mag_error(fluxErr, flux):
     # error prop. zErr = abs(dF(x)/dx) xErr
     magErr = np.multiply(np.abs(np.divide(-2.5, np.log(10) * flux)), 
@@ -300,6 +264,43 @@ def rewrite_file(fileName):
         outFile.write(line)
 
     outFile.close()
+
+
+def flux_to_mag(flux, limFlux=False):
+    """
+    Converts fluxes to magnitudes using the following law (from Kessler+2010):
+        flux = 10^(-0.4 * m + 11) => m = -2.5 * (log_10(flux) - 11)
+    If the flux is below the limit of the instrument, returns the 
+    corresponding limiting magnitude.
+
+    INPUT:
+        flux: numpy array of fluxes
+        limFlux: specifies the limiting flux
+        
+    OUTPUT:
+        mag: magnitude-converted fluxes
+    """
+
+    if limFlux:
+        limMag = -2.5 * (-11 + np.log10(limFlux))
+
+        # applying the mask to detection below the limiting flux
+        maFlux = ma.masked_where(flux < limFlux, flux)
+        
+        # to avoid warnings due to values passed to np.log10
+        # fluxMask = maFlux.mask
+        # maMag = -2.5 * (-11.0 + np.log10(ma.filled(maFlux,1)))
+        maMag = -2.5 * (-11.0 + np.log10(maFlux))
+        
+        mag = ma.filled(maMag, limMag)
+    else:
+        if flux > 0:
+            mag = -2.5 * (-11 + np.log10(flux))
+        else:
+            mag = None
+
+    return mag
+
 
 def mag_to_flux(mag, limMag=False):
     """
