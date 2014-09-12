@@ -209,7 +209,7 @@ def create_file(indexList, outFilePath):
     
     for i in indexList:
         filePath = 'train_data/DES_BLIND+HOSTZ_FIT/' + \
-            'DES_SN{:0<6d}_FIT.DAT'.format(i)
+            'DES_SN{:0>6d}_FIT.DAT'.format(i)
         try:
             f = open(filePath, 'r')
 
