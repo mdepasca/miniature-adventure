@@ -51,6 +51,8 @@ class LightCurve():
     """
     TRY TO USE __slots__
     """
+    __slots__ = ['band', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
+        'shifted_mjd']
     def __init__(self, band):
         self.band = band
         self.mjd = np.ma.zeros(0, dtype=np.float32)
@@ -93,20 +95,6 @@ class LightCurve():
         Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
         self.shiftedMjd = np.ma.subtract(self.mjd, distance)
-    
-    # def get_max_fmfe_Index(self):
-    #     """
-    #     Return the index of max (flux - fluxErr)
-    #     """
-    #     difference = np.subtract(self.flux, self.fluxErr)
-        
-    #     return np.argmax(difference)
-    
-    # def get_max_flux_p(self, p):
-    #     """
-    #     Returns max (flux - p*fluxErr)
-    #     """
-    #     return np.max(np.subtract(self.flux, p*self.fuxErr))
     
     @property
     def max_flux(self):
