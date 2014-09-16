@@ -18,14 +18,14 @@ import classes as cls
 import utilities as util
 from utilities import bcolors
 
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
-from rpy2.robjects.numpy2ri import numpy2ri
+# import rpy2.robjects as ro
+# from rpy2.robjects.packages import importr
+# from rpy2.robjects.numpy2ri import numpy2ri
+# # Activate automatic conversion of ndarray to R objects
+# ro.conversion.py2ri = numpy2ri
 
-# Activate automatic conversion of ndarray to R objects
-ro.conversion.py2ri = numpy2ri
-
-from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar
+from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar, \
+                        AnimatedMarker
 
 if __name__ == "__main__":
     # gc.set_debug(gc.DEBUG_LEAK)
@@ -500,9 +500,7 @@ if __name__ == "__main__":
         """
         bigDistance = 1.01
 
-        widgets = [indent, Percentage(), ' ',
-               Bar(marker='#',left='[',right=']'),
-               ' ', ETA()]
+        widgets = [indent, AnimatedMarker(), ' ', ETA()]
         
         for b in bands:
             # creating numpy matrix
@@ -545,12 +543,34 @@ if __name__ == "__main__":
                 """
                 iCandidate.shift_mjds()
                 if iCandidate.peaked == False:
+                    """
+                    keeping to perform check with other non peaed LC
+                    """
+                    iElMax = np.argmin(np.abs(
+                        jCandidate.r.shiftedMjd
+                        # jCandidate.lcsDict[b].shiftedMjd
+                            ))
+                    """
+                    correcting using CC results
+                    """
                     iCandidate.lcsDict[b].shiftedMjd = np.ma.add(
                             iCandidate.lcsDict[b].shiftedMjd, 
                             iCandidate.ccMjdMaxFlux
                             )
 
                 iElSize = iCandidate.lcsDict[b].size
+                iPeaked = iCandidate.peaked
+                """
+                if this SN has badCurve in this band it will be far from all 
+                the others by default. A cicle on the rest of the table 
+                here will save time from not opening all the other files 
+                to create new SupernovaFit objcets
+                """
+                if iCandidate.lcsDict[b].badCurve:
+                    for j in range(len(lsDirFit[start:end])):
+                        Pymatrix[i+start, j+start] += bigDistance
+                    continue
+
                 for j in range(len(lsDirFit[start:end])):
                     if j+start < i+start:
                         # filling matrix elements below the diagonal
@@ -583,12 +603,23 @@ if __name__ == "__main__":
                     """
                     jCandidate.shift_mjds()
                     if jCandidate.peaked == False:
+                        """
+                        keeping to perform check with other non peaed LC
+                        """
+                        jElMax = np.argmin(np.abs(
+                            jCandidate.r.shiftedMjd
+                            # jCandidate.lcsDict[b].shiftedMjd
+                            ))
+                        """
+                        correcting using CC results
+                        """
                         jCandidate.lcsDict[b].shiftedMjd = np.ma.add(
                                 jCandidate.lcsDict[b].shiftedMjd, 
                                 jCandidate.ccMjdMaxFlux
                                 )
-                    if jCandidate.lcsDict[b].badCurve \
-                    or iCandidate.lcsDict[b].badCurve:
+
+
+                    if jCandidate.lcsDict[b].badCurve:
                         Pymatrix[i+start, j+start] += bigDistance
                         continue
 
@@ -597,18 +628,14 @@ if __name__ == "__main__":
                     # getting index of maximum 
                     # 
                     # shiftedMjd is = to zero at the r maximum
-                    iElMax = np.argmin(np.abs(
-                        iCandidate.lcsDict[b].shiftedMjd
-                            ))
-                    jElMax = np.argmin(np.abs(
-                        jCandidate.lcsDict[b].shiftedMjd
-                        ))
-
+                    
+                    
+                    if (jCandidate.peaked == False) and (iPeaked == False):
                     # maximum values are at opposite sides
-                    if (iElMax == 0 and jElMax == jElSize-1) \
-                    or (iElMax == iElSize-1 and jElMax == 0):
-                        Pymatrix[i+start, j+start] += bigDistance
-                        continue
+                        if (iElMax == 0 and jElMax == jElSize-1) \
+                        or (iElMax == iElSize-1 and jElMax == 0):
+                            Pymatrix[i+start, j+start] += bigDistance
+                            continue
 
 
                     Pymatrix[i+start, j+start] += iCandidate.get_distance(
@@ -622,8 +649,8 @@ if __name__ == "__main__":
         Create R matrix
         """
         np.savetxt('distance_matrix_PY.txt', Pymatrix, fmt='%6.4f')
-        Rmatrix = ro.Matrix(Pymatrix)
-        util.dump_pkl('Rmatrix.pkl', Rmatrix)
+        # Rmatrix = ro.Matrix(Pymatrix)
+        # util.dump_pkl('Rmatrix.pkl', Rmatrix)
 
     """
 
