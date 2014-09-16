@@ -48,7 +48,9 @@ class LightCurve():
     """
     badCurve = False
     shifted_mjd = np.zeros(0)
-    # max from cross-correlation
+    """
+    TRY TO USE __slots__
+    """
     def __init__(self, band):
         self.band = band
         self.mjd = np.ma.zeros(0, dtype=np.float32)
@@ -169,7 +171,9 @@ class Supernova():
                                                         the catalog have this)
     zPhotHostErr    (float) Error in zPhotHost
     """
-
+    """
+    TRY TO USE __slots__
+    """
     def __init__(self, inFileName):
         """
         Parses all the light curve data in inFileName into a Supernova object.
@@ -184,6 +188,20 @@ class Supernova():
         self.i = LightCurve("i")
         self.z = LightCurve("z")
 
+        list_gMjd = list()
+        list_rMjd = list()
+        list_iMjd = list()
+        list_zMjd = list()
+
+        list_gFlux = list()
+        list_rFlux = list()
+        list_iFlux = list()
+        list_zFlux = list()
+
+        list_gFluxErr = list()
+        list_rFluxErr = list()
+        list_iFluxErr = list()
+        list_zFluxErr = list()
 
         self.lcsDict = {'g':self.g, 
                         'r':self.r, 
@@ -204,13 +222,25 @@ class Supernova():
                     fluxErr = float(data[4])
                     if fluxErr > 0:
                         if passband == "g":
-                            self.g.add_data_point(mjd, flux, fluxErr)
+                            list_gMjd.append(mjd)
+                            list_gFlux.append(flux)
+                            list_gFluxErr.append(fluxErr)
+                            # self.g.add_data_point(mjd, flux, fluxErr)
                         elif passband == "r":
-                            self.r.add_data_point(mjd, flux, fluxErr)
+                            list_rMjd.append(mjd)
+                            list_rFlux.append(flux)
+                            list_rFluxErr.append(fluxErr)
+                            # self.r.add_data_point(mjd, flux, fluxErr)
                         elif passband == "i":
-                            self.i.add_data_point(mjd, flux, fluxErr)
+                            list_iMjd.append(mjd)
+                            list_iFlux.append(flux)
+                            list_iFluxErr.append(fluxErr)
+                            # self.i.add_data_point(mjd, flux, fluxErr)
                         elif passband == "z":
-                            self.z.add_data_point(mjd, flux, fluxErr)
+                            list_zMjd.append(mjd)
+                            list_zFlux.append(flux)
+                            list_zFluxErr.append(fluxErr)
+                            # self.z.add_data_point(mjd, flux, fluxErr)
                         else:
                             print "Filter not recognized: {:<}".format(passband)
                 elif tag == "SNID":
@@ -237,7 +267,28 @@ class Supernova():
                 elif tag == "MJD_MAX_FLUX-CCF":
                     self.ccMjdMaxFlux = float(data[0])
 
+
+        self.g.mjd = np.ma.array(list_gMjd)
+        self.g.flux = np.ma.array(list_gFlux)
+        self.g.fluxErr = np.ma.array(list_gFluxErr)
+
+        self.r.mjd = np.ma.array(list_rMjd)
+        self.r.flux = np.ma.array(list_rFlux)
+        self.r.fluxErr = np.ma.array(list_rFluxErr)
+
+        self.i.mjd = np.ma.array(list_iMjd)
+        self.i.flux = np.ma.array(list_iFlux)
+        self.i.fluxErr = np.ma.array(list_iFluxErr)
+
+        self.z.mjd = np.ma.array(list_zMjd)
+        self.z.flux = np.ma.array(list_zFlux)
+        self.z.fluxErr = np.ma.array(list_zFluxErr)
+
         for b in self.lcsDict.keys():
+            self.lcsDict[b].mjd.mask = np.zeros(self.lcsDict[b].mjd.size)
+            self.lcsDict[b].flux.mask = np.zeros(self.lcsDict[b].flux.size)
+            self.lcsDict[b].fluxErr.mask = np.zeros(self.lcsDict[b].fluxErr.size)
+
             self.lcsDict[b].set_badCurve()
 
     def __cmp__(self, other):
