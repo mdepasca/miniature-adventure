@@ -18,12 +18,12 @@ import classes as cls
 import utilities as util
 from utilities import bcolors
 
-# import rpy2.robjects as ro
-# from rpy2.robjects.packages import importr
-# from rpy2.robjects.numpy2ri import numpy2ri
+import rpy2.robjects as ro
+from rpy2.robjects.packages import importr
+from rpy2.robjects.numpy2ri import numpy2ri
 
 # Activate automatic conversion of ndarray to R objects
-# ro.conversion.py2ri = numpy2ri
+ro.conversion.py2ri = numpy2ri
 
 from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar
 
@@ -622,8 +622,8 @@ if __name__ == "__main__":
         Create R matrix
         """
         np.savetxt('distance_matrix_PY.txt', Pymatrix, fmt='%6.4f')
-        # Rmatrix = ro.Matrix(Pymatrix)
-        # util.dump_pkl('Rmatrix.pkl', Rmatrix)
+        Rmatrix = ro.Matrix(Pymatrix)
+        util.dump_pkl('Rmatrix.pkl', Rmatrix)
 
     """
 
