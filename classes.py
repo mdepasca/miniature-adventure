@@ -7,7 +7,9 @@ from astropy.io import ascii
 from astropy.table import Table, Column, MaskedColumn, vstack, hstack
 import time
 import argparse
+import warnings
 
+warnings.filterwarnings('error', message=".*divide by zero encountered in double_scalars.*", category=RuntimeWarning)
 from math import sqrt
 
 if __name__ == '__main__':
@@ -317,21 +319,14 @@ class SupernovaFit():
     def set_lightcurve(self, band, mjd, flux, fluxErr):
         self.lcsDict[band].mjd = np.asarray(mjd, dtype=float)
         self.lcsDict[band].flux = np.asarray(flux, dtype=float)
-        self.lcsDict[band].fluxErr = np.asarray(fluxErr, 
-            dtype=float)
+        self.lcsDict[band].fluxErr = np.asarray(fluxErr, dtype=float)
 
         self.lcsDict[band].set_badCurve()
 
         if not self.lcsDict[band].badCurve:
             if (band == 'r') \
-                and self.r.max_flux_index not in set([0, -1, self.r.size-1]):
-                    self.set_peaked()
-
-            # setting the masks
-            # self.lcsDict[band].mjd.mask = np.zeros(mjd.size)
-            # self.lcsDict[band].flux.mask = np.zeros(flux.size)
-            # self.lcsDict[band].fluxErr.mask = np.zeros(fluxErr.size)
-
+                and self.r.max_flux_index not in set([0, self.r.size-1]):
+                    self.peaked = True
 
 
     def shift_mjds(self):
@@ -345,19 +340,14 @@ class SupernovaFit():
             if self.lcsDict[b].badCurve:
                 continue
             self.lcsDict[b].set_shifted_mjd(mjdrMax)
-    
-    # def reset_masks(self):
-    #     for b in self.lcsDict.keys():
-    #         self.lcsDict[b].reset_mask()
+
 
     def normalized_flux(self, band):
         """Normalizes the light curve in `band` using the sum of the maximums
         in all that band.
         """
-        result = np.array(0)
 
-
-        result = self.lcsDict[band].flux.data / (\
+        result = self.lcsDict[band].flux / (\
             self.g.max_flux + 
             self.r.max_flux + 
             self.i.max_flux + 
@@ -370,9 +360,8 @@ class SupernovaFit():
         """Normalizes the light curve in band b using the maximum in that band.
         s is a slice on the array.
         """
-        result = np.array(0)
         
-        result = self.lcsDict[band].fluxErr.data / (\
+        result = self.lcsDict[band].fluxErr / (\
             self.g.max_error + 
             self.r.max_error + 
             self.i.max_error + 
@@ -384,43 +373,21 @@ class SupernovaFit():
     def set_peaked(self):
         self.peaked = True
 
-    # def ccMjdMaxFlux(self, value):
-    #     """
-    #     To use only with non-peaked lcs in r band
-    #     """
-    #     # if (value < 0) or (value > self.mjd.size-1):
-    #     #     raise IndexError("index out of range")
-    #     if self.peaked == False:
-    #         self.__ccMjdMaxFlux = value
-    #     else:
-    #         print 'Peaked lightcurve, value not set!!!'
-
-    # def get_ccMjdMaxFlux(self):
-    #     if self.peaked:
-    #         raise TypeError('Lightcurve is peaked!')
-    #     return self.__ccMjdMaxFlux
-
     @property
     def peaked(self):
         return self.peaked
 
-    def get_distance(self, candidate, band, reset_masks=True):
+    def get_distance(self, candidate, band):
         """Calculate difference (aka distance) between two 
         interpolated light curves. 
         """
         if type(band) is not str:
-            raise TypeError
+            raise TypeError("variable `band` is not of type string")
         distance = -99
         bigDistance = 1.01
 
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
-
-        
-        idxSelfMax = np.argmin(
-            np.abs(self.lcsDict[band].shiftedMjd))#[0][0]
-        idxCandidateMax = np.argmin(
-                np.abs(candidate.lcsDict[band].shiftedMjd))#[0][0]
 
 
         if sizeSelf >= sizeCandidate:
@@ -430,8 +397,6 @@ class SupernovaFit():
             mjd2 = [round(val) for val in list(candidate.lcsDict[band].shiftedMjd)]
             flux2 = list(candidate.normalized_flux(band))
             fluxErr2 = list(candidate.normalized_error(band))
-            # bigger = self.lcsDict[band].shiftedMjd.view()
-            # smaller = candidate.lcsDict[band].shiftedMjd.view()
         else:
             mjd1 = [round(val) for val in list(candidate.lcsDict[band].shiftedMjd)]
             flux1 = list(candidate.normalized_flux(band))
@@ -439,49 +404,33 @@ class SupernovaFit():
             mjd2 = [round(val) for val in list(self.lcsDict[band].shiftedMjd)]
             flux2 = list(self.normalized_flux(band))
             fluxErr2 = list(self.normalized_error(band))
-            # bigger = candidate.lcsDict[band].shiftedMjd.view()
-            # smaller = self.lcsDict[band].shiftedMjd.view()
+
 
         mjdIntersection = [val for val in mjd1 if val in mjd2]
-        # modifying masks
-        # smaller.mask = np.in1d(
-        #     np.round(smaller), np.round(bigger), invert=True)
-        # bigger.mask = np.in1d(
-        #     np.round(bigger), np.round(smaller), invert=True)
 
-        # setting new masks
-        # print mjdIntersection
-        # raise SystemExit
+
         if len(mjdIntersection) < 2:
             distance = bigDistance
         else:
             flux1Int = [
-                flux1[i] for i in [mjd1.index(j) for j in mjdIntersection]
+                flux1[i] for i in [mjd1.index(el) for el in mjdIntersection]
                 ]
 
+
             flux2Int = [
-                flux2[i] for i in [mjd2.index(j) for j in mjdIntersection]
+                flux2[i] for i in [mjd2.index(el) for el in mjdIntersection]
                 ]
 
 
             fluxErr1Int = [
-                fluxErr1[i] for i in [mjd1.index(j) for j in mjdIntersection]
+                fluxErr1[i] for i in [mjd1.index(el) for el in mjdIntersection]
                 ]
 
 
             fluxErr2Int = [
-                fluxErr2[i] for i in [mjd2.index(j) for j in mjdIntersection]
+                fluxErr2[i] for i in [mjd2.index(el) for el in mjdIntersection]
                 ]
-        # self.lcsDict[band].flux.mask = \
-        #             self.lcsDict[band].shiftedMjd.mask
-        # self.lcsDict[band].fluxErr.mask = \
-        #             self.lcsDict[band].shiftedMjd.mask
 
-        # candidate.lcsDict[band].flux.mask = \
-        #             candidate.lcsDict[band].shiftedMjd.mask
-        # candidate.lcsDict[band].fluxErr.mask = \
-        #             candidate.lcsDict[band].shiftedMjd.mask            
-            # print (max(mjdIntersection) - min(mjdIntersection)), len(mjdIntersection)
 
             num = [
                 (val)**2 for val in [
@@ -496,45 +445,25 @@ class SupernovaFit():
                     )
                 ]
 
+            try:
+                distance = sqrt(
+                    sum([r for r in [num[i]/den[i] for i in range(
+                            len(mjdIntersection)
+                            )]]
+                    )
+                    )/(max(mjdIntersection) - min(mjdIntersection))
 
-            distance = sqrt(
-                sum([r for r in [num[i]/den[i] for i in range(
-                        len(mjdIntersection)
-                        )]]
-                )
-                )/(max(mjdIntersection) - min(mjdIntersection))
-
-
-
-        # if (self.lcsDict[band].shiftedMjd.compressed().size == 0) \
-        # and (candidate.lcsDict[band].shiftedMjd.compressed().size == 0):
-        #     distance = bigDistance
-        # else:
-        #     # calculating min and max overlapping MJD
-        #     minMjd = min(self.lcsDict[band].shiftedMjd.compressed()[0],
-        #         candidate.lcsDict[band].shiftedMjd.compressed()[0])
-
-        #     maxMjd = max(self.lcsDict[band].shiftedMjd.compressed()[-1],
-        #         candidate.lcsDict[band].shiftedMjd.compressed()[-1])
-
-        #     # calculating the distance
-        #     distance = (1. / (maxMjd - minMjd)) * np.sqrt(np.ma.sum(
-        #                 np.ma.divide(
-        #                     np.ma.power(
-        #                         np.ma.subtract(
-        #                             self.normalized_flux(band),
-        #                             candidate.normalized_flux(band)
-        #                             ), 2), 
-        #                     np.ma.add(
-        #                         np.ma.power(self.normalized_error(band), 2), 
-        #                         np.ma.power(candidate.normalized_error(band), 2)
-        #                     )
-        #                 )
-        #             ))
-
-        # if reset_masks:
-        #     self.reset_masks()
-        #     candidate.reset_masks()
+            except RuntimeWarning:
+                print "selfID: {:<d} -- CandidateID {:<d}".format(self.SNID, candidate.SNID)
+                print "1: {:<d}".format(id1)
+                print "len(num) {:<d}".format(len(num))
+                print "len(den) {:<d}".format(len(den))
+                print den.index(0)
+                print fluxErr1Int[den.index(0)], fluxErr2Int[den.index(0)]
+                print fluxErr1.index(0), fluxErr2.index(0)
+                print "len(mjdIntersection) {:<d}".format(len(mjdIntersection))
+                print distance
+                print '--------------------------------------------------------'
 
         return distance
 
