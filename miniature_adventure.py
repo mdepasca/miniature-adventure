@@ -655,10 +655,23 @@ if __name__ == "__main__":
         """
         Create R matrix
         """
-        np.savetxt('distance_matrix_PY.txt', Pymatrix, fmt='%6.4f')
+        filePath = 'Pymatrix_{:<}_{:<5.3f}.txt'.format(
+            socket.gethostname(), time.time()
+            )
+
+        np.savetxt(filePath, Pymatrix, fmt='%6.4f')
+
+        filePath = 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
 
         Rmatrix = ro.Matrix(Pymatrix)
-        util.dump_pkl('Rmatrix.pkl', Rmatrix)
+        write_table = ro.r['write.table']
+        """
+        write Rmatrix on dat file to use later.
+        """
+        write_table(Rmatrix, filePath, row_names=False, col_names=False)
+        
 
     """
 
