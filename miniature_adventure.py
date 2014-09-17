@@ -21,11 +21,11 @@ from utilities import bcolors
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
 from rpy2.robjects.numpy2ri import numpy2ri
-
 # Activate automatic conversion of ndarray to R objects
 ro.conversion.py2ri = numpy2ri
 
-from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar
+from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar, \
+                        AnimatedMarker, Timer
 
 if __name__ == "__main__":
     # gc.set_debug(gc.DEBUG_LEAK)
@@ -340,7 +340,7 @@ if __name__ == "__main__":
         start = 0
         end = 825
         print "\n" + indent + bcolors.undwht + \
-            "[2] * Calculate cross-correlation of not peaked- with " + \
+            "(*) Calculate cross-correlation of not peaked- with " + \
             "peaked-lcs ..." +  bcolors.txtrst
 
         print "\n" + indent + "Interval [{:<},{:<})".format(start, end)
@@ -364,9 +364,9 @@ if __name__ == "__main__":
         
         filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(filePath, 'w')
-        
+        prog = 0        
         for i in nopeakIdx[start:end]:
-            prog = 0
+
             z = 0 # goes on peakIdx to index the progress bar
             
             """
@@ -481,34 +481,56 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
+        j_offset = 100
+        i_start = 0
+        i_end = 100
+        j_start = i_start + offset
+        j_end = i_end + offset
         print "\n" + indent + bcolors.undwht + \
-            "[3] * Calculate distances between lightcurves ..." + \
+            "(*) Calculate distances between lightcurves ..." + \
             bcolors.txtrst
 
+        p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirFit+os.sep)
+            # cwd=args.dirFit+os.sep)
+        lsDirFit = p.stdout.read()
+        lsDirFit = lsDirFit.split('\n')
+        lsDirFit.sort()
+        lsDirFit.remove('')
+
+        """
+        setting value for big distance
+        """
         bigDistance = 1.01
 
-        widgets = [indent, Percentage(), ' ',
-               Bar(marker='#',left='[',right=']'),
-               ' ', ETA()]
-        print indent + 'Calculating distances ...'
+        widgets = [indent, 'Processing:', ' ', AnimatedMarker(), indent, Timer()]
+        
         for b in bands:
             # creating numpy matrix
-            Pymatrix = np.zeros((len(lsDirFit), len(lsDirFit)),
-                dtype=np.float32)
+            Pymatrix = np.zeros((
+                len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
+                dtype=float
+                )
 
             print bcolors.OKGREEN 
             print indent + "-------------"
             print indent + "Band {:<} ...".format(b)
             print indent + "-------------" 
             print bcolors.txtrst
-            pbar = ProgressBar(widgets=widgets, maxval=len(lsDirFit)).start()
+            pbar = ProgressBar(widgets=widgets).start()
 
-            for i in range(len(lsDirFit)):
+            for i in range(i_start, i_end):
 
                 """
                 Reading in i-candidate
                 """
-                tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[i])
+                tmpSN = util.get_sn_from_file(
+                    args.dirFit+os.sep+lsDirFit[i]
+                    )
+                if tmpSN.r.badCurve:
+                    raise SystemExit("{:<} Has bad curve in r band - " + \
+                        "THE FILE HAS TO BE DELETED".format(lsDirFit[i]))
+                    
                 iCandidate = cls.SupernovaFit(tmpSN)
                 
                 for l in tmpSN.lcsDict.keys():
@@ -524,27 +546,55 @@ if __name__ == "__main__":
                 """
                 iCandidate.shift_mjds()
                 if iCandidate.peaked == False:
-                    iCandidate.lcsDict[b].shiftedMjd = np.ma.add(
+                    # print i, iCandidate.SNID
+                    """
+                    keeping to perform check with other non peaed LC
+                    """
+                    # iElMax = np.argmin(np.abs(
+                    #     jCandidate.r.shiftedMjd #<--- BUG on jCandidate should be iCandidate
+                    #     # jCandidate.lcsDict[b].shiftedMjd
+                    #         ))
+                    iElMax = np.argwhere(iCandidate.r.shiftedMjd == 0.)[0][0]
+                    """
+                    correcting using CC results
+                    """
+                    iCandidate.lcsDict[b].shiftedMjd = np.add(
                             iCandidate.lcsDict[b].shiftedMjd, 
                             iCandidate.ccMjdMaxFlux
                             )
 
-                iElSize = iCandidate.lcsDict[b].size
-                for j in range(len(lsDirFit)):
+                iElSize = iCandidate.r.size
+                iPeaked = iCandidate.peaked
+
+                for j in range(j_start, j_end):
+                    """
+                    if this SN has badCurve in this band it will be far from all 
+                    the others by default.
+                    here will save time from not opening all the other files 
+                    to create new SupernovaFit objcets.
+                    """
+                    if iCandidate.lcsDict[b].badCurve:
+                        Pymatrix[i-i_start, j-j_start] += bigDistance
+                        continue
+
                     if j < i:
                         # filling matrix elements below the diagonal
-                        Pymatrix[i, j] += Pymatrix[j, i]
+                        Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
                         continue # jump to the next iteration of the loop
 
                     if j == i:
                         # filling elements on the distance matrix diagonal
-                        Pymatrix[i, j] += 0.
+                        Pymatrix[i-i_start, j-j_start] += 0.
                         continue
 
                     """
                     Reading in j-candidate
                     """
-                    tmpSN = util.get_sn_from_file(args.dirFit+os.sep+lsDirFit[j])
+                    tmpSN = util.get_sn_from_file(
+                        args.dirFit+os.sep+lsDirFit[j]
+                        )
+                    if tmpSN.r.badCurve:
+                        raise SystemExit("{:<} Has bad curve in r band - THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
                     jCandidate = cls.SupernovaFit(tmpSN)
                     for l in tmpSN.lcsDict.keys():
                         jCandidate.set_lightcurve(l, 
@@ -558,37 +608,46 @@ if __name__ == "__main__":
                     """
                     jCandidate.shift_mjds()
                     if jCandidate.peaked == False:
-                        jCandidate.lcsDict[b].shiftedMjd = np.ma.add(
+                        """
+                        keeping to perform check with other non peaed LC
+                        """
+                        # jElMax = np.argmin(np.abs(
+                        #     jCandidate.r.shiftedMjd
+                        #     # jCandidate.lcsDict[b].shiftedMjd
+                        #     ))
+                        jElMax = np.argwhere(jCandidate.r.shiftedMjd == 0.)[0][0]
+                        """
+                        correcting using CC results
+                        """
+                        jCandidate.lcsDict[b].shiftedMjd = np.add(
                                 jCandidate.lcsDict[b].shiftedMjd, 
                                 jCandidate.ccMjdMaxFlux
                                 )
-                    if jCandidate.lcsDict[b].badCurve \
-                    or iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i, j] += bigDistance
+
+
+                    if jCandidate.lcsDict[b].badCurve:
+                        Pymatrix[i-i_start, j-j_start] += bigDistance
                         continue
 
-                    jElSize = jCandidate.lcsDict[b].size
+                    # jElSize = jCandidate.lcsDict[b].size
+                    jElSize = jCandidate.r.size
 
                     # getting index of maximum 
                     # 
                     # shiftedMjd is = to zero at the r maximum
-                    iElMax = np.argmin(np.abs(
-                        iCandidate.lcsDict[b].shiftedMjd
-                            ))
-                    jElMax = np.argmin(np.abs(
-                        jCandidate.lcsDict[b].shiftedMjd
-                        ))
-
-                    # maximum values are at opposite sides
-                    if (iElMax == 0 and jElMax == jElSize-1) \
-                    or (iElMax == iElSize-1 and jElMax == 0):
-                        Pymatrix[i, j] += bigDistance
-                        continue
+                    
+                    
+                    if (jCandidate.peaked == False) and (iPeaked == False):
+                        # maximum values are at opposite sides
+                        if (iElMax == 0. and jElMax == jElSize-1.) \
+                        or (iElMax == iElSize-1. and jElMax == 0.):
+                            Pymatrix[i-i_start, j-j_start] += bigDistance
+                            continue
 
 
-                    Pymatrix[i, j] += iCandidate.get_distance(
+                    Pymatrix[i-i_start, j-j_start] += iCandidate.get_distance(
                         jCandidate, 
-                        b, reset_masks=True)
+                        b)
 
                 pbar.update(i+1)
             pbar.finish()
@@ -596,6 +655,8 @@ if __name__ == "__main__":
         """
         Create R matrix
         """
+        np.savetxt('distance_matrix_PY.txt', Pymatrix, fmt='%6.4f')
+
         Rmatrix = ro.Matrix(Pymatrix)
         util.dump_pkl('Rmatrix.pkl', Rmatrix)
 

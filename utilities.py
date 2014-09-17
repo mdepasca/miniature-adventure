@@ -12,6 +12,7 @@ from os import path
 import argparse
 import matplotlib.pyplot as plt
 from cStringIO import StringIO
+import subprocess
 
 # code from 
 #
@@ -165,6 +166,20 @@ def flux_error_to_mag_error(fluxErr, flux):
                          np.abs(fluxErr)) 
 
     return magErr
+
+def check_lc_from_file(fileDir):
+    p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=fileDir)
+    lsDir = p.stdout.read()
+    lsDir = lsDir.split('\n')
+    lsDir.sort()
+    lsDir.remove('')
+
+    for i in range(len(lsDir)):
+        tmpSN = get_sn_from_file(fileDir+lsDir[i])
+        if tmpSN.r.badCurve:
+            print "{:<} Has bad curve in r band - ".format(lsDir[i]) +\
+            "THE FILE HAS TO BE DELETED"
 
 
 def create_file(indexList, outFilePath):
