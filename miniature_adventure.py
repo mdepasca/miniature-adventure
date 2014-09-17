@@ -484,8 +484,8 @@ if __name__ == "__main__":
         j_offset = 100
         i_start = 0
         i_end = 100
-        j_start = i_start + offset
-        j_end = i_end + offset
+        j_start = i_start + j_offset
+        j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate distances between lightcurves ..." + \
             bcolors.txtrst
