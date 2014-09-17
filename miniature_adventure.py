@@ -481,10 +481,11 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
+        j_offset = 100
         i_start = 0
         i_end = 100
-        j_start = 0
-        j_end = 100
+        j_start = i_start + offset
+        j_end = i_end + offset
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate distances between lightcurves ..." + \
             bcolors.txtrst
