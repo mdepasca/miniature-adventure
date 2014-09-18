@@ -481,9 +481,9 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
-        j_offset = 100
+        j_offset = 13560
         i_start = 0
-        i_end = 100
+        i_end = 4520
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
@@ -517,7 +517,7 @@ if __name__ == "__main__":
             print indent + "Band {:<} ...".format(b)
             print indent + "-------------" 
             print bcolors.txtrst
-            pbar = ProgressBar(widgets=widgets).start()
+            pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
 
             for i in range(i_start, i_end):
 
@@ -590,9 +590,13 @@ if __name__ == "__main__":
                     """
                     Reading in j-candidate
                     """
-                    tmpSN = util.get_sn_from_file(
-                        args.dirFit+os.sep+lsDirFit[j]
+                    try:
+                        tmpSN = util.get_sn_from_file(
+                            args.dirFit+os.sep+lsDirFit[j]
                         )
+                    except IndexError:
+                        print j, len(lsDirFit)
+                        raise IndexError("list index out of range")
                     if tmpSN.r.badCurve:
                         raise SystemExit("{:<} Has bad curve in r band - THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
                     jCandidate = cls.SupernovaFit(tmpSN)
@@ -649,7 +653,7 @@ if __name__ == "__main__":
                         jCandidate, 
                         b)
 
-                pbar.update(i+1)
+                pbar.update(i-i_start+1)
             pbar.finish()
 
         """
