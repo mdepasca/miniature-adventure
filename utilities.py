@@ -208,6 +208,70 @@ def index_to_filename(indexList, inFileName, outFileName):
     outFileList = npLines[indexList]
     np.savetxt(outFileName, outFileList, fmt='%s', newline='')
 
+def extract_training_set(path):
+    """Finds files from spectroscopically indentified SNe and write them into
+    a list, along with their index in the full list of files in `path`
+    """
+
+    p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=path)
+    lsList = p.stdout.read()
+    lsList = lsList.split('\n')
+    lsList.sort()
+    lsList.remove('')
+
+    outFileTest = open('product/DES_BLIND+HOSTZ_FIT.TEST', 'w')
+    outFileTrain = open('product/DES_BLIND+HOSTZ_FIT.TRAIN', 'w')
+    outFileIa = open('product/DES_BLIND+HOSTZ_FIT.Ia.TRAIN', 'w')
+    outFileII = open('product/DES_BLIND+HOSTZ_FIT.II.TRAIN', 'w')
+    outFileIbc = open('product/DES_BLIND+HOSTZ_FIT.Ibc.TRAIN', 'w')
+    outFileIaPec = open('product/DES_BLIND+HOSTZ_FIT.IaPec.TRAIN', 'w')
+    outFileOther = open('product/DES_BLIND+HOSTZ_FIT.Other.TRAIN', 'w')
+    outFileRej = open('product/DES_BLIND+HOSTZ_FIT.Rej.TRAIN', 'w')
+
+    for i in range(len(lsList)):
+        tmpSN = get_sn_from_file(path+lsList[i])
+        SNType = tmpSN.SNTypeInt
+        if SNType != -9:
+            outFileTrain.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+        else:
+            outFileTest.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        if SNType == 1:
+            outFileIa.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        if SNType == 21 or SNType == 22 or SNType == 23:
+            outFileII.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue 
+
+        if SNType == 3 or SNType == 32 or SNType == 33:
+            outFileIbc.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        if SNType == 11:
+            outFileIaPec.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        if SNType == 66:
+            outFileOther.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        if SNType == -1:
+            outFileIbc.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+            continue
+
+        outFileOther.write("{:0>5d}   {:>}\n".format(i, path+lsList[i]))
+
+    outFileTest.close()
+    outFileTrain.close()
+    outFileIa.close()
+    outFileII.close()
+    outFileIbc.close()
+    outFileIaPec.close()
+    outFileOther.close()
+    outFileRej.close()
 
 def rewrite_file(fileName):
     """Rewrites files produced after fit of old code version.
