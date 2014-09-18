@@ -115,6 +115,7 @@ if __name__ == "__main__":
     start = 0
     stop = 5
     indent = "          "
+    prodDir = "products"+os.sep
     os.system("clear")
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
@@ -147,7 +148,7 @@ if __name__ == "__main__":
     if args.fit or args.fitTraining:
         whileOn = True
         i = 0
-        filePath = 'PEAKED_{:<}.LIST'.format(socket.gethostname())
+        filePath = prodDir + 'PEAKED_{:<}.LIST'.format(socket.gethostname())
         while whileOn:
             if path.exists(filePath):
                     i += 1
@@ -158,11 +159,11 @@ if __name__ == "__main__":
                         )
             else:
                 whileOn = False    
-        fPeaked = file(filePath, 'w')
+        fPeaked = open(filePath, 'w')
 
         whileOn = True
         i = 0
-        filePath = 'NOPEAKED_{:<}.LIST'.format(socket.gethostname())
+        filePath = prodDir + 'NOPEAKED_{:<}.LIST'.format(socket.gethostname())
         while whileOn:
             if path.exists(filePath):
                     i += 1
@@ -173,7 +174,7 @@ if __name__ == "__main__":
                         )
             else:
                 whileOn = False    
-        fNopeaked = file(filePath, 'w')
+        fNopeaked = open(filePath, 'w')
 
 
         # Relevant input data
@@ -294,7 +295,7 @@ if __name__ == "__main__":
         i = 0
         filePath = 'peaked_{:<}.dat'.format(socket.gethostname())
         while whileOn:
-            if path.exists(filePath):
+            if path.exists(prodDir + filePath):
                     i += 1
                     pklIdx = filePath.rfind('.dat')
                     filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
@@ -303,14 +304,14 @@ if __name__ == "__main__":
                         )
             else:
                 whileOn = False    
-        np.savetxt(filePath, peakIdx,
+        np.savetxt(prodDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
         whileOn = True
         i = 0
-        filePath = 'nopeaked_{:<}.dat'.format(socket.gethostname())
+        filePath = prodDir + 'nopeaked_{:<}.dat'.format(socket.gethostname())
         while whileOn:
-            if path.exists(filePath):
+            if path.exists(prodDir + filePath):
                     i += 1
                     pklIdx = filePath.rfind('.dat')
                     filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
@@ -319,7 +320,7 @@ if __name__ == "__main__":
                         )   
             else:
                 whileOn = False    
-        np.savetxt(filePath, nopeakIdx,
+        np.savetxt(prodDir + filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
     """
@@ -354,16 +355,16 @@ if __name__ == "__main__":
         lsDirData.remove('')
         
         filePath = 'peaked_{:<}_FULL.dat'.format(socket.gethostname())
-        peakIdx = np.loadtxt(filePath, dtype=np.int)
+        peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
         filePath = 'nopeaked_{:<}_FULL.dat'.format(socket.gethostname())
-        tmp = np.loadtxt(filePath, dtype=np.int)
+        tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
         if tmp.size == 1:
             nopeakIdx = np.asarray([tmp])
         else:    
             nopeakIdx = np.asarray(tmp)
         
         filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
-        reWrite = open(filePath, 'w')
+        reWrite = open(prodDir + filePath, 'w')
         prog = 0        
         for i in nopeakIdx[start:end]:
 
@@ -659,13 +660,17 @@ if __name__ == "__main__":
         """
         Create R matrix
         """
-        filePath = 'Pymatrix_{:<}_{:<5.3f}.txt'.format(
+        filePath = prodDir + 'Pymatrix_{:<}_{:<5.3f}.txt'.format(
             socket.gethostname(), time.time()
             )
+        fileHeader = "# Pymatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
+            i_start, i_end, j_start, j_end
+            ) + \
+            "Created by {:<}".format(socket.gethostname())
 
-        np.savetxt(filePath, Pymatrix, fmt='%6.4f')
+        np.savetxt(filePath, Pymatrix, fmt='%6.4f', header=fileHeader)
 
-        filePath = 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
+        filePath = prodDir + 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
 
