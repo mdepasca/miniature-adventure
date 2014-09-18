@@ -39,6 +39,10 @@ nosetests.xml
 # Dump files
 *.pkl
 
+# Shell files
+*.sh
+
 # Directories
 transit/
 junk/
+products/
