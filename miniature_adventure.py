@@ -515,120 +515,106 @@ if __name__ == "__main__":
             dtype=float
             )
 
-        for b in bands:
-        
+        pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
 
-            print bcolors.OKGREEN 
-            print indent + "-------------"
-            print indent + "Band {:<} ...".format(b)
-            print indent + "-------------" 
-            print bcolors.txtrst
-            pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
+        for i in range(i_start, i_end):
 
-            for i in range(i_start, i_end):
-
-                """
-                Reading in i-candidate
-                """
-                tmpSN = util.get_sn_from_file(
-                    args.dirFit+os.sep+lsDirFit[i]
-                    )
-                if tmpSN.r.badCurve:
-                    raise SystemExit("{:<} Has bad curve in r band - " + \
-                        "THE FILE HAS TO BE DELETED".format(lsDirFit[i]))
-                    
-                iCandidate = cls.SupernovaFit(tmpSN)
+            """
+            Reading in i-candidate
+            """
+            tmpSN = util.get_sn_from_file(
+                args.dirFit+os.sep+lsDirFit[i]
+                )
+            if tmpSN.r.badCurve:
+                raise SystemExit("{:<} Has bad curve in r band - " + \
+                    "THE FILE HAS TO BE DELETED".format(lsDirFit[i]))
                 
-                for l in tmpSN.lcsDict.keys():
-                    # set_lightcurve set also if the lc is peaked or not
-                    iCandidate.set_lightcurve(l, 
-                        tmpSN.lcsDict[l].mjd,
-                        tmpSN.lcsDict[l].flux,
-                        tmpSN.lcsDict[l].fluxErr
-                        )
+            iCandidate = cls.SupernovaFit(tmpSN)
+            
+            for l in tmpSN.lcsDict.keys():
+                # set_lightcurve set also if the lc is peaked or not
+                iCandidate.set_lightcurve(l, 
+                    tmpSN.lcsDict[l].mjd,
+                    tmpSN.lcsDict[l].flux,
+                    tmpSN.lcsDict[l].fluxErr
+                    )
 
+            """
+            Shifting mjds in i-candidate
+            """
+            iCandidate.shift_mjds()
+            if iCandidate.peaked == False:
+                # print i, iCandidate.SNID
                 """
-                Shifting mjds in i-candidate
+                keeping to perform check with other non peaed LC
                 """
-                iCandidate.shift_mjds()
-                if iCandidate.peaked == False:
-                    # print i, iCandidate.SNID
-                    """
-                    keeping to perform check with other non peaed LC
-                    """
-                    iElMax = iCandidate.r.shiftedMjd.index(0.)
-                    """
-                    correcting using CC results
-                    """
+                iElMax = iCandidate.r.shiftedMjd.index(0.)
+                """
+                correcting using CC results
+                """
+                for b in bands:
                     iCandidate.lcsDict[b].shiftedMjd = [
                         iCandidate.lcsDict[b].shiftedMjd[l] + 
                         iCandidate.ccMjdMaxFlux for l in range(len(
                             iCandidate.lcsDict[b].shiftedMjd
                             ))
                     ]
-                iElSize = iCandidate.r.size
-                iPeaked = iCandidate.peaked
+            iElSize = iCandidate.r.size
+            iPeaked = iCandidate.peaked
 
-                for j in range(j_start, j_end):
-                    """
-                    if this SN has badCurve in this band it will be far from all 
-                    the others by default.
-                    here will save time from not opening all the other files 
-                    to create new SupernovaFit objcets.
-                    """
+            for j in range(j_start, j_end):
+                """
+                if this SN has badCurve in this band it will be far from all 
+                the others by default.
+                here will save time from not opening all the other files 
+                to create new SupernovaFit objcets.
+                """
 
-                    if j == i:
-                        # filling elements on the distance matrix diagonal
-                        Pymatrix[i-i_start, j-j_start] += 0.
-                        continue
+                if j == i:
+                    # filling elements on the distance matrix diagonal
+                    Pymatrix[i-i_start, j-j_start] += 0.
+                    continue
 
-                    if iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i-i_start, j-j_start] += bigDistance
-                        continue
+                if j < i:
+                    # filling matrix elements below the diagonal
+                    Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
+                    continue # jump to the next iteration of the loop
 
-                    if j < i:
-                        # filling matrix elements below the diagonal
-                        Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
-                        continue # jump to the next iteration of the loop
+                """
+                Reading in j-candidate
+                """
+                try:
+                    tmpSN = util.get_sn_from_file(
+                        args.dirFit+os.sep+lsDirFit[j]
+                    )
+                except IndexError:
+                    print j, len(lsDirFit)
+                    raise IndexError("list index out of range")
+                if tmpSN.r.badCurve:
+                    raise SystemExit("{:<} Has bad curve in r band -"+\
+                        " THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
 
-                    """
-                    Reading in j-candidate
-                    """
-                    try:
-                        tmpSN = util.get_sn_from_file(
-                            args.dirFit+os.sep+lsDirFit[j]
+                jCandidate = cls.SupernovaFit(tmpSN)
+                for l in tmpSN.lcsDict.keys():
+                    jCandidate.set_lightcurve(l, 
+                        tmpSN.lcsDict[l].mjd, 
+                        tmpSN.lcsDict[l].flux, 
+                        tmpSN.lcsDict[l].fluxErr
                         )
-                    except IndexError:
-                        print j, len(lsDirFit)
-                        raise IndexError("list index out of range")
-                    if tmpSN.r.badCurve:
-                        raise SystemExit("{:<} Has bad curve in r band - THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
-                        
-                    jCandidate = cls.SupernovaFit(tmpSN)
-                    for l in tmpSN.lcsDict.keys():
-                        jCandidate.set_lightcurve(l, 
-                            tmpSN.lcsDict[l].mjd, 
-                            tmpSN.lcsDict[l].flux, 
-                            tmpSN.lcsDict[l].fluxErr
-                            )
 
+                """
+                Shifting mjds in j-candidate
+                """
+                jCandidate.shift_mjds()
+                if jCandidate.peaked == False:
                     """
-                    Shifting mjds in j-candidate
+                    keeping to perform check with other non peaed LC
                     """
-                    jCandidate.shift_mjds()
-                    if jCandidate.peaked == False:
-                        """
-                        keeping to perform check with other non peaed LC
-                        """
-                        # jElMax = np.argmin(np.abs(
-                        #     jCandidate.r.shiftedMjd
-                        #     # jCandidate.lcsDict[b].shiftedMjd
-                        #     ))
-                        # jElMax = np.argwhere(jCandidate.r.shiftedMjd == 0.)[0][0]
-                        jElMax = jCandidate.r.shiftedMjd.index(0.)
-                        """
-                        correcting using CC results
-                        """
+                    jElMax = jCandidate.r.shiftedMjd.index(0.)
+                    """
+                    correcting using CC results
+                    """
+                    for b in bands:
                         jCandidate.lcsDict[b].shiftedMjd = [
                             jCandidate.lcsDict[b].shiftedMjd[l] + 
                             jCandidate.ccMjdMaxFlux for l in range(len(
@@ -636,32 +622,30 @@ if __name__ == "__main__":
                                 ))
                         ]
 
-                    if jCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i-i_start, j-j_start] += bigDistance
+                jElSize = jCandidate.r.size
+
+                
+                if (jCandidate.peaked == False) and (iPeaked == False):
+                    # maximum values are at opposite sides
+                    if (iElMax == 0. and jElMax == jElSize-1.) \
+                    or (iElMax == iElSize-1. and jElMax == 0.) \
+                    and not jCandidate.lcsDict[b].badCurve \
+                    and not iCandidate.lcsDict[b].badCurve:
+                        for b in bands:
+                            Pymatrix[i-i_start, j-j_start] += bigDistance
                         continue
 
-                    # jElSize = jCandidate.lcsDict[b].size
-                    jElSize = jCandidate.r.size
+                for b in bands:
+                    if not jCandidate.lcsDict[b].badCurve \
+                    and not iCandidate.lcsDict[b].badCurve:
+                        Pymatrix[i-i_start, j-j_start] += iCandidate.get_distance(
+                            jCandidate, 
+                            b)
+                    else:
+                        Pymatrix[i-i_start, j-j_start] += bigDistance
 
-                    # getting index of maximum 
-                    # 
-                    # shiftedMjd is = to zero at the r maximum
-                    
-                    
-                    if (jCandidate.peaked == False) and (iPeaked == False):
-                        # maximum values are at opposite sides
-                        if (iElMax == 0. and jElMax == jElSize-1.) \
-                        or (iElMax == iElSize-1. and jElMax == 0.):
-                            Pymatrix[i-i_start, j-j_start] += bigDistance
-                            continue
-
-
-                    Pymatrix[i-i_start, j-j_start] += iCandidate.get_distance(
-                        jCandidate, 
-                        b)
-
-                pbar.update(i-i_start+1)
-            pbar.finish()
+            pbar.update(i-i_start+1)
+        pbar.finish()
 
         """
         Create R matrix
