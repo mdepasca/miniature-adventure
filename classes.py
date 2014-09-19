@@ -57,10 +57,10 @@ class LightCurve():
         'shifted_mjd']
     def __init__(self, band):
         self.band = band
-        self.mjd = np.zeros(0, dtype=float)
-        self.shiftedMjd = np.zeros(0, dtype=float)
-        self.flux = np.zeros(0, dtype=float)
-        self.fluxErr = np.zeros(0, dtype=float)
+        self.mjd = list()#np.zeros(0, dtype=float)
+        self.shiftedMjd = list()#np.zeros(0, dtype=float)
+        self.flux = list()#np.zeros(0, dtype=float)
+        self.fluxErr = list()#np.zeros(0, dtype=float)
 
     @classmethod
     def data(band, mjd, flux, fluxErr):
@@ -73,35 +73,18 @@ class LightCurve():
     def set_badCurve(self): 
         if len(self.flux) == 0:
             self.badCurve = True
-            # self.flux.mask = True
-            # self.fluxErr.mask = True
-            # self.mjd.mask = True
-        # else:
-        #   self.badCurve = False
-
-    # def add_data_point(self, mjd, flux, fluxErr):
-    #     """
-    #     Adds a data point to the light curve.
-    #     """
-    #     self.mjd = np.append(self.mjd, np.float32(mjd))
-    #     self.flux = np.append(self.flux, np.float32(flux))
-    #     self.fluxErr = np.append(self.fluxErr, np.float32(fluxErr))
-
-    #     #update the mask
-    #     self.mjd.mask = np.zeros(self.mjd.size)
-    #     self.flux.mask = np.zeros(self.flux.size)
-    #     self.fluxErr.mask = np.zeros(self.fluxErr.size)
 
     def set_shifted_mjd(self, distance):
         """
         Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
-        self.shiftedMjd = np.subtract(self.mjd, distance)
+        # self.shiftedMjd = np.subtract(self.mjd, distance)
+        self.shiftedMjd = [self.mjd[i]-distance for i in range(len(self.mjd))]
     
     @property
     def max_flux(self):
         if not self.badCurve:
-            result = self.flux.max()
+            result = max(self.flux)
         else:
             result = 0
 
@@ -110,35 +93,24 @@ class LightCurve():
     @property
     def max_error(self):
         if not self.badCurve:
-            result = self.fluxErr.max()
+            result = max(self.fluxErr)
         else:
             result = 0
 
         return result
-
-    # def reset_mask(self):
-    #     if (np.nonzero(self.mjd.mask)[0].size > 0) and (not self.badCurve):
-    #         self.mjd.mask = np.zeros(self.size)
-
-    #     if (np.nonzero(self.mjd.mask)[0].size > 0) and (not self.badCurve):
-    #         self.shiftedMjd.mask = np.zeros(self.size)
-        
-    #     if (np.nonzero(self.flux.mask)[0].size > 0) and (not self.badCurve): 
-    #         self.flux.mask = np.zeros(self.size)
-
-    #     if (np.nonzero(self.fluxErr.mask)[0].size > 0) and (not self.badCurve):  
-    #         self.fluxErr.mask = np.zeros(self.size)
 
     @property
     def max_flux_index(self):
         """
         Return the index of the maximum flux
         """
-        return np.argmax(self.flux)
+        # return np.argmax(self.flux)
+        return self.flux.index(max(self.flux))
 
     @property
     def size(self):
-        return self.mjd.size
+        # return self.mjd.size
+        return len(self.mjd)
 
 
 class Supernova():
@@ -178,20 +150,20 @@ class Supernova():
         self.i = LightCurve("i")
         self.z = LightCurve("z")
 
-        list_gMjd = list()
-        list_rMjd = list()
-        list_iMjd = list()
-        list_zMjd = list()
+        # list_gMjd = list()
+        # list_rMjd = list()
+        # list_iMjd = list()
+        # list_zMjd = list()
 
-        list_gFlux = list()
-        list_rFlux = list()
-        list_iFlux = list()
-        list_zFlux = list()
+        # list_gFlux = list()
+        # list_rFlux = list()
+        # list_iFlux = list()
+        # list_zFlux = list()
 
-        list_gFluxErr = list()
-        list_rFluxErr = list()
-        list_iFluxErr = list()
-        list_zFluxErr = list()
+        # list_gFluxErr = list()
+        # list_rFluxErr = list()
+        # list_iFluxErr = list()
+        # list_zFluxErr = list()
 
         self.lcsDict = {'g':self.g, 
                         'r':self.r, 
@@ -212,24 +184,24 @@ class Supernova():
                     fluxErr = float(data[4])
                     if fluxErr > 0:
                         if passband == "g":
-                            list_gMjd.append(mjd)
-                            list_gFlux.append(flux)
-                            list_gFluxErr.append(fluxErr)
+                            self.g.mjd.append(mjd)
+                            self.g.flux.append(flux)
+                            self.g.fluxErr.append(fluxErr)
                             # self.g.add_data_point(mjd, flux, fluxErr)
                         elif passband == "r":
-                            list_rMjd.append(mjd)
-                            list_rFlux.append(flux)
-                            list_rFluxErr.append(fluxErr)
+                            self.r.mjd.append(mjd)
+                            self.r.flux.append(flux)
+                            self.r.fluxErr.append(fluxErr)
                             # self.r.add_data_point(mjd, flux, fluxErr)
                         elif passband == "i":
-                            list_iMjd.append(mjd)
-                            list_iFlux.append(flux)
-                            list_iFluxErr.append(fluxErr)
+                            self.i.mjd.append(mjd)
+                            self.i.flux.append(flux)
+                            self.i.fluxErr.append(fluxErr)
                             # self.i.add_data_point(mjd, flux, fluxErr)
                         elif passband == "z":
-                            list_zMjd.append(mjd)
-                            list_zFlux.append(flux)
-                            list_zFluxErr.append(fluxErr)
+                            self.z.mjd.append(mjd)
+                            self.z.flux.append(flux)
+                            self.z.fluxErr.append(fluxErr)
                             # self.z.add_data_point(mjd, flux, fluxErr)
                         else:
                             print "Filter not recognized: {:<}".format(passband)
@@ -258,21 +230,21 @@ class Supernova():
                     self.ccMjdMaxFlux = float(data[0])
 
 
-        self.g.mjd = np.array(list_gMjd)
-        self.g.flux = np.array(list_gFlux)
-        self.g.fluxErr = np.array(list_gFluxErr)
+        # self.g.mjd = np.array(list_gMjd)
+        # self.g.flux = np.array(list_gFlux)
+        # self.g.fluxErr = np.array(list_gFluxErr)
 
-        self.r.mjd = np.array(list_rMjd)
-        self.r.flux = np.array(list_rFlux)
-        self.r.fluxErr = np.array(list_rFluxErr)
+        # self.r.mjd = np.array(list_rMjd)
+        # self.r.flux = np.array(list_rFlux)
+        # self.r.fluxErr = np.array(list_rFluxErr)
 
-        self.i.mjd = np.array(list_iMjd)
-        self.i.flux = np.array(list_iFlux)
-        self.i.fluxErr = np.array(list_iFluxErr)
+        # self.i.mjd = np.array(list_iMjd)
+        # self.i.flux = np.array(list_iFlux)
+        # self.i.fluxErr = np.array(list_iFluxErr)
 
-        self.z.mjd = np.array(list_zMjd)
-        self.z.flux = np.array(list_zFlux)
-        self.z.fluxErr = np.array(list_zFluxErr)
+        # self.z.mjd = np.array(list_zMjd)
+        # self.z.flux = np.array(list_zFlux)
+        # self.z.fluxErr = np.array(list_zFluxErr)
 
         for b in self.lcsDict.keys():
             # self.lcsDict[b].mjd.mask = np.zeros(self.lcsDict[b].mjd.size)
@@ -317,9 +289,9 @@ class SupernovaFit():
         self.zPhotHostErr = supernova.zPhotHostErr 
 
     def set_lightcurve(self, band, mjd, flux, fluxErr):
-        self.lcsDict[band].mjd = np.asarray(mjd, dtype=float)
-        self.lcsDict[band].flux = np.asarray(flux, dtype=float)
-        self.lcsDict[band].fluxErr = np.asarray(fluxErr, dtype=float)
+        self.lcsDict[band].mjd = mjd
+        self.lcsDict[band].flux = flux
+        self.lcsDict[band].fluxErr = fluxErr
 
         self.lcsDict[band].set_badCurve()
 
@@ -347,12 +319,19 @@ class SupernovaFit():
         in all that band.
         """
 
-        result = self.lcsDict[band].flux / (\
-            self.g.max_flux + 
-            self.r.max_flux + 
-            self.i.max_flux + 
+        # result = self.lcsDict[band].flux / (\
+        #     self.g.max_flux + 
+        #     self.r.max_flux + 
+        #     self.i.max_flux + 
+        #     self.z.max_flux
+        #     )
+        den = self.g.max_flux + \
+            self.r.max_flux + \
+            self.i.max_flux + \
             self.z.max_flux
-            )
+
+        flux = self.lcsDict[band].flux
+        result = [flux[idx]/den for idx in range(len(flux))]
 
         return result
 
@@ -361,13 +340,19 @@ class SupernovaFit():
         s is a slice on the array.
         """
         
-        result = self.lcsDict[band].fluxErr / (\
-            self.g.max_error + 
-            self.r.max_error + 
-            self.i.max_error + 
+        # result = self.lcsDict[band].fluxErr / (\
+        #     self.g.max_error + 
+        #     self.r.max_error + 
+        #     self.i.max_error + 
+        #     self.z.max_error
+        #     )
+        den = self.g.max_error + \
+            self.r.max_error + \
+            self.i.max_error + \
             self.z.max_error
-            )
 
+        fluxErr = self.lcsDict[band].fluxErr
+        result = [fluxErr[idx]/den for idx in range(len(fluxErr))]
         return result
 
     def set_peaked(self):
@@ -391,19 +376,19 @@ class SupernovaFit():
 
 
         if sizeSelf >= sizeCandidate:
-            mjd1 = [round(val) for val in list(self.lcsDict[band].shiftedMjd)]
-            flux1 = list(self.normalized_flux(band))
-            fluxErr1 = list(self.normalized_error(band))
-            mjd2 = [round(val) for val in list(candidate.lcsDict[band].shiftedMjd)]
-            flux2 = list(candidate.normalized_flux(band))
-            fluxErr2 = list(candidate.normalized_error(band))
+            mjd1 = [round(val) for val in self.lcsDict[band].shiftedMjd]
+            flux1 = self.normalized_flux(band)
+            fluxErr1 = self.normalized_error(band)
+            mjd2 = [round(val) for val in candidate.lcsDict[band].shiftedMjd]
+            flux2 = candidate.normalized_flux(band)
+            fluxErr2 = candidate.normalized_error(band)
         else:
-            mjd1 = [round(val) for val in list(candidate.lcsDict[band].shiftedMjd)]
-            flux1 = list(candidate.normalized_flux(band))
-            fluxErr1 = list(candidate.normalized_error(band))
-            mjd2 = [round(val) for val in list(self.lcsDict[band].shiftedMjd)]
-            flux2 = list(self.normalized_flux(band))
-            fluxErr2 = list(self.normalized_error(band))
+            mjd1 = [round(val) for val in candidate.lcsDict[band].shiftedMjd]
+            flux1 = candidate.normalized_flux(band)
+            fluxErr1 = candidate.normalized_error(band)
+            mjd2 = [round(val) for val in self.lcsDict[band].shiftedMjd]
+            flux2 = self.normalized_flux(band)
+            fluxErr2 = self.normalized_error(band)
 
 
         mjdIntersection = [val for val in mjd1 if val in mjd2]
