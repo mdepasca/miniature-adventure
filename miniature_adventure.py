@@ -509,12 +509,14 @@ if __name__ == "__main__":
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
+        # creating numpy matrix
+        Pymatrix = np.zeros((
+            len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
+            dtype=float
+            )
+
         for b in bands:
-            # creating numpy matrix
-            Pymatrix = np.zeros((
-                len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
-                dtype=float
-                )
+        
 
             print bcolors.OKGREEN 
             print indent + "-------------"
@@ -554,19 +556,10 @@ if __name__ == "__main__":
                     """
                     keeping to perform check with other non peaed LC
                     """
-                    # iElMax = np.argmin(np.abs(
-                    #     jCandidate.r.shiftedMjd #<--- BUG on jCandidate should be iCandidate
-                    #     # jCandidate.lcsDict[b].shiftedMjd
-                    #         ))
-                    # iElMax = np.argwhere(iCandidate.r.shiftedMjd == 0.)[0][0]
                     iElMax = iCandidate.r.shiftedMjd.index(0.)
                     """
                     correcting using CC results
                     """
-                    iCandidate.lcsDict[b].shiftedMjd = np.add(
-                            iCandidate.lcsDict[b].shiftedMjd, 
-                            iCandidate.ccMjdMaxFlux
-                            )
                     iCandidate.lcsDict[b].shiftedMjd = [
                         iCandidate.lcsDict[b].shiftedMjd[l] + 
                         iCandidate.ccMjdMaxFlux for l in range(len(
@@ -583,6 +576,12 @@ if __name__ == "__main__":
                     here will save time from not opening all the other files 
                     to create new SupernovaFit objcets.
                     """
+
+                    if j == i:
+                        # filling elements on the distance matrix diagonal
+                        Pymatrix[i-i_start, j-j_start] += 0.
+                        continue
+
                     if iCandidate.lcsDict[b].badCurve:
                         Pymatrix[i-i_start, j-j_start] += bigDistance
                         continue
@@ -591,11 +590,6 @@ if __name__ == "__main__":
                         # filling matrix elements below the diagonal
                         Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
                         continue # jump to the next iteration of the loop
-
-                    if j == i:
-                        # filling elements on the distance matrix diagonal
-                        Pymatrix[i-i_start, j-j_start] += 0.
-                        continue
 
                     """
                     Reading in j-candidate
@@ -609,6 +603,7 @@ if __name__ == "__main__":
                         raise IndexError("list index out of range")
                     if tmpSN.r.badCurve:
                         raise SystemExit("{:<} Has bad curve in r band - THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
+                        
                     jCandidate = cls.SupernovaFit(tmpSN)
                     for l in tmpSN.lcsDict.keys():
                         jCandidate.set_lightcurve(l, 
@@ -634,10 +629,6 @@ if __name__ == "__main__":
                         """
                         correcting using CC results
                         """
-                        jCandidate.lcsDict[b].shiftedMjd = np.add(
-                                jCandidate.lcsDict[b].shiftedMjd, 
-                                jCandidate.ccMjdMaxFlux
-                                )
                         jCandidate.lcsDict[b].shiftedMjd = [
                             jCandidate.lcsDict[b].shiftedMjd[l] + 
                             jCandidate.ccMjdMaxFlux for l in range(len(
