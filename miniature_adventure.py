@@ -482,14 +482,16 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
-        j_offset = 13560
+        j_offset = 0
         i_start = 0
-        i_end = 4520
+        i_end = 100
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate distances between lightcurves ..." + \
             bcolors.txtrst
+        print indent + "Rows in [{:<d}, {:<d})".format(i_start, i_end)
+        print indent + "Cols in [{:<d}, {:<d})".format(j_start, j_end)
 
         p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirFit+os.sep)
@@ -555,7 +557,8 @@ if __name__ == "__main__":
                     #     jCandidate.r.shiftedMjd #<--- BUG on jCandidate should be iCandidate
                     #     # jCandidate.lcsDict[b].shiftedMjd
                     #         ))
-                    iElMax = np.argwhere(iCandidate.r.shiftedMjd == 0.)[0][0]
+                    # iElMax = np.argwhere(iCandidate.r.shiftedMjd == 0.)[0][0]
+                    iElMax = iCandidate.r.shiftedMjd.index(0.)
                     """
                     correcting using CC results
                     """
@@ -563,7 +566,12 @@ if __name__ == "__main__":
                             iCandidate.lcsDict[b].shiftedMjd, 
                             iCandidate.ccMjdMaxFlux
                             )
-
+                    iCandidate.lcsDict[b].shiftedMjd = [
+                        iCandidate.lcsDict[b].shiftedMjd[l] + 
+                        iCandidate.ccMjdMaxFlux for l in range(len(
+                            iCandidate.lcsDict[b].shiftedMjd
+                            ))
+                    ]
                 iElSize = iCandidate.r.size
                 iPeaked = iCandidate.peaked
 
@@ -620,7 +628,8 @@ if __name__ == "__main__":
                         #     jCandidate.r.shiftedMjd
                         #     # jCandidate.lcsDict[b].shiftedMjd
                         #     ))
-                        jElMax = np.argwhere(jCandidate.r.shiftedMjd == 0.)[0][0]
+                        # jElMax = np.argwhere(jCandidate.r.shiftedMjd == 0.)[0][0]
+                        jElMax = jCandidate.r.shiftedMjd.index(0.)
                         """
                         correcting using CC results
                         """
@@ -628,7 +637,12 @@ if __name__ == "__main__":
                                 jCandidate.lcsDict[b].shiftedMjd, 
                                 jCandidate.ccMjdMaxFlux
                                 )
-
+                        jCandidate.lcsDict[b].shiftedMjd = [
+                            jCandidate.lcsDict[b].shiftedMjd[l] + 
+                            jCandidate.ccMjdMaxFlux for l in range(len(
+                                jCandidate.lcsDict[b].shiftedMjd
+                                ))
+                        ]
 
                     if jCandidate.lcsDict[b].badCurve:
                         Pymatrix[i-i_start, j-j_start] += bigDistance
