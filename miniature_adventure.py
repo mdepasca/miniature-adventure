@@ -25,7 +25,7 @@ from rpy2.robjects.numpy2ri import numpy2ri
 ro.conversion.py2ri = numpy2ri
 
 from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar, \
-                        AnimatedMarker, Timer
+                        AnimatedMarker, Timer, Counter
 
 if __name__ == "__main__":
     # gc.set_debug(gc.DEBUG_LEAK)
@@ -506,7 +506,8 @@ if __name__ == "__main__":
         """
         bigDistance = 1.01
 
-        widgets = [indent, 'Processing:', ' ', AnimatedMarker(), indent, Timer()]
+        widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
+            AnimatedMarker(), indent, Timer()]
         
         for b in bands:
             # creating numpy matrix
