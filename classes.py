@@ -229,28 +229,7 @@ class Supernova():
                 elif tag == "MJD_MAX_FLUX-CCF":
                     self.ccMjdMaxFlux = float(data[0])
 
-
-        # self.g.mjd = np.array(list_gMjd)
-        # self.g.flux = np.array(list_gFlux)
-        # self.g.fluxErr = np.array(list_gFluxErr)
-
-        # self.r.mjd = np.array(list_rMjd)
-        # self.r.flux = np.array(list_rFlux)
-        # self.r.fluxErr = np.array(list_rFluxErr)
-
-        # self.i.mjd = np.array(list_iMjd)
-        # self.i.flux = np.array(list_iFlux)
-        # self.i.fluxErr = np.array(list_iFluxErr)
-
-        # self.z.mjd = np.array(list_zMjd)
-        # self.z.flux = np.array(list_zFlux)
-        # self.z.fluxErr = np.array(list_zFluxErr)
-
         for b in self.lcsDict.keys():
-            # self.lcsDict[b].mjd.mask = np.zeros(self.lcsDict[b].mjd.size)
-            # self.lcsDict[b].flux.mask = np.zeros(self.lcsDict[b].flux.size)
-            # self.lcsDict[b].fluxErr.mask = np.zeros(self.lcsDict[b].fluxErr.size)
-
             self.lcsDict[b].set_badCurve()
 
     def __cmp__(self, other):
@@ -439,7 +418,8 @@ class SupernovaFit():
                     )/(max(mjdIntersection) - min(mjdIntersection))
 
             except RuntimeWarning:
-                print "selfID: {:<d} -- CandidateID {:<d}".format(self.SNID, candidate.SNID)
+                print "selfID: {:<d} -- CandidateID {:<d}".format(self.SNID, 
+                    candidate.SNID)
                 print "1: {:<d}".format(id1)
                 print "len(num) {:<d}".format(len(num))
                 print "len(den) {:<d}".format(len(den))
