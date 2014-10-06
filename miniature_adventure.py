@@ -711,7 +711,7 @@ if __name__ == "__main__":
     """
 
     PLOT OBSERVATION AND FIT
-
+    --plot
     """
 
     if args.plot:
@@ -736,7 +736,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 0
+        offset = 25
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -800,7 +800,20 @@ if __name__ == "__main__":
                     tmpSN.lcsDict[l].fluxErr
                     )
             fit.shift_mjds()
-            
+            """
+            Fixing shiftedMjd for not-peaked LCs
+            """
+            if fit.peaked == False:
+                """
+                correcting using CC results
+                """
+                for b in bands:
+                    fit.lcsDict[b].shiftedMjd = [
+                        fit.lcsDict[b].shiftedMjd[l] + 
+                        fit.ccMjdMaxFlux for l in range(len(
+                            fit.lcsDict[b].shiftedMjd
+                            ))
+                    ]
 
             for b in dictAx.keys():
                 data = candidate.lcsDict[b]
@@ -808,16 +821,16 @@ if __name__ == "__main__":
                 """
                 Fixing shiftedMjd for not-peaked LCs
                 """
-                if fit.peaked == False:
-                    fit.lcsDict[b].shiftedMjd = np.ma.add(
-                        fit.lcsDict[b].shiftedMjd, 
-                        fit.ccMjdMaxFlux
-                        )
+                # if fit.peaked == False:
+                #     fit.lcsDict[b].shiftedMjd = np.ma.add(
+                #         fit.lcsDict[b].shiftedMjd, 
+                #         fit.ccMjdMaxFlux
+                #         )
                 fit_b = fit.lcsDict[b]
 
                 fit_r = fit.lcsDict['r']
                 
-                if c[b] > 4:
+                if c[b] > nrows-1:
                     c[b] = 0
                     r[b] += 1
 
@@ -830,37 +843,78 @@ if __name__ == "__main__":
                     else:
                         data.set_shifted_mjd(
                             fit_r.mjd[fit_r.max_flux_index])
-                        data.shiftedMjd += fit.ccMjdMaxFlux
+                        # for b in bands:
+                        data.shiftedMjd = [
+                            data.shiftedMjd[l] + 
+                            fit.ccMjdMaxFlux for l in range(len(
+                                data.shiftedMjd
+                                ))
+                        ]
+                        # data.shiftedMjd += fit.ccMjdMaxFlux
 
-                    bottom = data.flux.min() - np.median(data.fluxErr)
-                    up = data.flux.max() + np.median(data.fluxErr)
+                    bottom = min(data.flux) - np.median(data.fluxErr)
+                    up = max(data.flux) + np.median(data.fluxErr)
                     dictAx[b][r[b], c[b]].set_ylim(bottom, up)
 
+                    fluxUpLim = [val for val in [
+                        fit_b.flux[i] + fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux+fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux+fit_b.fluxErr)>fit_b.flux,
+                        fluxUpLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            +np.array(fit_b.fluxErr))>np.array(fit_b.flux),
                         facecolor='red', alpha=0.4, linewidth=0.5)
+                    fluxLowLim = [val for val in [
+                        fit_b.flux[i] - fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux-fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux-fit_b.fluxErr)<fit_b.flux,
+                        fluxLowLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            -np.array(fit_b.fluxErr))<np.array(fit_b.flux),
                         facecolor='red', alpha=0.4, linewidth=0.5)
 
+                    fluxUpLim = [val for val in [
+                        fit_b.flux[i] + 2*fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux+2*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux+2*fit_b.fluxErr)>fit_b.flux+fit_b.fluxErr,
+                        fluxUpLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            +2*np.array(fit_b.fluxErr))>np.array(fit_b.flux)
+                                                    +np.array(fit_b.fluxErr),
                         facecolor='red', alpha=0.2, linewidth=0.5)
+                    fluxLowLim = [val for val in [
+                        fit_b.flux[i] - 2*fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux-2*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux-2*fit_b.fluxErr)<fit_b.flux+fit_b.fluxErr,
+                        fluxLowLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            -2*np.array(fit_b.fluxErr))<np.array(fit_b.flux)
+                                                    +np.array(fit_b.fluxErr),
                         facecolor='red', alpha=0.2, linewidth=0.5)
 
+                    fluxUpLim = [val for val in [
+                        fit_b.flux[i] + 3*fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux+3*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux+3*fit_b.fluxErr)>fit_b.flux+2*fit_b.fluxErr,
+                        fluxUpLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            +3*np.array(fit_b.fluxErr))>np.array(fit_b.flux)
+                                                    +2*np.array(fit_b.fluxErr),
                         facecolor='red', alpha=0.1, linewidth=0.5)
+                    fluxLowLim = [val for val in [
+                        fit_b.flux[i] - 3*fit_b.fluxErr[i] 
+                            for i in range(len(fit_b.flux))
+                        ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fit_b.flux-3*fit_b.fluxErr, fit_b.flux, 
-                        where=(fit_b.flux-3*fit_b.fluxErr)<fit_b.flux-2*fit_b.fluxErr,
+                        fluxLowLim, fit_b.flux, 
+                        where=(np.array(fit_b.flux)
+                            -3*np.array(fit_b.fluxErr))<np.array(fit_b.flux)
+                                                    -2*np.array(fit_b.fluxErr),
                         facecolor='red', alpha=0.1, linewidth=0.5)
 
                     dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
@@ -889,7 +943,11 @@ if __name__ == "__main__":
                 c[b] += 1
                 
         for b in dictFig.keys():
-            dictFig[b].savefig('test_band_{:<1}.pdf'.format(b), dpi=300)
+            dictFig[b].savefig(
+                'products/test_band_{:<1}_{:0>6d}to{:0>6d}.pdf'.format(b,
+                    offset, nrows*ncols+offset), 
+                dpi=300
+                )
 
         plt.close('all')
     print "\n" + indent \
