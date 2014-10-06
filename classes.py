@@ -355,23 +355,21 @@ class SupernovaFit():
 
 
         if sizeSelf >= sizeCandidate:
-            mjd1 = [round(val) for val in self.lcsDict[band].shiftedMjd]
+            mjd1 = [round(el) for el in self.lcsDict[band].shiftedMjd]
             flux1 = self.normalized_flux(band)
             fluxErr1 = self.normalized_error(band)
-            mjd2 = [round(val) for val in candidate.lcsDict[band].shiftedMjd]
+            mjd2 = [round(el) for el in candidate.lcsDict[band].shiftedMjd]
             flux2 = candidate.normalized_flux(band)
             fluxErr2 = candidate.normalized_error(band)
         else:
-            mjd1 = [round(val) for val in candidate.lcsDict[band].shiftedMjd]
+            mjd1 = [round(el) for el in candidate.lcsDict[band].shiftedMjd]
             flux1 = candidate.normalized_flux(band)
             fluxErr1 = candidate.normalized_error(band)
-            mjd2 = [round(val) for val in self.lcsDict[band].shiftedMjd]
+            mjd2 = [round(el) for el in self.lcsDict[band].shiftedMjd]
             flux2 = self.normalized_flux(band)
             fluxErr2 = self.normalized_error(band)
 
-
-        mjdIntersection = [val for val in mjd1 if val in mjd2]
-
+        mjdIntersection = [el for el in mjd1 if el in mjd2]
 
         if len(mjdIntersection) < 2:
             distance = bigDistance
@@ -397,7 +395,7 @@ class SupernovaFit():
 
 
             num = [
-                (val)**2 for val in [
+                (el)**2 for el in [
                     flux1Int[i] - flux2Int[i] for i in range(
                         len(mjdIntersection)
                         )
