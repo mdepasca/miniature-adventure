@@ -298,12 +298,6 @@ class SupernovaFit():
         in all that band.
         """
 
-        # result = self.lcsDict[band].flux / (\
-        #     self.g.max_flux + 
-        #     self.r.max_flux + 
-        #     self.i.max_flux + 
-        #     self.z.max_flux
-        #     )
         den = self.g.max_flux + \
             self.r.max_flux + \
             self.i.max_flux + \
@@ -318,17 +312,11 @@ class SupernovaFit():
         """Normalizes the light curve in band b using the maximum in that band.
         s is a slice on the array.
         """
-        
-        # result = self.lcsDict[band].fluxErr / (\
-        #     self.g.max_error + 
-        #     self.r.max_error + 
-        #     self.i.max_error + 
-        #     self.z.max_error
-        #     )
-        den = self.g.max_error + \
-            self.r.max_error + \
-            self.i.max_error + \
-            self.z.max_error
+
+        den = self.g.max_flux + \
+            self.r.max_flux + \
+            self.i.max_flux + \
+            self.z.max_flux
 
         fluxErr = self.lcsDict[band].fluxErr
         result = [fluxErr[idx]/den for idx in range(len(fluxErr))]
