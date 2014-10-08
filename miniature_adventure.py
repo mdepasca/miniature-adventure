@@ -504,7 +504,7 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        bigDistance = 1.01
+        bigDistance = 100
 
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
