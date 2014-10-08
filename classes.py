@@ -150,21 +150,6 @@ class Supernova():
         self.i = LightCurve("i")
         self.z = LightCurve("z")
 
-        # list_gMjd = list()
-        # list_rMjd = list()
-        # list_iMjd = list()
-        # list_zMjd = list()
-
-        # list_gFlux = list()
-        # list_rFlux = list()
-        # list_iFlux = list()
-        # list_zFlux = list()
-
-        # list_gFluxErr = list()
-        # list_rFluxErr = list()
-        # list_iFluxErr = list()
-        # list_zFluxErr = list()
-
         self.lcsDict = {'g':self.g, 
                         'r':self.r, 
                         'i':self.i, 
@@ -336,7 +321,7 @@ class SupernovaFit():
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
         distance = -99
-        bigDistance = 1.01
+        bigDistance = 100
 
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
