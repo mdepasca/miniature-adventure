@@ -505,12 +505,17 @@ if __name__ == "__main__":
         setting value for big distance
         """
         bigDistance = 100
-
+        bandDict = dict(
+            'g':0,
+            'r':1,
+            'i':2,
+            'z':3
+            )
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
         # creating numpy matrix
-        Pymatrix = np.zeros((
+        Pymatrix = np.zeros((4, 
             len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
             dtype=float
             )
@@ -625,15 +630,15 @@ if __name__ == "__main__":
                 jElSize = jCandidate.r.size
 
                 
-                if (jCandidate.peaked == False) and (iPeaked == False):
-                    # maximum values are at opposite sides
-                    if (iElMax == 0. and jElMax == jElSize-1.) \
-                    or (iElMax == iElSize-1. and jElMax == 0.) \
-                    and not jCandidate.lcsDict[b].badCurve \
-                    and not iCandidate.lcsDict[b].badCurve:
-                        for b in bands:
-                            Pymatrix[i-i_start, j-j_start] += bigDistance
-                        continue
+                # if (jCandidate.peaked == False) and (iPeaked == False):
+                #     # maximum values are at opposite sides
+                #     if (iElMax == 0. and jElMax == jElSize-1.) \
+                #     or (iElMax == iElSize-1. and jElMax == 0.) \
+                #     and not jCandidate.lcsDict[b].badCurve \
+                #     and not iCandidate.lcsDict[b].badCurve:
+                #         for b in bands:
+                #             Pymatrix[i-i_start, j-j_start] += bigDistance
+                #         continue
 
                 for b in bands:
                     if not jCandidate.lcsDict[b].badCurve \
@@ -642,6 +647,8 @@ if __name__ == "__main__":
                             jCandidate, 
                             b)
                     else:
+                        # in case of bad curve
+                        # print i, j
                         Pymatrix[i-i_start, j-j_start] += bigDistance
 
             pbar.update(i-i_start+1)
@@ -650,8 +657,9 @@ if __name__ == "__main__":
         """
         Create R matrix
         """
-        filePath = prodDir + 'Pymatrix_{:<}_{:<5.3f}.txt'.format(
-            socket.gethostname(), time.time()
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'Pymatrix_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
             )
         fileHeader = "# Pymatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
             i_start, i_end, j_start, j_end
@@ -660,16 +668,16 @@ if __name__ == "__main__":
 
         np.savetxt(filePath, Pymatrix, fmt='%6.4f', header=fileHeader)
 
-        filePath = prodDir + 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
-            socket.gethostname(), time.time()
-            )
+        # filePath = prodDir + 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
+        #     socket.gethostname(), time.time()
+        #     )
 
-        Rmatrix = ro.Matrix(Pymatrix)
-        write_table = ro.r['write.table']
-        """
-        write Rmatrix on dat file to use later.
-        """
-        write_table(Rmatrix, filePath, row_names=False, col_names=False)
+        # Rmatrix = ro.Matrix(Pymatrix)
+        # write_table = ro.r['write.table']
+        # """
+        # write Rmatrix on dat file to use later.
+        # """
+        # write_table(Rmatrix, filePath, row_names=False, col_names=False)
         
 
     """
