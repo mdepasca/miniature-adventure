@@ -50,11 +50,13 @@ class LightCurve():
     """
     badCurve = False
     shifted_mjd = np.zeros(0)
+    normFlux = list()
+    normErr = list()
     """
     TRY TO USE __slots__
     """
     __slots__ = ['band', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
-        'shifted_mjd']
+        'shifted_mjd', 'normFlux', 'normErr']
     def __init__(self, band):
         self.band = band
         self.mjd = list()#np.zeros(0, dtype=float)
@@ -283,29 +285,38 @@ class SupernovaFit():
         in all that band.
         """
 
-        den = self.g.max_flux + \
-            self.r.max_flux + \
-            self.i.max_flux + \
-            self.z.max_flux
+        if not self.lcsDict[band].normFlux:
+            den = self.g.max_flux + \
+                self.r.max_flux + \
+                self.i.max_flux + \
+                self.z.max_flux
 
-        flux = self.lcsDict[band].flux
-        result = [flux[idx]/den for idx in range(len(flux))]
-
-        return result
+            flux = self.lcsDict[band].flux
+        # result = [flux[idx]/den for idx in range(len(flux))]
+            self.lcsDict[band].normFlux = [
+                flux[idx]/den for idx in range(len(flux))
+                ]
+        # return result
+        return self.lcsDict[band].normFlux
 
     def normalized_error(self, band):
         """Normalizes the light curve in band b using the maximum in that band.
         s is a slice on the array.
         """
 
-        den = self.g.max_flux + \
-            self.r.max_flux + \
-            self.i.max_flux + \
-            self.z.max_flux
+        if not self.lcsDict[band].normErr:
+            den = self.g.max_flux + \
+                self.r.max_flux + \
+                self.i.max_flux + \
+                self.z.max_flux
 
-        fluxErr = self.lcsDict[band].fluxErr
-        result = [fluxErr[idx]/den for idx in range(len(fluxErr))]
-        return result
+            fluxErr = self.lcsDict[band].fluxErr
+        # result = [fluxErr[idx]/den for idx in range(len(fluxErr))]
+            self.lcsDict[band].normErr = [
+                fluxErr[idx]/den for idx in range(len(fluxErr))
+                ]
+        # return result
+        return self.lcsDict[band].normErr
 
     def set_peaked(self):
         self.peaked = True
