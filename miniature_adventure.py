@@ -484,7 +484,7 @@ if __name__ == "__main__":
         """
         j_offset = 0
         i_start = 0
-        i_end = 100
+        i_end = 1000
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
@@ -504,7 +504,7 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        distFlag = 999
+        distFlag = 9
         bandDict = {
             'g':0,
             'r':1,
@@ -632,17 +632,6 @@ if __name__ == "__main__":
 
                 jElSize = jCandidate.r.size
 
-                
-                # if (jCandidate.peaked == False) and (iPeaked == False):
-                #     # maximum values are at opposite sides
-                #     if (iElMax == 0. and jElMax == jElSize-1.) \
-                #     or (iElMax == iElSize-1. and jElMax == 0.) \
-                #     and not jCandidate.lcsDict[b].badCurve \
-                #     and not iCandidate.lcsDict[b].badCurve:
-                #         for b in bands:
-                #             Pymatrix[i-i_start, j-j_start] += bigDistance
-                #         continue
-
                 for b in bands:
                     if not jCandidate.lcsDict[b].badCurve \
                     and not iCandidate.lcsDict[b].badCurve:
@@ -661,46 +650,47 @@ if __name__ == "__main__":
         pbar.finish()
 
         # fixing flagged elements
-        raise SystemExit
+        # raise SystemExit
         if Pymatrix[0, Pymatrix[0] == distFlag].size > 0: 
-            Pymatrix[0, Pymatrix[0] == distFlag] = (
-                Pymatrix[1, Pymatrix[0] == distFlag] + \
-                Pymatrix[2, Pymatrix[0] == distFlag] + \
-                Pymatrix[3, Pymatrix[0] == distFlag]
+            ind = np.where(Pymatrix[0] == distFlag)
+            Pymatrix[0, ind[0], ind[1]] = np.add(
+                np.add(
+                    Pymatrix[1, ind[0], ind[1]], 
+                    Pymatrix[2, ind[0], ind[1]]
+                    ), 
+                Pymatrix[3, ind[0], ind[1]]
                 )/3.
-            # np.mean(
-            #     Pymatrix[1:4, Pymatrix[0] == distFlag]
-            #     )
 
-        if Pymatrix[1, Pymatrix[1] == distFlag].size > 0: 
-            Pymatrix[1, Pymatrix[1] == distFlag] = (
-                Pymatrix[0, Pymatrix[0] == distFlag] + \
-                Pymatrix[2, Pymatrix[0] == distFlag] + \
-                Pymatrix[3, Pymatrix[0] == distFlag]
+
+        if Pymatrix[1, Pymatrix[1] == distFlag].size > 0:
+            ind = np.where(Pymatrix[1] == distFlag)
+            Pymatrix[1, ind[0], ind[1]] = np.add(
+                np.add(
+                    Pymatrix[0, ind[0], ind[1]], 
+                    Pymatrix[2, ind[0], ind[1]]
+                    ), 
+                Pymatrix[3, ind[0], ind[1]]
                 )/3.
-            # np.mean(
-            #     Pymatrix[slc, Pymatrix[1] == distFlag]
-            #     )        
 
         if Pymatrix[2, Pymatrix[2] == distFlag].size > 0: 
-            Pymatrix[2, Pymatrix[2] == distFlag] = (
-                Pymatrix[0, Pymatrix[0] == distFlag] + \
-                Pymatrix[1, Pymatrix[0] == distFlag] + \
-                Pymatrix[3, Pymatrix[0] == distFlag]
+            ind = np.where(Pymatrix[2] == distFlag)
+            Pymatrix[2, ind[0], ind[1]] = np.add(
+                np.add(
+                    Pymatrix[0, ind[0], ind[1]], 
+                    Pymatrix[1, ind[0], ind[1]]
+                    ), 
+                Pymatrix[3, ind[0], ind[1]]
                 )/3.
-            # np.mean(
-            #     Pymatrix[slc, Pymatrix[2] == distFlag]
-            #     )
 
         if Pymatrix[3, Pymatrix[3] == distFlag].size > 0: 
-            Pymatrix[3, Pymatrix[3] == distFlag] = (
-                Pymatrix[0, Pymatrix[0] == distFlag] + \
-                Pymatrix[1, Pymatrix[0] == distFlag] + \
-                Pymatrix[2, Pymatrix[0] == distFlag]
+            ind = np.where(Pymatrix[3] == distFlag)
+            Pymatrix[3, ind[0], ind[1]] = np.add(
+                np.add(
+                    Pymatrix[0, ind[0], ind[1]], 
+                    Pymatrix[1, ind[0], ind[1]]
+                    ), 
+                Pymatrix[2, ind[0], ind[1]]
                 )/3.
-            # np.mean(
-            #     Pymatrix[0:3, Pymatrix[3] == distFlag]
-            #     )
         
         PymatrixSum = np.sum(Pymatrix, 0)
         """
