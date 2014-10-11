@@ -331,9 +331,8 @@ class SupernovaFit():
         """
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
-        distance = -99
-        bigDistance = 100
-
+        distFlag = 999
+        
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
 
@@ -356,7 +355,7 @@ class SupernovaFit():
         mjdIntersection = [el for el in mjd1 if el in mjd2]
 
         if len(mjdIntersection) < 2:
-            distance = bigDistance
+            distance = distFlag
         else:
             flux1Int = [
                 flux1[i] for i in [mjd1.index(el) for el in mjdIntersection]
