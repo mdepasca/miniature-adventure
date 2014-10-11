@@ -504,13 +504,13 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        bigDistance = 100
-        bandDict = dict(
+        distFlag = 999
+        bandDict = {
             'g':0,
             'r':1,
             'i':2,
             'z':3
-            )
+            }
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
@@ -577,12 +577,15 @@ if __name__ == "__main__":
 
                 if j == i:
                     # filling elements on the distance matrix diagonal
-                    Pymatrix[i-i_start, j-j_start] += 0.
+                    for b in bands:
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = 0.
                     continue
 
                 if j < i:
                     # filling matrix elements below the diagonal
-                    Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
+                    for b in bands:
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = \
+                                    Pymatrix[bandDict[b], j-j_start, i-i_start]
                     continue # jump to the next iteration of the loop
 
                 """
@@ -643,42 +646,101 @@ if __name__ == "__main__":
                 for b in bands:
                     if not jCandidate.lcsDict[b].badCurve \
                     and not iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i-i_start, j-j_start] += iCandidate.get_distance(
-                            jCandidate, 
-                            b)
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = \
+                            iCandidate.get_distance(jCandidate, b)
                     else:
                         # in case of bad curve
                         # print i, j
-                        Pymatrix[i-i_start, j-j_start] += bigDistance
+                        """
+                        This works like a flag. These elements will be set 
+                        equal to a neutral value (the mean of the other)
+                        """
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = distFlag
 
             pbar.update(i-i_start+1)
         pbar.finish()
 
+        # fixing flagged elements
+        raise SystemExit
+        if Pymatrix[0, Pymatrix[0] == distFlag].size > 0: 
+            Pymatrix[0, Pymatrix[0] == distFlag] = (
+                Pymatrix[1, Pymatrix[0] == distFlag] + \
+                Pymatrix[2, Pymatrix[0] == distFlag] + \
+                Pymatrix[3, Pymatrix[0] == distFlag]
+                )/3.
+            # np.mean(
+            #     Pymatrix[1:4, Pymatrix[0] == distFlag]
+            #     )
+
+        if Pymatrix[1, Pymatrix[1] == distFlag].size > 0: 
+            Pymatrix[1, Pymatrix[1] == distFlag] = (
+                Pymatrix[0, Pymatrix[0] == distFlag] + \
+                Pymatrix[2, Pymatrix[0] == distFlag] + \
+                Pymatrix[3, Pymatrix[0] == distFlag]
+                )/3.
+            # np.mean(
+            #     Pymatrix[slc, Pymatrix[1] == distFlag]
+            #     )        
+
+        if Pymatrix[2, Pymatrix[2] == distFlag].size > 0: 
+            Pymatrix[2, Pymatrix[2] == distFlag] = (
+                Pymatrix[0, Pymatrix[0] == distFlag] + \
+                Pymatrix[1, Pymatrix[0] == distFlag] + \
+                Pymatrix[3, Pymatrix[0] == distFlag]
+                )/3.
+            # np.mean(
+            #     Pymatrix[slc, Pymatrix[2] == distFlag]
+            #     )
+
+        if Pymatrix[3, Pymatrix[3] == distFlag].size > 0: 
+            Pymatrix[3, Pymatrix[3] == distFlag] = (
+                Pymatrix[0, Pymatrix[0] == distFlag] + \
+                Pymatrix[1, Pymatrix[0] == distFlag] + \
+                Pymatrix[2, Pymatrix[0] == distFlag]
+                )/3.
+            # np.mean(
+            #     Pymatrix[0:3, Pymatrix[3] == distFlag]
+            #     )
+        
+        PymatrixSum = np.sum(Pymatrix, 0)
         """
         Create R matrix
         """
-        filePath = prodDir + 'distance_matrix' + os.sep + \
-            'Pymatrix_{:<}_{:<5.3f}.txt'.format(
-                socket.gethostname(), time.time()
-            )
         fileHeader = "# Pymatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
             i_start, i_end, j_start, j_end
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-        np.savetxt(filePath, Pymatrix, fmt='%6.4f', header=fileHeader)
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, Pymatrix[0], fmt='%6.4f', header=fileHeader)
 
-        # filePath = prodDir + 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
-        #     socket.gethostname(), time.time()
-        #     )
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, Pymatrix[1], fmt='%6.4f', header=fileHeader)
 
-        # Rmatrix = ro.Matrix(Pymatrix)
-        # write_table = ro.r['write.table']
-        # """
-        # write Rmatrix on dat file to use later.
-        # """
-        # write_table(Rmatrix, filePath, row_names=False, col_names=False)
-        
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, Pymatrix[2], fmt='%6.4f', header=fileHeader)
+
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, Pymatrix[3], fmt='%6.4f', header=fileHeader)
+
+
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, PymatrixSum, fmt='%6.4f', header=fileHeader)
 
     """
 
@@ -688,11 +750,6 @@ if __name__ == "__main__":
 
 
     if args.diffuse:
-        if 'Rmatrix' not in globals():
-            print indent + 'Loading catalog from dump file ...'
-            Rmatrix = util.open_pkl('Rmatrix.pkl')
-            # Rmatrix = util.open_pkl('Rmatrix_train.pkl')
-
         if 'diffusionMap' not in globals():
             diffusionMap = importr('diffusionMap')
 
