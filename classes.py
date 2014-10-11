@@ -331,7 +331,7 @@ class SupernovaFit():
         """
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
-        distFlag = 999
+        distFlag = 9
         
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
