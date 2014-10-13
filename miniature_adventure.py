@@ -484,7 +484,7 @@ if __name__ == "__main__":
         """
         j_offset = 0
         i_start = 0
-        i_end = 100
+        i_end = 500
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
@@ -504,18 +504,18 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        bigDistance = 100
-        bandDict = dict(
+        bigDistance = 10
+        bandDict = {
             'g':0,
             'r':1,
             'i':2,
             'z':3
-            )
+            }
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
         # creating numpy matrix
-        Pymatrix = np.zeros((4, 
+        Pymatrix = np.zeros(( 
             len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
             dtype=float
             )
