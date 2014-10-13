@@ -80,7 +80,6 @@ class LightCurve():
         """
         Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
-        # self.shiftedMjd = np.subtract(self.mjd, distance)
         self.shiftedMjd = [self.mjd[i]-distance for i in range(len(self.mjd))]
     
     @property
@@ -331,7 +330,7 @@ class SupernovaFit():
         """
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
-        distFlag = 9
+        distFlag = 1
         
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size

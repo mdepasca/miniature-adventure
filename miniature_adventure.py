@@ -484,7 +484,7 @@ if __name__ == "__main__":
         """
         j_offset = 0
         i_start = 0
-        i_end = 1000
+        i_end = 100
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
@@ -504,7 +504,7 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        distFlag = 9
+        distFlag = 1
         bandDict = {
             'g':0,
             'r':1,
@@ -536,12 +536,12 @@ if __name__ == "__main__":
                 
             iCandidate = cls.SupernovaFit(tmpSN)
             
-            for l in tmpSN.lcsDict.keys():
+            for b in tmpSN.lcsDict.keys():
                 # set_lightcurve set also if the lc is peaked or not
-                iCandidate.set_lightcurve(l, 
-                    tmpSN.lcsDict[l].mjd,
-                    tmpSN.lcsDict[l].flux,
-                    tmpSN.lcsDict[l].fluxErr
+                iCandidate.set_lightcurve(b, 
+                    tmpSN.lcsDict[b].mjd,
+                    tmpSN.lcsDict[b].flux,
+                    tmpSN.lcsDict[b].fluxErr
                     )
 
             """
@@ -551,7 +551,7 @@ if __name__ == "__main__":
             if iCandidate.peaked == False:
                 # print i, iCandidate.SNID
                 """
-                keeping to perform check with other non peaed LC
+                keeping to perform check with other non peaked LC
                 """
                 iElMax = iCandidate.r.shiftedMjd.index(0.)
                 """
@@ -603,11 +603,11 @@ if __name__ == "__main__":
                         " THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
 
                 jCandidate = cls.SupernovaFit(tmpSN)
-                for l in tmpSN.lcsDict.keys():
-                    jCandidate.set_lightcurve(l, 
-                        tmpSN.lcsDict[l].mjd, 
-                        tmpSN.lcsDict[l].flux, 
-                        tmpSN.lcsDict[l].fluxErr
+                for b in tmpSN.lcsDict.keys():
+                    jCandidate.set_lightcurve(b, 
+                        tmpSN.lcsDict[b].mjd, 
+                        tmpSN.lcsDict[b].flux, 
+                        tmpSN.lcsDict[b].fluxErr
                         )
 
                 """
@@ -616,7 +616,7 @@ if __name__ == "__main__":
                 jCandidate.shift_mjds()
                 if jCandidate.peaked == False:
                     """
-                    keeping to perform check with other non peaed LC
+                    keeping to perform check with other non peaked LC
                     """
                     jElMax = jCandidate.r.shiftedMjd.index(0.)
                     """
@@ -639,7 +639,6 @@ if __name__ == "__main__":
                             iCandidate.get_distance(jCandidate, b)
                     else:
                         # in case of bad curve
-                        # print i, j
                         """
                         This works like a flag. These elements will be set 
                         equal to a neutral value (the mean of the other)
@@ -653,44 +652,48 @@ if __name__ == "__main__":
         # raise SystemExit
         if Pymatrix[0, Pymatrix[0] == distFlag].size > 0: 
             ind = np.where(Pymatrix[0] == distFlag)
-            Pymatrix[0, ind[0], ind[1]] = np.add(
-                np.add(
-                    Pymatrix[1, ind[0], ind[1]], 
-                    Pymatrix[2, ind[0], ind[1]]
-                    ), 
-                Pymatrix[3, ind[0], ind[1]]
-                )/3.
+            Pymatrix[0, ind[0], ind[1]] = Pymatrix[0,:,:].max()
+            # Pymatrix[0, ind[0], ind[1]] = np.add(
+            #     np.add(
+            #         Pymatrix[1, ind[0], ind[1]], 
+            #         Pymatrix[2, ind[0], ind[1]]
+            #         ), 
+            #     Pymatrix[3, ind[0], ind[1]]
+            #     )/3.
 
 
         if Pymatrix[1, Pymatrix[1] == distFlag].size > 0:
             ind = np.where(Pymatrix[1] == distFlag)
-            Pymatrix[1, ind[0], ind[1]] = np.add(
-                np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[2, ind[0], ind[1]]
-                    ), 
-                Pymatrix[3, ind[0], ind[1]]
-                )/3.
+            Pymatrix[1, ind[0], ind[1]] = Pymatrix[1,:,:].max()
+            # Pymatrix[1, ind[0], ind[1]] = np.add(
+            #     np.add(
+            #         Pymatrix[0, ind[0], ind[1]], 
+            #         Pymatrix[2, ind[0], ind[1]]
+            #         ), 
+            #     Pymatrix[3, ind[0], ind[1]]
+            #     )/3.
 
         if Pymatrix[2, Pymatrix[2] == distFlag].size > 0: 
             ind = np.where(Pymatrix[2] == distFlag)
-            Pymatrix[2, ind[0], ind[1]] = np.add(
-                np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[1, ind[0], ind[1]]
-                    ), 
-                Pymatrix[3, ind[0], ind[1]]
-                )/3.
+            Pymatrix[2, ind[0], ind[1]] = Pymatrix[2].max()
+            # Pymatrix[2, ind[0], ind[1]] = np.add(
+            #     np.add(
+            #         Pymatrix[0, ind[0], ind[1]], 
+            #         Pymatrix[1, ind[0], ind[1]]
+            #         ), 
+            #     Pymatrix[3, ind[0], ind[1]]
+            #     )/3.
 
         if Pymatrix[3, Pymatrix[3] == distFlag].size > 0: 
             ind = np.where(Pymatrix[3] == distFlag)
-            Pymatrix[3, ind[0], ind[1]] = np.add(
-                np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[1, ind[0], ind[1]]
-                    ), 
-                Pymatrix[2, ind[0], ind[1]]
-                )/3.
+            Pymatrix[3, ind[0], ind[1]] = Pymatrix[3].max()
+            # Pymatrix[3, ind[0], ind[1]] = np.add(
+            #     np.add(
+            #         Pymatrix[0, ind[0], ind[1]], 
+            #         Pymatrix[1, ind[0], ind[1]]
+            #         ), 
+            #     Pymatrix[2, ind[0], ind[1]]
+            #     )/3.
         
         PymatrixSum = np.sum(Pymatrix, 0)
         """
