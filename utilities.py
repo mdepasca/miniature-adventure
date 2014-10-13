@@ -73,6 +73,7 @@ class bcolors:
     FAIL = '\033[91m'
     ENDC = '\033[0m'
 
+global Rband
 
 if __name__ == '__main__':
     """
@@ -414,6 +415,31 @@ def mag_to_flux(mag, limMag=False):
     return flux
 
 
+def time_correct(mjd, zed):
+    """
+    correct for time dilation
+    """
+    return [mjd[i]/(1.+zed) for i in range(len(mjd))]
+
+
+Rband = dict([('g', 3.237), ('r', 2.176), ('i', 1.595), ('z', 1.217)])
+def correct_for_absorbtion(flux, ebv, band):
+    """
+    correct for MW dust absorption.
+    From the `ebv' and `band' uses the correct R_band obtained from 
+    Schlafly & Finkbeiner 2011.
+    general law A_band = R_band * E(B-V)
+
+    A_band has to be turned in flux units
+    """
+
+    a_mag = Rband[band] * ebv
+    print Rband[band]
+    print a_mag
+    a_flux = 10**(-0.4*a_mag)
+    print a_flux
+    return [flux[i]*a_flux for i in range(len(flux))]
+
 def open_gzip_pkl_catalog(path):
     f = gzip.open(path, 'rb')
     catalog = pkl.load(f)
@@ -429,15 +455,15 @@ def pick_random_sn(catalog, band):
     Phase has zeropoint on the maximum flux in r band
     """
     idx = np.random.random_integers(low=0, high=len(catalog.SNID))
-    numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
+    numObs = len(catalog.sne[idx].lcsDict[band].mjd)
 
-    phase = catalog.sne[idx].lightCurvesDict[band].mjd
-    # phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
+    phase = catalog.sne[idx].lcsDict[band].mjd
+    # phase = phase - phase[catalog.sne[idx].lcsDict['r'].flux.argmax()]
     phase = phase - phase.min()
 
-    flux = catalog.sne[idx].lightCurvesDict[band].flux
+    flux = catalog.sne[idx].lcsDict[band].flux
     
-    errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
+    errFlux = catalog.sne[idx].lcsDict[band].fluxErr
     
     return phase, flux, errFlux, idx
 
@@ -448,15 +474,15 @@ def get_sn(catalog, band, idx):
     Time has zeropoint on the maximum flux in r band
     """
 
-    numObs = len(catalog.sne[idx].lightCurvesDict[band].mjd)
+    numObs = len(catalog.sne[idx].lcsDict[band].mjd)
 
-    phase = catalog.sne[idx].lightCurvesDict[band].mjd
-    # phase = phase - phase[catalog.sne[idx].lightCurvesDict['r'].flux.argmax()]
+    phase = catalog.sne[idx].lcsDict[band].mjd
+    # phase = phase - phase[catalog.sne[idx].lcsDict['r'].flux.argmax()]
     phase = phase - phase.min()
 
-    flux = catalog.sne[idx].lightCurvesDict[band].flux
+    flux = catalog.sne[idx].lcsDict[band].flux
     
-    errFlux = catalog.sne[idx].lightCurvesDict[band].fluxErr
+    errFlux = catalog.sne[idx].lcsDict[band].fluxErr
     
     return phase, flux, errFlux
 
@@ -496,7 +522,7 @@ def gp_fit(
     # Block to capture unwanted output from .constrain_fixed() function
     # with Capturing() as output:
     [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
-         for i in range(X.size)
+         for i in range(len(X))
          ]
 
     if test_length:
@@ -522,7 +548,7 @@ def gp_fit(
     else:
         gpModel.optimize(optimizer='scg')
 
-    predX = reshape_for_GPy(np.arange(X.min(), X.max(), 1.))
+    predX = reshape_for_GPy(np.arange(min(X), max(X), 1.))
 
     # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
@@ -567,9 +593,9 @@ if __name__ == '__main__':
                         "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
         sn = get_sn_from_file(pathToSN)
 
-        phase = sn.lightCurvesDict[args.band].mjd
-        flux = sn.lightCurvesDict[args.band].flux
-        errFlux = sn.lightCurvesDict[args.band].fluxErr
+        phase = sn.lcsDict[args.band].mjd
+        flux = sn.lcsDict[args.band].flux
+        errFlux = sn.lcsDict[args.band].fluxErr
     else:
         pass
     
@@ -600,7 +626,7 @@ if __name__ == '__main__':
     # TBD: the fit is OK if passes the model validation procedure (which has 
     # 
     # to be done)
-    if not sn.lightCurvesDict[args.band].badCurve:
+    if not sn.lcsDict[args.band].badCurve:
         if args.mag:
             predPhase, mu, var, GPModel = gp_fit(
                                             phase, mag, errMag, 
@@ -616,8 +642,19 @@ if __name__ == '__main__':
                                             test_prior=args.testPrior,
                                             verbose=args.verbose)
 
+            zed = sn.zSpec if sn.zSpec else sn.zPhotHost
+            corr_phase = time_correct(phase, zed)
+            corr_flux = correct_for_absorbtion(flux, sn.MWEBV, args.band)
+
+            corr_predPhase, corr_mu, corr_var, corr_GPModel = gp_fit(
+                                            corr_phase, corr_flux, errFlux, 
+                                            kern, n_restarts=10, 
+                                            test_length=args.testLength,
+                                            test_prior=args.testPrior,
+                                            verbose=args.verbose)
+
         
-        print GPModel['.*lengthscale|.*power']
+        # print GPModel['.*lengthscale|.*power']
         
         print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
 
@@ -631,20 +668,28 @@ if __name__ == '__main__':
         else:
             figNum = 1
 
-        GPModel.plot_f(fignum=figNum)
+        # GPModel.plot_f(fignum=figNum)
+        # corr_GPModel.plot_f(fignum=figNum)
 
         if args.mag:
+            print 'mags'
             ylim = plt.ylim()
             plt.ylim(ylim[1], ylim[0])
             plt.errorbar(phase, mag, 
-                         yerr=errMag, fmt=None, ecolor='black', zorder=1)
+                 yerr=errMag, fmt=None, ecolor='black', zorder=1)
         else:
-            plt.errorbar(phase, flux, 
-                         yerr=errFlux, fmt=None, ecolor='black', zorder=1)
+            fig, ax = plt.subplots(nrows=2, ncols=1, 
+                figsize=(16.5, 11.7), 
+                tight_layout=False
+                )
+            fig.suptitle("{:>06}".format(args.candidate))
+            print 'fluxes'
+            ax[0].errorbar(phase, flux, 
+                yerr=errFlux, fmt=None, ecolor='black', zorder=1)
 
-        plt.text(
-            plt.xlim()[0], 
-            plt.ylim()[1], "{:>06}".format(args.candidate))
+            ax[1].errorbar(corr_phase, corr_flux,
+                yerr=errFlux, fmt=None, ecolor='red', zorder=1)
+
         print "  The process took {:5.3f} secs.".format(time.time()-start_time)
         plt.show()
     else:
