@@ -262,9 +262,10 @@ if __name__ == "__main__":
                 fout.close()
 
                 candidateFit.set_lightcurve(b, 
-                    predMjd.reshape(predMjd.size),
-                    predFlux.reshape(predFlux.size), 
-                    predErr.reshape(predErr.size))
+                    predMjd, predFlux, predErr)
+                    # predMjd.reshape(predMjd.size),
+                    # predFlux.reshape(predFlux.size), 
+                    # predErr.reshape(predErr.size))
                 
                 
                 print indent + \
@@ -322,7 +323,7 @@ if __name__ == "__main__":
                         )   
             else:
                 whileOn = False    
-        np.savetxt(prodDir + filePath, nopeakIdx,
+        np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
     """

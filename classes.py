@@ -433,13 +433,13 @@ class SupernovaFit():
                 continue
 
             if bandArr.size == 0:
-                bandArr = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                bandArr = np.empty(len(self.lcsDict[b].mjd), dtype=np.str)
                 bandArr[:] = b
                 mjd = self.lcsDict[b].mjd
                 flux = self.lcsDict[b].flux
                 fluxErr = self.lcsDict[b].fluxErr
             else:
-                tmp = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                tmp = np.empty(len(self.lcsDict[b].mjd), dtype=np.str)
                 tmp[:] = b
                 bandArr = np.concatenate((bandArr, tmp))
                 mjd = np.concatenate((mjd, self.lcsDict[b].mjd))

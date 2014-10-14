@@ -588,7 +588,8 @@ def gp_fit(
 
     # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
-    return predX, meanY, var, gpModel
+    return list(predX.reshape(predX.size)), \
+        list(meanY.reshape(meanY.size)), list(var.reshape(var.size)), gpModel
 
 #
 #
