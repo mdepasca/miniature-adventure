@@ -227,8 +227,9 @@ if __name__ == "__main__":
             # candidateFit = cls.SupernovaFit(candidate.SNID)
             candidateFit = cls.SupernovaFit(candidate)
             for b in candidate.lcsDict.keys(): 
+                phase = util.time_correct(candidate.lcsDict[b].mjd, 
+                    candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
-                phase = util.time_correct(candidate.lcsDict[b].mjd)
                 flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
                     candidate.MWEBV, b)
                 errFlux = candidate.lcsDict[b].fluxErr
