@@ -438,10 +438,7 @@ def correct_for_absorption(flux, ebv, band):
     """
 
     a_mag = Rband[band] * ebv
-    print Rband[band]
-    print a_mag
     a_flux = 10**(0.4*a_mag)
-    print a_flux
     return [flux[i]*a_flux for i in range(len(flux))]
 
 def open_gzip_pkl_catalog(path):
