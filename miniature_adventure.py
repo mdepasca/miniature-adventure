@@ -238,7 +238,7 @@ if __name__ == "__main__":
                 # 
                 # Fitting Lightcurve
 
-                if (candidate.lcsDict[b].badCurve) or (flux.size <= 3):
+                if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
