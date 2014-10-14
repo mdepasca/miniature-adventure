@@ -477,7 +477,6 @@ def redshift_distrib(pathToDir, binSize):
     lsDirData.sort()
     lsDirData.remove('')
 
-
     zed = np.zeros(len(lsDirData), dtype=np.float)
 
     i = 0
@@ -486,15 +485,10 @@ def redshift_distrib(pathToDir, binSize):
         z[...] = sn.zSpec if sn.zSpec else sn.zPhotHost
         i += 1
 
-    # print len(lsDirData)
-    # print i
     nBins = round((zed.max()-zed.min())/binSize)
-    # print nBins
-    # print zed.max()
-    # print zed.min()
-    # figNum = plt.get_fignums()[-1]
+
     plt.figure()
-    plt.hist(zed, bins=nBins, color='0.60', edgecolor='0.70')
+    plt.hist(zed, bins=nBins, color='0.60', edgecolor='0.50')
     plt.xlabel('redshift z')
     plt.ylabel('number of observations')
 
