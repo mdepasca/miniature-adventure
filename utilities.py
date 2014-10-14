@@ -436,7 +436,7 @@ def correct_for_absorbtion(flux, ebv, band):
     a_mag = Rband[band] * ebv
     print Rband[band]
     print a_mag
-    a_flux = 10**(-0.4*a_mag)
+    a_flux = 10**(0.4*a_mag)
     print a_flux
     return [flux[i]*a_flux for i in range(len(flux))]
 
@@ -466,6 +466,39 @@ def pick_random_sn(catalog, band):
     errFlux = catalog.sne[idx].lcsDict[band].fluxErr
     
     return phase, flux, errFlux, idx
+
+
+def redshift_distrib(pathToDir, binSize):
+    p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=pathToDir)
+
+    lsDirData = p.stdout.read()
+    lsDirData = lsDirData.split('\n')
+    lsDirData.sort()
+    lsDirData.remove('')
+
+
+    zed = np.zeros(len(lsDirData), dtype=np.float)
+
+    i = 0
+    for z in np.nditer(zed, op_flags=['readwrite']):
+        sn = get_sn_from_file(pathToDir+lsDirData[i])    
+        z[...] = sn.zSpec if sn.zSpec else sn.zPhotHost
+        i += 1
+
+    # print len(lsDirData)
+    # print i
+    nBins = round((zed.max()-zed.min())/binSize)
+    # print nBins
+    # print zed.max()
+    # print zed.min()
+    # figNum = plt.get_fignums()[-1]
+    plt.figure()
+    plt.hist(zed, bins=nBins, color='0.60', edgecolor='0.70')
+    plt.xlabel('redshift z')
+    plt.ylabel('number of observations')
+
+    return zed
 
 def get_sn(catalog, band, idx):
     """
