@@ -422,8 +422,12 @@ def time_correct(mjd, zed):
     return [mjd[i]/(1.+zed) for i in range(len(mjd))]
 
 
+def k_correction():
+    pass
+
+
 Rband = dict([('g', 3.237), ('r', 2.176), ('i', 1.595), ('z', 1.217)])
-def correct_for_absorbtion(flux, ebv, band):
+def correct_for_absorption(flux, ebv, band):
     """
     correct for MW dust absorption.
     From the `ebv' and `band' uses the correct R_band obtained from 
@@ -451,24 +455,27 @@ def open_gzip_pkl_catalog(path):
 def pick_random_sn(catalog, band):
     """
     Extract random observation in specified band from catalog. 
-    Returns phase, flux, flux errors arrays and index in the catalog.
-    Phase has zeropoint on the maximum flux in r band
+    Returns epoch, flux, flux errors arrays and index in the catalog.
+    epoch has zeropoint on the maximum flux in r band
     """
     idx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[idx].lcsDict[band].mjd)
 
-    phase = catalog.sne[idx].lcsDict[band].mjd
-    # phase = phase - phase[catalog.sne[idx].lcsDict['r'].flux.argmax()]
-    phase = phase - phase.min()
+    epoch = catalog.sne[idx].lcsDict[band].mjd
+    # epoch = epoch - epoch[catalog.sne[idx].lcsDict['r'].flux.argmax()]
+    epoch = epoch - epoch.min()
 
     flux = catalog.sne[idx].lcsDict[band].flux
     
     errFlux = catalog.sne[idx].lcsDict[band].fluxErr
     
-    return phase, flux, errFlux, idx
+    return epoch, flux, errFlux, idx
 
 
 def redshift_distrib(pathToDir, binSize):
+    """
+    returns the distribution of redshift values with bin size *binSize*
+    """
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=pathToDir)
 
@@ -485,10 +492,15 @@ def redshift_distrib(pathToDir, binSize):
         z[...] = sn.zSpec if sn.zSpec else sn.zPhotHost
         i += 1
 
-    nBins = round((zed.max()-zed.min())/binSize)
-
+    # nBins = round((zed.max()-zed.min())/binSize)
+    print round(zed.max()*100)
+    print int(binSize*100)
+    bins = [range(0, int(zed.max()*100), int(binSize*100))[i]/100. for i in 
+        range(len(range(0, int(zed.max()*100), int(binSize*100))))]
+    bins.append(bins[-1]+binSize)
+    print bins
     plt.figure()
-    plt.hist(zed, bins=nBins, color='0.60', edgecolor='0.50')
+    plt.hist(zed, bins=bins, color='0.60', edgecolor='0.50')
     plt.xlabel('redshift z')
     plt.ylabel('number of observations')
 
@@ -503,15 +515,15 @@ def get_sn(catalog, band, idx):
 
     numObs = len(catalog.sne[idx].lcsDict[band].mjd)
 
-    phase = catalog.sne[idx].lcsDict[band].mjd
-    # phase = phase - phase[catalog.sne[idx].lcsDict['r'].flux.argmax()]
-    phase = phase - phase.min()
+    epoch = catalog.sne[idx].lcsDict[band].mjd
+    # epoch = epoch - epoch[catalog.sne[idx].lcsDict['r'].flux.argmax()]
+    epoch = epoch - epoch.min()
 
     flux = catalog.sne[idx].lcsDict[band].flux
     
     errFlux = catalog.sne[idx].lcsDict[band].fluxErr
     
-    return phase, flux, errFlux
+    return epoch, flux, errFlux
 
 def get_sn_from_file(pathToSN):
     """Reads photometric data of SN from file formatted by SNPhotCC"""
@@ -620,7 +632,7 @@ if __name__ == '__main__':
                         "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
         sn = get_sn_from_file(pathToSN)
 
-        phase = sn.lcsDict[args.band].mjd
+        epoch = sn.lcsDict[args.band].mjd
         flux = sn.lcsDict[args.band].flux
         errFlux = sn.lcsDict[args.band].fluxErr
     else:
@@ -655,26 +667,26 @@ if __name__ == '__main__':
     # to be done)
     if not sn.lcsDict[args.band].badCurve:
         if args.mag:
-            predPhase, mu, var, GPModel = gp_fit(
-                                            phase, mag, errMag, 
+            predEupoch, mu, var, GPModel = gp_fit(
+                                            epoch, mag, errMag, 
                                             kern, n_restarts=10, 
                                             test_length=args.testLength, 
                                             test_prior=args.testPrior,
                                             verbose=args.verbose)
         else:
-            predPhase, mu, var, GPModel = gp_fit(
-                                            phase, flux, errFlux, 
+            predEpoch, mu, var, GPModel = gp_fit(
+                                            epoch, flux, errFlux, 
                                             kern, n_restarts=10, 
                                             test_length=args.testLength,
                                             test_prior=args.testPrior,
                                             verbose=args.verbose)
 
             zed = sn.zSpec if sn.zSpec else sn.zPhotHost
-            corr_phase = time_correct(phase, zed)
-            corr_flux = correct_for_absorbtion(flux, sn.MWEBV, args.band)
+            corr_epoch = time_correct(epoch, zed)
+            corr_flux = correct_for_absorption(flux, sn.MWEBV, args.band)
 
-            corr_predPhase, corr_mu, corr_var, corr_GPModel = gp_fit(
-                                            corr_phase, corr_flux, errFlux, 
+            corr_predEpoch, corr_mu, corr_var, corr_GPModel = gp_fit(
+                                            corr_epoch, corr_flux, errFlux, 
                                             kern, n_restarts=10, 
                                             test_length=args.testLength,
                                             test_prior=args.testPrior,
@@ -702,7 +714,7 @@ if __name__ == '__main__':
             print 'mags'
             ylim = plt.ylim()
             plt.ylim(ylim[1], ylim[0])
-            plt.errorbar(phase, mag, 
+            plt.errorbar(epoch, mag, 
                  yerr=errMag, fmt=None, ecolor='black', zorder=1)
         else:
             fig, ax = plt.subplots(nrows=2, ncols=1, 
@@ -711,10 +723,10 @@ if __name__ == '__main__':
                 )
             fig.suptitle("{:>06}".format(args.candidate))
             print 'fluxes'
-            ax[0].errorbar(phase, flux, 
+            ax[0].errorbar(epoch, flux, 
                 yerr=errFlux, fmt=None, ecolor='black', zorder=1)
 
-            ax[1].errorbar(corr_phase, corr_flux,
+            ax[1].errorbar(corr_epoch, corr_flux,
                 yerr=errFlux, fmt=None, ecolor='red', zorder=1)
 
         print "  The process took {:5.3f} secs.".format(time.time()-start_time)
