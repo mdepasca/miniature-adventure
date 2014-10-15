@@ -282,33 +282,37 @@ if __name__ == "__main__":
         # ferr.close()
         whileOn = True
         i = 0
-        filePath = 'peaked_{:<}.dat'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(prodDir + filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
+        # while whileOn:
+        #     if path.exists(prodDir + filePath):
+        #             i += 1
+        #             pklIdx = filePath.rfind('.dat')
+        #             filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
+        #                 socket.gethostname(),
+        #                 i
+        #                 )
+        #     else:
+        #         whileOn = False    
         np.savetxt(prodDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
         whileOn = True
         i = 0
-        filePath = prodDir + 'nopeaked_{:<}.dat'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(prodDir + filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
-                        socket.gethostname(),
-                        i
-                        )   
-            else:
-                whileOn = False    
+        filePath = prodDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
+        # while whileOn:
+        #     if path.exists(prodDir + filePath):
+        #             i += 1
+        #             pklIdx = filePath.rfind('.dat')
+        #             filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
+        #                 socket.gethostname(),
+        #                 i
+        #                 )   
+        #     else:
+        #         whileOn = False    
         np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
