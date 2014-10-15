@@ -11,6 +11,7 @@ import warnings
 
 warnings.filterwarnings('error', message=".*divide by zero encountered in double_scalars.*", category=RuntimeWarning)
 from math import sqrt
+from scipy import interpolate
 
 if __name__ == '__main__':
     import utilities as util
@@ -221,6 +222,62 @@ class Supernova():
     def __cmp__(self, other):
         return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
+    def k_correct_flux(self):
+        lambda_oss = [479.66, 638.26, 776.90, 910.82]
+        zed_gr = lambda_oss[1]/lambda_oss[0] - 1
+        zed_ri = lambda_oss[2]/lambda_oss[1] - 1
+        zed_iz = lambda_oss[3]/lambda_oss[2] - 1
+
+        lambda_em = [lambda_oss[i]/(
+            1+(self.zSpec if self.zSpec else self.zPhotHost)
+            ) for i in range(len(lambda_oss))]
+
+        # check for existence of observations in all the 4 lcs
+        if self.g.badCurve or self.r.badCurve or self.i.badCurve \
+        or self.z.badCurve:
+            raise TypeError("K-correction not possible: not all bands\
+                have observations")
+        else:
+            # intersection of epochs in 4 bands
+            print len(self.g.mjd), \
+                len(self.r.mjd), \
+                len(self.i.mjd), \
+                len(self.z.mjd)
+
+            mjd = self.r.mjd # temp solution 
+            # list of low resolution spectra
+            k_corr_g = list()
+            k_corr_r = list()
+            k_corr_i = list()
+
+            int_mjd_g = [int(el) for el in self.g.mjd]
+            int_mjd_r = [int(el) for el in self.r.mjd]            
+            int_mjd_i = [int(el) for el in self.i.mjd]
+            int_mjd_z = [int(el) for el in self.z.mjd]
+
+            for i in range(len(mjd)):
+                # s.append([self.g.flux[self.g.mjd.index(mjd[i])], 
+                #     self.r.flux[self.r.mjd.index(mjd[i])],
+                #     self.i.flux[self.i.mjd.index(mjd[i])],
+                #     self.z.flux[self.z.mjd.index(mjd[i])]
+                #     ])
+                try:
+                    interpol = interpolate.interp1d(
+                            lambda_em, [
+                                self.g.flux[int_mjd_g.index(int(mjd[i]))], 
+                                self.r.flux[int_mjd_r.index(int(mjd[i]))],
+                                self.i.flux[int_mjd_i.index(int(mjd[i]))],
+                                self.z.flux[int_mjd_z.index(int(mjd[i]))]
+                                ],
+                            assume_sorted=True
+                            )
+                    k_corr_g.append(interpol(lambda_oss[0]).item(0))
+                    k_corr_r.append(interpol(lambda_oss[1]).item(0))
+                    k_corr_i.append(interpol(lambda_oss[2]).item(0))
+                except ValueError:
+                    print int(mjd[i]))
+                    
+        return list([k_corr_g, k_corr_r, k_corr_i])
 
 class SupernovaFit():
     ccMjdMaxFlux = 0
@@ -701,11 +758,7 @@ if __name__ == '__main__':
     dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     fCandidatesList = "DES_BLIND+HOSTZ.LIST"
     candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)
-    catalogFit = CandidatesCatalog()
     kern = GPy.kern.RBF(1)
-
-    print args.candidate1
-    print args.candidate2
 
     if args.band not in ['g', 'r', 'i', 'z']:
         print 'Band {:<} not recognised! Changing to r'.format(args.band)
@@ -723,9 +776,12 @@ if __name__ == '__main__':
         args.candidate2 = np.random.random_integers(
             low=0, high=18321)
 
+    print args.candidate1
+    print args.candidate2
 
     # Getting observation data
     candidates = list()
+    fit = list()
     candidates.append(Supernova(
         dirData+os.sep+candidatesFileList[args.candidate1]))
 
@@ -734,7 +790,10 @@ if __name__ == '__main__':
 
     for candidate in candidates:
         # Create SupernovaFit objects
-        candidateFit = SupernovaFit(candidate.SNID)
+        # candidateFit = SupernovaFit(candidate.SNID)
+        k_corr = candidate.k_correct_flux()
+        raise SystemExit
+
         for b in candidate.lcsDict.keys():
             phase = candidate.lcsDict[b].mjd
             flux = candidate.lcsDict[b].flux
@@ -756,10 +815,7 @@ if __name__ == '__main__':
                 sys.stdout = saveOut
                 fout.close()
 
-                candidateFit.set_lightcurve(b, 
-                    predMjd.reshape(predMjd.size),
-                    predFlux.reshape(predFlux.size), 
-                    predErr.reshape(predErr.size))
+                candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
                 
                 print indent + \
                     "{:<} {:<}".format(candidate.SNID, b)
@@ -770,12 +826,13 @@ if __name__ == '__main__':
                     util.bcolors.ENDC
 
         candidateFit.shift_mjds()
-        catalogFit.add_candidate(candidateFit)
+        fit.append(candidateFit)
+        # catalogFit.add_candidate(candidateFit)
 
-    if catalogFit.candidates[0].peaked and catalogFit.candidates[1].peaked:
+    if fit[0].peaked and fit[1].peaked:
         print 'Distance between the 2 normalized lcs in ' + \
         '{:<} band = {:<2.4f}'.format(args.band,
-            catalogFit.candidates[0].get_distance(catalogFit.candidates[1], 
+            fit[0].get_distance(fit[1], 
             args.band, reset_masks=False))
 
         # if plt.get_fignums():
@@ -785,18 +842,18 @@ if __name__ == '__main__':
 
         # plt.figure(figNum)
         plt.scatter(
-            catalogFit.candidates[0].lcsDict[args.band].shiftedMjd.compressed(),
-            catalogFit.candidates[0].normalized_flux(args.band))
+            fit[0].lcsDict[args.band].shiftedMjd,
+            fit[0].normalized_flux(args.band))
 
         plt.scatter(
-            catalogFit.candidates[1].lcsDict[args.band].shiftedMjd.compressed(),
-            catalogFit.candidates[1].normalized_flux(args.band), c='orange')
+            fit[1].lcsDict[args.band].shiftedMjd,
+            fit[1].normalized_flux(args.band), c='orange')
 
         plt.show()
     else:
         print 'One of the 2 candidate has not r-band peak: '
-        print 'Candidate 1 - {:<}'.format(catalogFit.candidates[0].peaked)
-        print 'Candidate 2 - {:<}'.format(catalogFit.candidates[1].peaked)
+        print 'Candidate 1 - {:<}'.format(fit[0].peaked)
+        print 'Candidate 2 - {:<}'.format(fit[1].peaked)
 
 
     # return catalogFit
