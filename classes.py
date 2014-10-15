@@ -244,7 +244,7 @@ class Supernova():
                 len(self.i.mjd), \
                 len(self.z.mjd)
 
-            mjd = self.r.mjd # temp solution 
+            # mjd = self.r.mjd # temp solution 
             # list of low resolution spectra
             k_corr_g = list()
             k_corr_r = list()
@@ -255,6 +255,12 @@ class Supernova():
             int_mjd_i = [int(el) for el in self.i.mjd]
             int_mjd_z = [int(el) for el in self.z.mjd]
 
+            mjd = [el for el in int_mjd_g if el in int_mjd_r]
+            mjd = [el for el in mjd if el in int_mjd_i]
+            mjd = [el for el in mjd if el in int_mjd_z]
+
+            print mjd, len(mjd)
+
             for i in range(len(mjd)):
                 # s.append([self.g.flux[self.g.mjd.index(mjd[i])], 
                 #     self.r.flux[self.r.mjd.index(mjd[i])],
@@ -264,10 +270,10 @@ class Supernova():
                 try:
                     interpol = interpolate.interp1d(
                             lambda_em, [
-                                self.g.flux[int_mjd_g.index(int(mjd[i]))], 
-                                self.r.flux[int_mjd_r.index(int(mjd[i]))],
-                                self.i.flux[int_mjd_i.index(int(mjd[i]))],
-                                self.z.flux[int_mjd_z.index(int(mjd[i]))]
+                                self.g.flux[int_mjd_g.index(mjd[i])], 
+                                self.r.flux[int_mjd_r.index(mjd[i])],
+                                self.i.flux[int_mjd_i.index(mjd[i])],
+                                self.z.flux[int_mjd_z.index(mjd[i])]
                                 ],
                             assume_sorted=True
                             )
@@ -275,7 +281,7 @@ class Supernova():
                     k_corr_r.append(interpol(lambda_oss[1]).item(0))
                     k_corr_i.append(interpol(lambda_oss[2]).item(0))
                 except ValueError:
-                    print int(mjd[i]))
+                    print mjd[i], i
                     
         return list([k_corr_g, k_corr_r, k_corr_i])
 
