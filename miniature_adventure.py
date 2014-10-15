@@ -148,32 +148,18 @@ if __name__ == "__main__":
     if args.fit or args.fitTraining:
         whileOn = True
         i = 0
-        filePath = prodDir + 'PEAKED_{:<}.LIST'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.LIST')
-                    filePath = filePath[0:6] + '_{:<}({:<d}).LIST'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = prodDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
+            socket.gethostname(), time.time()
+            )
+   
         fPeaked = open(filePath, 'w')
 
         whileOn = True
         i = 0
-        filePath = prodDir + 'NOPEAKED_{:<}.LIST'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.LIST')
-                    filePath = filePath[0:8] + '_{:<}({:<d}).LIST'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = prodDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
+            socket.gethostname(), time.time()
+            )
+  
         fNopeaked = open(filePath, 'w')
 
 
@@ -357,9 +343,13 @@ if __name__ == "__main__":
         lsDirData.sort()
         lsDirData.remove('')
         
-        filePath = 'peaked_{:<}_FULL.dat'.format(socket.gethostname())
+        filePath = 'peaked_{:<}_FULL_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
         peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
-        filePath = 'nopeaked_{:<}_FULL.dat'.format(socket.gethostname())
+        filePath = 'nopeaked_{:<}_FULL_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
         tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
         if tmp.size == 1:
             nopeakIdx = np.asarray([tmp])
