@@ -142,7 +142,7 @@ if __name__ == "__main__":
 
     """
 
-    PERFORM LCs FITTING
+    PERFORMS LCs FITTING
 
     """
     if args.fit or args.fitTraining:
@@ -249,18 +249,9 @@ if __name__ == "__main__":
 
                 candidateFit.set_lightcurve(b, 
                     predMjd, predFlux, predErr)
-                    # predMjd.reshape(predMjd.size),
-                    # predFlux.reshape(predFlux.size), 
-                    # predErr.reshape(predErr.size))
-                
-                
+
                 print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
-                # else:
-                #     candidateFit.lcsDict[b].badCurve = True
-                #     print indent + bcolors.FAIL + \
-                #         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
-                #         bcolors.txtrst
                                 
             # Setting phase 0 point to phase or r maximum
             if candidateFit.r.badCurve is False:
@@ -285,16 +276,7 @@ if __name__ == "__main__":
         filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
-        # while whileOn:
-        #     if path.exists(prodDir + filePath):
-        #             i += 1
-        #             pklIdx = filePath.rfind('.dat')
-        #             filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
-        #                 socket.gethostname(),
-        #                 i
-        #                 )
-        #     else:
-        #         whileOn = False    
+
         np.savetxt(prodDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
@@ -303,16 +285,7 @@ if __name__ == "__main__":
         filePath = prodDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
-        # while whileOn:
-        #     if path.exists(prodDir + filePath):
-        #             i += 1
-        #             pklIdx = filePath.rfind('.dat')
-        #             filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
-        #                 socket.gethostname(),
-        #                 i
-        #                 )   
-        #     else:
-        #         whileOn = False    
+
         np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
@@ -347,13 +320,9 @@ if __name__ == "__main__":
         lsDirData.sort()
         lsDirData.remove('')
         
-        filePath = 'peaked_{:<}_FULL_{:<5.3f}.dat'.format(
-            socket.gethostname(), time.time()
-            )
+        filePath = 'peaked.dat'.format(socket.gethostname())
         peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
-        filePath = 'nopeaked_{:<}_FULL_{:<5.3f}.dat'.format(
-            socket.gethostname(), time.time()
-            )
+        filePath = 'nopeaked.dat'.format(socket.gethostname())
         tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
         if tmp.size == 1:
             nopeakIdx = np.asarray([tmp])
