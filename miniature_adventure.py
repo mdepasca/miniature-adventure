@@ -372,7 +372,7 @@ if __name__ == "__main__":
             """
             notPeaked.shift_mjds()
 
-            ccMax = np.zeros(peakIdx.size)
+            ccMax = list()#np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
             for j in peakIdx:
                 """
@@ -407,23 +407,23 @@ if __name__ == "__main__":
                     )
                 xcorr = np.arange(ycorr.size)
                 lags = xcorr - (
-                    notPeaked.normalized_flux('r').size-1
+                    len(notPeaked.normalized_flux('r'))-1
                     )
                 distancePerLag = (
                     notPeaked.r.shiftedMjd[-1] - \
                     notPeaked.r.shiftedMjd[0])/float(
-                                        notPeaked.r.shiftedMjd.size
+                                        len(notPeaked.r.shiftedMjd)
                                         )
                 offsets = -lags*distancePerLag
                 # raise SystemExit
-                ccMax[k] = offsets[np.argmax(ycorr)]
-
+                # ccMax[k] = offsets[np.argmax(ycorr)]
+                ccMax.appen(offsets[np.argmax(ycorr)])
                 k += 1
                 
                 pbar.update(z+1)
                 z += 1
 
-            notPeaked.ccMjdMaxFlux = ccMax.mean()
+            notPeaked.ccMjdMaxFlux = np.mean(ccMax)#ccMax.mean()
             """
             re-writing file of not peaked lc to include information on maximum
             position from CC.
