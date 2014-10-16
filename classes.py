@@ -223,14 +223,14 @@ class Supernova():
         return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
     def k_correct_flux(self):
-        lambda_oss = [479.66, 638.26, 776.90, 910.82]
-        zed_gr = lambda_oss[1]/lambda_oss[0] - 1
-        zed_ri = lambda_oss[2]/lambda_oss[1] - 1
-        zed_iz = lambda_oss[3]/lambda_oss[2] - 1
+        lambda_obs = [479.66, 638.26, 776.90, 910.82]
+        zed_gr = lambda_obs[1]/lambda_obs[0] - 1
+        zed_ri = lambda_obs[2]/lambda_obs[1] - 1
+        zed_iz = lambda_obs[3]/lambda_obs[2] - 1
 
-        lambda_em = [lambda_oss[i]/(
+        lambda_em = [el/(
             1+(self.zSpec if self.zSpec else self.zPhotHost)
-            ) for i in range(len(lambda_oss))]
+            ) for el in lambda_obs]
 
         # check for existence of observations in all the 4 lcs
         if self.g.badCurve or self.r.badCurve or self.i.badCurve \
@@ -250,40 +250,95 @@ class Supernova():
             k_corr_r = list()
             k_corr_i = list()
 
+            # k_corr_g_err = list()
+            # k_corr_r_err = list()
+            # k_corr_i_err = list()            
+            # k_corr_g_err_1 = list()
+            # k_corr_r_err_1 = list()
+            # k_corr_i_err_1 = list()
+
             int_mjd_g = [int(el) for el in self.g.mjd]
-            int_mjd_r = [int(el) for el in self.r.mjd]            
+            int_mjd_r = [int(el) for el in self.r.mjd]
             int_mjd_i = [int(el) for el in self.i.mjd]
             int_mjd_z = [int(el) for el in self.z.mjd]
 
-            mjd = [el for el in int_mjd_g if el in int_mjd_r]
-            mjd = [el for el in mjd if el in int_mjd_i]
-            mjd = [el for el in mjd if el in int_mjd_z]
+            mjd = [el for el in int_mjd_g if el in int_mjd_r 
+                    and el in int_mjd_i and el in int_mjd_z]
+            # mjd = [el for el in mjd if el in int_mjd_i]
+            # mjd = [el for el in mjd if el in int_mjd_z]
 
-            print mjd, len(mjd)
+            # print mjd, len(mjd)
 
-            for i in range(len(mjd)):
-                # s.append([self.g.flux[self.g.mjd.index(mjd[i])], 
-                #     self.r.flux[self.r.mjd.index(mjd[i])],
-                #     self.i.flux[self.i.mjd.index(mjd[i])],
-                #     self.z.flux[self.z.mjd.index(mjd[i])]
-                #     ])
+            for jd in mjd:
                 try:
-                    interpol = interpolate.interp1d(
+                    fluxInterpol = interpolate.interp1d(
                             lambda_em, [
-                                self.g.flux[int_mjd_g.index(mjd[i])], 
-                                self.r.flux[int_mjd_r.index(mjd[i])],
-                                self.i.flux[int_mjd_i.index(mjd[i])],
-                                self.z.flux[int_mjd_z.index(mjd[i])]
+                                self.g.flux[int_mjd_g.index(jd)], 
+                                self.r.flux[int_mjd_r.index(jd)],
+                                self.i.flux[int_mjd_i.index(jd)],
+                                self.z.flux[int_mjd_z.index(jd)]
                                 ],
                             assume_sorted=True
                             )
-                    k_corr_g.append(interpol(lambda_oss[0]).item(0))
-                    k_corr_r.append(interpol(lambda_oss[1]).item(0))
-                    k_corr_i.append(interpol(lambda_oss[2]).item(0))
-                except ValueError:
-                    print mjd[i], i
+                    # errInterpol1 = interpolate.interp1d(
+                    #         lambda_em, [
+                    #             self.g.flux[int_mjd_g.index(jd)] - \
+                    #                 self.g.fluxErr[int_mjd_g.index(jd)], 
+                    #             self.r.flux[int_mjd_r.index(jd)] - \
+                    #                 self.r.fluxErr[int_mjd_r.index(jd)],
+                    #             self.i.flux[int_mjd_i.index(jd)] - \
+                    #                 self.i.fluxErr[int_mjd_i.index(jd)],
+                    #             self.z.flux[int_mjd_z.index(jd)] - \
+                    #                 self.z.fluxErr[int_mjd_z.index(jd)]
+                    #             ],
+                    #         assume_sorted=True
+                    #         )
+                    # errInterpol2 = interpolate.interp1d(
+                    #         lambda_em, [
+                    #             self.g.flux[int_mjd_g.index(jd)] + \
+                    #                 self.g.fluxErr[int_mjd_g.index(jd)], 
+                    #             self.r.flux[int_mjd_r.index(jd)] + \
+                    #                 self.r.fluxErr[int_mjd_r.index(jd)],
+                    #             self.i.flux[int_mjd_i.index(jd)] + \
+                    #                 self.i.fluxErr[int_mjd_i.index(jd)],
+                    #             self.z.flux[int_mjd_z.index(jd)] + \
+                    #                 self.z.fluxErr[int_mjd_z.index(jd)]
+                    #             ],
+                    #         assume_sorted=True
+                    #         )
                     
-        return list([k_corr_g, k_corr_r, k_corr_i])
+                    if fluxInterpol(lambda_obs[0]).item(0):
+                        k_corr_g.append(fluxInterpol(lambda_obs[0]).item(0))
+                        # k_corr_g_err.append(
+                        #     abs(k_corr_g[-1]-errInterpol1(lambda_obs[0]).item(0))
+                        #     )
+                        # k_corr_g_err_1.append(
+                        #     abs(k_corr_g[-1]-errInterpol2(lambda_obs[0]).item(0))
+                        #     )
+                    if fluxInterpol(lambda_obs[1]).item(0):
+                        k_corr_r.append(fluxInterpol(lambda_obs[1]).item(0))
+                        # k_corr_r_err.append(
+                        #     abs(k_corr_r[-1]-errInterpol1(lambda_obs[1]).item(0))
+                        #     )
+                        # k_corr_r_err_1.append(
+                        #     abs(k_corr_r[-1]-errInterpol2(lambda_obs[1]).item(0))
+                        #     )
+                    if fluxInterpol(lambda_obs[2]).item(0):    
+                        k_corr_i.append(fluxInterpol(lambda_obs[2]).item(0))
+                        # k_corr_i_err.append(
+                        #     abs(k_corr_i[-1]-errInterpol1(lambda_obs[2]).item(0))
+                        #     )
+                        # k_corr_i_err_1.append(
+                        #     abs(k_corr_i[-1]-errInterpol2(lambda_obs[2]).item(0))
+                        #     )
+                    
+                except ValueError:
+                    print 'Too high z caused scipy.interpolate.interp1d to fail'
+                    print mjd[i], i
+        
+
+        return mjd, list([k_corr_g, k_corr_r, k_corr_i])#, \
+        # list([k_corr_g_err, k_corr_r_err, k_corr_i_err])
 
 class SupernovaFit():
     ccMjdMaxFlux = 0
@@ -797,7 +852,9 @@ if __name__ == '__main__':
     for candidate in candidates:
         # Create SupernovaFit objects
         # candidateFit = SupernovaFit(candidate.SNID)
-        k_corr = candidate.k_correct_flux()
+        print 'candidate z = {:>6.4f}'.format(
+            candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+        mjd_k_corr, k_correct_flux, k_corr_err = candidate.k_correct_flux()
         raise SystemExit
 
         for b in candidate.lcsDict.keys():
