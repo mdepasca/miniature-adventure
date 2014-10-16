@@ -417,8 +417,8 @@ if __name__ == "__main__":
                 offsets = -lags*distancePerLag
                 # raise SystemExit
                 # ccMax[k] = offsets[np.argmax(ycorr)]
-                ccMax.appen(offsets[np.argmax(ycorr)])
-                k += 1
+                ccMax.append(offsets[np.argmax(ycorr)])
+                # k += 1
                 
                 pbar.update(z+1)
                 z += 1
