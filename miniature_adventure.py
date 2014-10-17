@@ -479,7 +479,6 @@ if __name__ == "__main__":
         setting value for big distance
         """
         distFlag = 5
-        nullVal = -999
 
         bandDict = {
             'g':0,
@@ -490,11 +489,13 @@ if __name__ == "__main__":
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
-        # creating numpy matrix
-        Pymatrix = np.zeros((4, 
-            len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
-            dtype=float
-            )
+        # creating numpy matrix: list of 4 lists
+        distList = list([], [], [], [])
+        nCols = 0
+        # distList = np.zeros((4, 
+        #     len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
+        #     dtype=float
+        #     )
 
         pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
 
@@ -507,8 +508,12 @@ if __name__ == "__main__":
                 args.dirFit+os.sep+lsDirFit[i]
                 )
             if tmpSN.r.badCurve:
-                for b in bands:
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = nullVal
+                # nothing has to be added to the distance matrix. Print and 
+                #
+                # continue to nex object
+
+                # for b in bands:
+                    # distList[bandDict[b], i-i_start, j-j_start] = nullVal
                 print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
                     "THE FILE HAS TO BE DELETED"
                 continue
@@ -557,14 +562,19 @@ if __name__ == "__main__":
                 if j == i:
                     # filling elements on the distance matrix diagonal
                     for b in bands:
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = 0.
+                        # adding one element to each sub list in distList
+                        distList[bandDict[b]].append(0.)
+                        # distList[bandDict[b], i-i_start, j-j_start] = 0.
                     continue
 
                 if j < i:
                     # filling matrix elements below the diagonal
                     for b in bands:
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = \
-                                    Pymatrix[bandDict[b], j-j_start, i-i_start]
+                        # appending the symmetric element in the list: i-i_start
+                        distList[bandDict[b]].append(
+                            distList[bandDict[b]][(j-j_start)*nCols+i-i_star])
+                        # distList[bandDict[b], i-i_start, j-j_start] = \
+                        #             distList[bandDict[b], j-j_start, i-i_start]
                     continue # jump to the next iteration of the loop
 
                 """
@@ -578,8 +588,12 @@ if __name__ == "__main__":
                     print j, len(lsDirFit)
                     raise IndexError("list index out of range")
                 if tmpSN.r.badCurve:
-                    for b in bands:
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = nullVal
+                    # nothing has to be added to the distance matrix. Print and 
+                    #
+                    # continue to nex object
+
+                    # for b in bands:
+                    #     distList[bandDict[b], i-i_start, j-j_start] = nullVal
                     print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
                         " THE FILE HAS TO BE DELETED"
                     continue
@@ -617,70 +631,86 @@ if __name__ == "__main__":
                 for b in bands:
                     if not jCandidate.lcsDict[b].badCurve \
                     and not iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = \
+                        distList[bandDict[b]].append(
                             iCandidate.get_distance(jCandidate, b)
+                            )
+                        # distList[bandDict[b], i-i_start, j-j_start] = \
+                        #     iCandidate.get_distance(jCandidate, b)
                     else:
                         # in case of bad curve
                         """
                         This works like a flag. These elements will be set 
                         equal to a neutral value (the mean of the other)
                         """
-                        Pymatrix[bandDict[b], i-i_start, j-j_start] = distFlag
+                        distList[bandDict[b]].append(distFlag)
+                        # distList[bandDict[b], i-i_start, j-j_start] = distFlag
 
+            if (i == 0):
+                nCols = len(distList[0])
             pbar.update(i-i_start+1)
         pbar.finish()
 
+        distMatrix = np.zeros((4, 
+            nCols, nCols,
+            dtype=float
+            )
+
+        for b in bands:
+            distMatrix[bandDict[b]] = np.reshape(
+                distList[bandDict[b], (nCols, nCols)
+                )
+
         # fixing flagged elements
         # raise SystemExit
-        if Pymatrix[0, Pymatrix[0] == distFlag].size > 0: 
-            ind = np.where(Pymatrix[0] == distFlag)
-            Pymatrix[0, ind[0], ind[1]] = np.add(
+        if distMatrix[0, distMatrix[0] == distFlag].size > 0: 
+            ind = np.where(distMatrix[0] == distFlag)
+            distMatrix[0, ind[0], ind[1]] = np.add(
                 np.add(
-                    Pymatrix[1, ind[0], ind[1]], 
-                    Pymatrix[2, ind[0], ind[1]]
+                    distMatrix[1, ind[0], ind[1]], 
+                    distMatrix[2, ind[0], ind[1]]
                     ), 
-                Pymatrix[3, ind[0], ind[1]]
+                distMatrix[3, ind[0], ind[1]]
                 )/3.
 
 
-        if Pymatrix[1, Pymatrix[1] == distFlag].size > 0:
-            ind = np.where(Pymatrix[1] == distFlag)
-            # Pymatrix[1, ind[0], ind[1]] = Pymatrix[1,:,:].max()
-            Pymatrix[1, ind[0], ind[1]] = np.add(
+        if distMatrix[1, distMatrix[1] == distFlag].size > 0:
+            ind = np.where(distMatrix[1] == distFlag)
+            # distMatrix[1, ind[0], ind[1]] = distMatrix[1,:,:].max()
+            distMatrix[1, ind[0], ind[1]] = np.add(
                 np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[2, ind[0], ind[1]]
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[2, ind[0], ind[1]]
                     ), 
-                Pymatrix[3, ind[0], ind[1]]
+                distMatrix[3, ind[0], ind[1]]
                 )/3.
 
-        if Pymatrix[2, Pymatrix[2] == distFlag].size > 0: 
-            ind = np.where(Pymatrix[2] == distFlag)
-            # Pymatrix[2, ind[0], ind[1]] = Pymatrix[2].max()
-            Pymatrix[2, ind[0], ind[1]] = np.add(
+        if distMatrix[2, distMatrix[2] == distFlag].size > 0: 
+            ind = np.where(distMatrix[2] == distFlag)
+            # distMatrix[2, ind[0], ind[1]] = distMatrix[2].max()
+            distMatrix[2, ind[0], ind[1]] = np.add(
                 np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[1, ind[0], ind[1]]
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[1, ind[0], ind[1]]
                     ), 
-                Pymatrix[3, ind[0], ind[1]]
+                distMatrix[3, ind[0], ind[1]]
                 )/3.
 
-        if Pymatrix[3, Pymatrix[3] == distFlag].size > 0: 
-            ind = np.where(Pymatrix[3] == distFlag)
-            # Pymatrix[3, ind[0], ind[1]] = Pymatrix[3].max()
-            Pymatrix[3, ind[0], ind[1]] = np.add(
+        if distMatrix[3, distMatrix[3] == distFlag].size > 0: 
+            ind = np.where(distMatrix[3] == distFlag)
+            # distMatrix[3, ind[0], ind[1]] = distMatrix[3].max()
+            distMatrix[3, ind[0], ind[1]] = np.add(
                 np.add(
-                    Pymatrix[0, ind[0], ind[1]], 
-                    Pymatrix[1, ind[0], ind[1]]
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[1, ind[0], ind[1]]
                     ), 
-                Pymatrix[2, ind[0], ind[1]]
+                distMatrix[2, ind[0], ind[1]]
                 )/3.
         
-        PymatrixSum = np.sum(Pymatrix, 0)
+        distMatrixSum = np.sum(distMatrix, 0)
         """
         Saving on text files
         """
-        fileHeader = "# Pymatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
+        fileHeader = "# distMatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
             i_start, i_end, j_start, j_end
             ) + \
             "Created by {:<}".format(socket.gethostname())
@@ -689,32 +719,32 @@ if __name__ == "__main__":
             'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
-        np.savetxt(filePath, Pymatrix[0], fmt='%6.4f', header=fileHeader)
+        np.savetxt(filePath, distMatrix[0], fmt='%6.4f', header=fileHeader)
 
         filePath = prodDir + 'distance_matrix' + os.sep + \
             'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
-        np.savetxt(filePath, Pymatrix[1], fmt='%6.4f', header=fileHeader)
+        np.savetxt(filePath, distMatrix[1], fmt='%6.4f', header=fileHeader)
 
         filePath = prodDir + 'distance_matrix' + os.sep + \
             'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
-        np.savetxt(filePath, Pymatrix[2], fmt='%6.4f', header=fileHeader)
+        np.savetxt(filePath, distMatrix[2], fmt='%6.4f', header=fileHeader)
 
         filePath = prodDir + 'distance_matrix' + os.sep + \
             'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
-        np.savetxt(filePath, Pymatrix[3], fmt='%6.4f', header=fileHeader)
+        np.savetxt(filePath, distMatrix[3], fmt='%6.4f', header=fileHeader)
 
 
         filePath = prodDir + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
-        np.savetxt(filePath, PymatrixSum, fmt='%6.4f', header=fileHeader)
+        np.savetxt(filePath, distMatrixSum, fmt='%6.4f', header=fileHeader)
 
     """
 
