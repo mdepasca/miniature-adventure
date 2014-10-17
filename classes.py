@@ -11,7 +11,7 @@ import warnings
 
 warnings.filterwarnings('error', message=".*divide by zero encountered in double_scalars.*", category=RuntimeWarning)
 from math import sqrt
-from scipy import interpolate
+from scipy import interpolate, polyfit
 
 if __name__ == '__main__':
     import utilities as util
@@ -244,18 +244,10 @@ class Supernova():
                 len(self.i.mjd), \
                 len(self.z.mjd)
 
-            # mjd = self.r.mjd # temp solution 
             # list of low resolution spectra
             k_corr_g = list()
             k_corr_r = list()
             k_corr_i = list()
-
-            # k_corr_g_err = list()
-            # k_corr_r_err = list()
-            # k_corr_i_err = list()            
-            # k_corr_g_err_1 = list()
-            # k_corr_r_err_1 = list()
-            # k_corr_i_err_1 = list()
 
             int_mjd_g = [int(el) for el in self.g.mjd]
             int_mjd_r = [int(el) for el in self.r.mjd]
@@ -264,10 +256,7 @@ class Supernova():
 
             mjd = [el for el in int_mjd_g if el in int_mjd_r 
                     and el in int_mjd_i and el in int_mjd_z]
-            # mjd = [el for el in mjd if el in int_mjd_i]
-            # mjd = [el for el in mjd if el in int_mjd_z]
 
-            # print mjd, len(mjd)
 
             for jd in mjd:
                 try:
@@ -280,65 +269,22 @@ class Supernova():
                                 ],
                             assume_sorted=True
                             )
-                    # errInterpol1 = interpolate.interp1d(
-                    #         lambda_em, [
-                    #             self.g.flux[int_mjd_g.index(jd)] - \
-                    #                 self.g.fluxErr[int_mjd_g.index(jd)], 
-                    #             self.r.flux[int_mjd_r.index(jd)] - \
-                    #                 self.r.fluxErr[int_mjd_r.index(jd)],
-                    #             self.i.flux[int_mjd_i.index(jd)] - \
-                    #                 self.i.fluxErr[int_mjd_i.index(jd)],
-                    #             self.z.flux[int_mjd_z.index(jd)] - \
-                    #                 self.z.fluxErr[int_mjd_z.index(jd)]
-                    #             ],
-                    #         assume_sorted=True
-                    #         )
-                    # errInterpol2 = interpolate.interp1d(
-                    #         lambda_em, [
-                    #             self.g.flux[int_mjd_g.index(jd)] + \
-                    #                 self.g.fluxErr[int_mjd_g.index(jd)], 
-                    #             self.r.flux[int_mjd_r.index(jd)] + \
-                    #                 self.r.fluxErr[int_mjd_r.index(jd)],
-                    #             self.i.flux[int_mjd_i.index(jd)] + \
-                    #                 self.i.fluxErr[int_mjd_i.index(jd)],
-                    #             self.z.flux[int_mjd_z.index(jd)] + \
-                    #                 self.z.fluxErr[int_mjd_z.index(jd)]
-                    #             ],
-                    #         assume_sorted=True
-                    #         )
-                    
+
                     if fluxInterpol(lambda_obs[0]).item(0):
                         k_corr_g.append(fluxInterpol(lambda_obs[0]).item(0))
-                        # k_corr_g_err.append(
-                        #     abs(k_corr_g[-1]-errInterpol1(lambda_obs[0]).item(0))
-                        #     )
-                        # k_corr_g_err_1.append(
-                        #     abs(k_corr_g[-1]-errInterpol2(lambda_obs[0]).item(0))
-                        #     )
+
                     if fluxInterpol(lambda_obs[1]).item(0):
                         k_corr_r.append(fluxInterpol(lambda_obs[1]).item(0))
-                        # k_corr_r_err.append(
-                        #     abs(k_corr_r[-1]-errInterpol1(lambda_obs[1]).item(0))
-                        #     )
-                        # k_corr_r_err_1.append(
-                        #     abs(k_corr_r[-1]-errInterpol2(lambda_obs[1]).item(0))
-                        #     )
+
                     if fluxInterpol(lambda_obs[2]).item(0):    
                         k_corr_i.append(fluxInterpol(lambda_obs[2]).item(0))
-                        # k_corr_i_err.append(
-                        #     abs(k_corr_i[-1]-errInterpol1(lambda_obs[2]).item(0))
-                        #     )
-                        # k_corr_i_err_1.append(
-                        #     abs(k_corr_i[-1]-errInterpol2(lambda_obs[2]).item(0))
-                        #     )
                     
                 except ValueError:
                     print 'Too high z caused scipy.interpolate.interp1d to fail'
-                    print mjd[i], i
+                    # print mjd[i], i
         
 
-        return mjd, list([k_corr_g, k_corr_r, k_corr_i])#, \
-        # list([k_corr_g_err, k_corr_r_err, k_corr_i_err])
+        return mjd, list([k_corr_g, k_corr_r, k_corr_i])
 
 class SupernovaFit():
     ccMjdMaxFlux = 0
@@ -816,6 +762,7 @@ class SupernovaeCatalog():
 
 if __name__ == '__main__':
     indent = "          "
+    lambda_obs = [479.66, 638.26, 776.90, 910.82]
     dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     fCandidatesList = "DES_BLIND+HOSTZ.LIST"
     candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)
@@ -854,7 +801,35 @@ if __name__ == '__main__':
         # candidateFit = SupernovaFit(candidate.SNID)
         print 'candidate z = {:>6.4f}'.format(
             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
-        mjd_k_corr, k_correct_flux, k_corr_err = candidate.k_correct_flux()
+        lambda_em = [el/(
+            1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+            ) for el in lambda_obs]
+        mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
+
+        int_mjd_g = [int(el) for el in candidate.g.mjd]
+        int_mjd_r = [int(el) for el in candidate.r.mjd]
+        int_mjd_i = [int(el) for el in candidate.i.mjd]
+        int_mjd_z = [int(el) for el in candidate.z.mjd]
+        jd = mjd_k_corr[0]
+        (a, b) = np.polyfit(
+            # [lambda_em[0], lambda_em[1]], 
+            [
+            lambda_em[0],
+            lambda_em[1]#,
+            # lambda_em[2],
+            # lambda_em[3],
+            ],
+            [
+            candidate.g.flux[int_mjd_g.index(jd)], 
+            candidate.r.flux[int_mjd_r.index(jd)]#,
+            # candidate.i.flux[int_mjd_i.index(jd)],
+            # candidate.z.flux[int_mjd_z.index(jd)]
+            ], deg = 1, 
+            w = [
+                1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
+                1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
+            # cov=True
+            )
         raise SystemExit
 
         for b in candidate.lcsDict.keys():
