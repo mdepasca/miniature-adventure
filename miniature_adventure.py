@@ -224,6 +224,14 @@ if __name__ == "__main__":
                 # 
                 # Fitting Lightcurve
 
+                """
+                K--correction reduces the number of observation in each band.
+                For this reason it has to be performed here, before checking
+                flux length.
+
+                ---> K--correction
+                """
+
                 if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
@@ -471,6 +479,8 @@ if __name__ == "__main__":
         setting value for big distance
         """
         distFlag = 5
+        nullVal = -999
+
         bandDict = {
             'g':0,
             'r':1,
@@ -497,8 +507,11 @@ if __name__ == "__main__":
                 args.dirFit+os.sep+lsDirFit[i]
                 )
             if tmpSN.r.badCurve:
-                raise SystemExit("{:<} Has bad curve in r band - " + \
-                    "THE FILE HAS TO BE DELETED".format(lsDirFit[i]))
+                for b in bands:
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = nullVal
+                print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
+                    "THE FILE HAS TO BE DELETED"
+                continue
                 
             iCandidate = cls.SupernovaFit(tmpSN)
             
@@ -565,8 +578,11 @@ if __name__ == "__main__":
                     print j, len(lsDirFit)
                     raise IndexError("list index out of range")
                 if tmpSN.r.badCurve:
-                    raise SystemExit("{:<} Has bad curve in r band -"+\
-                        " THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
+                    for b in bands:
+                        Pymatrix[bandDict[b], i-i_start, j-j_start] = nullVal
+                    print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
+                        " THE FILE HAS TO BE DELETED"
+                    continue
 
                 jCandidate = cls.SupernovaFit(tmpSN)
                 for b in tmpSN.lcsDict.keys():
