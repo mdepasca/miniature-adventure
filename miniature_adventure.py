@@ -490,7 +490,7 @@ if __name__ == "__main__":
             AnimatedMarker(), indent, Timer()]
         
         # creating numpy matrix: list of 4 lists
-        distList = list([], [], [], [])
+        distList = list([[], [], [], []])
         nCols = 0
         # distList = np.zeros((4, 
         #     len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
@@ -572,7 +572,7 @@ if __name__ == "__main__":
                     for b in bands:
                         # appending the symmetric element in the list: i-i_start
                         distList[bandDict[b]].append(
-                            distList[bandDict[b]][(j-j_start)*nCols+i-i_star])
+                            distList[bandDict[b]][(j-j_start)*nCols+i-i_start])
                         # distList[bandDict[b], i-i_start, j-j_start] = \
                         #             distList[bandDict[b], j-j_start, i-i_start]
                     continue # jump to the next iteration of the loop
@@ -651,13 +651,13 @@ if __name__ == "__main__":
         pbar.finish()
 
         distMatrix = np.zeros((4, 
-            nCols, nCols,
+            nCols, nCols),
             dtype=float
             )
 
         for b in bands:
             distMatrix[bandDict[b]] = np.reshape(
-                distList[bandDict[b], (nCols, nCols)
+                distList[bandDict[b]], (nCols, nCols)
                 )
 
         # fixing flagged elements
