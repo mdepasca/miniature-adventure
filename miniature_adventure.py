@@ -213,7 +213,7 @@ if __name__ == "__main__":
             # candidateFit = cls.SupernovaFit(candidate.SNID)
             candidateFit = cls.SupernovaFit(candidate)
             for b in candidate.lcsDict.keys(): 
-                phase = util.time_correct(candidate.lcsDict[b].mjd, 
+                epoch = util.time_correct(candidate.lcsDict[b].mjd, 
                     candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
                 flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
@@ -240,7 +240,7 @@ if __name__ == "__main__":
 
                 
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                phase, flux, errFlux, 
+                                                epoch, flux, errFlux, 
                                                 kern, n_restarts=10, 
                                                 parallel=False, # this solves some memory leakage. The execution speed is not affected...
                                                 test_length=True)
@@ -253,7 +253,7 @@ if __name__ == "__main__":
                 print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                                 
-            # Setting phase 0 point to phase or r maximum
+            # Setting epoch 0 point to epoch or r maximum
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
@@ -305,7 +305,7 @@ if __name__ == "__main__":
         dirData. It is then filtered using the above variables.
         """
         start = 0
-        end = 825
+        end = 2
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate cross-correlation of not peaked- with " + \
             "peaked-lcs ..." +  bcolors.txtrst
