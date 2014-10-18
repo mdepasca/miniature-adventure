@@ -479,7 +479,8 @@ if __name__ == "__main__":
         setting value for big distance
         """
         distFlag = 5
-
+        missColCount = 0
+        missRowlist = list()
         bandDict = {
             'g':0,
             'r':1,
@@ -500,7 +501,7 @@ if __name__ == "__main__":
         pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
 
         for i in range(i_start, i_end):
-
+            missColCount = 0
             """
             Reading in i-candidate
             """
@@ -516,6 +517,7 @@ if __name__ == "__main__":
                     # distList[bandDict[b], i-i_start, j-j_start] = nullVal
                 print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
                     "THE FILE HAS TO BE DELETED"
+                missRowlist.append(i)
                 continue
                 
             iCandidate = cls.SupernovaFit(tmpSN)
@@ -569,10 +571,16 @@ if __name__ == "__main__":
 
                 if j < i:
                     # filling matrix elements below the diagonal
+                    if j in missRowlist: 
+                        missColCount += 1
+                        continue
                     for b in bands:
                         # appending the symmetric element in the list: i-i_start
                         distList[bandDict[b]].append(
-                            distList[bandDict[b]][(j-j_start)*nCols+i-i_start])
+                            distList[bandDict[b]][
+                                (j-j_start-missColCount)*nCols+\
+                                    i-i_start-len(missRowlist)
+                                ])
                         # distList[bandDict[b], i-i_start, j-j_start] = \
                         #             distList[bandDict[b], j-j_start, i-i_start]
                     continue # jump to the next iteration of the loop
