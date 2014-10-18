@@ -516,7 +516,8 @@ if __name__ == "__main__":
                 # for b in bands:
                     # distList[bandDict[b], i-i_start, j-j_start] = nullVal
                 print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
-                    "THE FILE HAS TO BE DELETED"
+                    "THE FILE HAS TO BE DELETED" +\
+                    " indices {:<d}, {:<d}".format(i, j)
                 missRowlist.append(i)
                 continue
                 
@@ -603,7 +604,8 @@ if __name__ == "__main__":
                     # for b in bands:
                     #     distList[bandDict[b], i-i_start, j-j_start] = nullVal
                     print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
-                        " THE FILE HAS TO BE DELETED"
+                        " THE FILE HAS TO BE DELETED:" +\
+                        " indices {:<d}, {:<d}".format(i, j)
                     continue
 
                 jCandidate = cls.SupernovaFit(tmpSN)
