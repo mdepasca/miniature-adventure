@@ -655,19 +655,19 @@ if __name__ == "__main__":
                         distList[bandDict[b]].append(distFlag)
                         # distList[bandDict[b], i-i_start, j-j_start] = distFlag
 
-            if (i == 0):
+            if (i == i_start):
                 nCols = len(distList[0])
             pbar.update(i-i_start+1)
         pbar.finish()
 
         distMatrix = np.zeros((4, 
-            nCols, nCols),
+            len(distList[0])/nCols, nCols),
             dtype=float
             )
 
         for b in bands:
             distMatrix[bandDict[b]] = np.reshape(
-                distList[bandDict[b]], (nCols, nCols)
+                distList[bandDict[b]], (len(distList[bandDict[b]])/nCols, nCols)
                 )
 
         # fixing flagged elements
