@@ -174,12 +174,15 @@ if __name__ == "__main__":
         print "\n" + indent + "List of candidates contained in: " \
             + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
-        vecCandidates = np.genfromtxt(
-                args.dirData+os.sep+fNameCandidatesList, dtype=None)
-        # tenPercent = vecCandidates.size / 10
-        # const = 0
+        p = subprocess.Popen("ls DES_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirData+os.sep)
+        lsDirData = p.stdout.read()
+        lsDirData = lsDirData.split('\n')
+        lsDirData.sort()
+        lsDirData.remove('')
+
         print "\n" + indent \
-            + "Number of candidates = {:<d}".format(vecCandidates.size)
+            + "Number of candidates = {:<d}".format(len(lsDirData))
 
         print "\n" + indent \
             + "Data are fitted using GP with Radial Basis Function kernel."
@@ -200,7 +203,7 @@ if __name__ == "__main__":
         
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + vecCandidates[i]
+                args.dirData + os.sep + lsDirData[i]
                 )
 
             if args.fitTraining:
@@ -265,7 +268,7 @@ if __name__ == "__main__":
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
-                    path.splitext(vecCandidates[i])[0] + "_FIT.DAT"
+                    path.splitext(lsDirData[i])[0] + "_FIT.DAT"
                 candidateFit.save_on_txt(filePath)
                 
                 if candidateFit.peaked:
