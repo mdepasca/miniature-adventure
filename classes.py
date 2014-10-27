@@ -249,40 +249,151 @@ class Supernova():
             k_corr_r = list()
             k_corr_i = list()
 
-            int_mjd_g = [int(el) for el in self.g.mjd]
-            int_mjd_r = [int(el) for el in self.r.mjd]
-            int_mjd_i = [int(el) for el in self.i.mjd]
-            int_mjd_z = [int(el) for el in self.z.mjd]
+            int_mjd_g = [int(round(el)) for el in self.g.mjd]
+            int_mjd_r = [int(round(el)) for el in self.r.mjd]
+            int_mjd_i = [int(round(el)) for el in self.i.mjd]
+            int_mjd_z = [int(round(el)) for el in self.z.mjd]
 
             mjd = [el for el in int_mjd_g if el in int_mjd_r 
                     and el in int_mjd_i and el in int_mjd_z]
 
-
+            """
+            interpolating between points as y = ax + b
+            """
             for jd in mjd:
-                try:
-                    fluxInterpol = interpolate.interp1d(
-                            lambda_em, [
-                                self.g.flux[int_mjd_g.index(jd)], 
-                                self.r.flux[int_mjd_r.index(jd)],
-                                self.i.flux[int_mjd_i.index(jd)],
-                                self.z.flux[int_mjd_z.index(jd)]
-                                ],
-                            assume_sorted=True
-                            )
+                if (self.zSpec < 0.17) or (self.zPhotHost < 0.17):
+                    """
+                    g r i band can be k-corrected
+                    """
+                    a_gr = (
+                        self.r.flux[int_mjd_r.index(jd)] - \
+                        self.g.flux[int_mjd_g.index(jd)]
+                        )/(lambda_em[1]-lambda_em[0])
+                    b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                        a_gr*lambda_em[0]
 
-                    if fluxInterpol(lambda_obs[0]).item(0):
-                        k_corr_g.append(fluxInterpol(lambda_obs[0]).item(0))
+                    a_gr_err = sqrt(self.r.fluxErr[int_mjd_r.index(jd)]**2+\
+                        self.g.fluxErr[int_mjd_g.index(jd)]**2)
+                    b_gr_err = sqrt(self.g.flux[int_mjd_g.index(jd)]**2+\
+                        a_gr_err**2)
 
-                    if fluxInterpol(lambda_obs[1]).item(0):
-                        k_corr_r.append(fluxInterpol(lambda_obs[1]).item(0))
 
-                    if fluxInterpol(lambda_obs[2]).item(0):    
-                        k_corr_i.append(fluxInterpol(lambda_obs[2]).item(0))
+                    a_ri = (
+                        self.i.flux[int_mjd_i.index(jd)] - \
+                        self.r.flux[int_mjd_r.index(jd)]
+                        )/(lambda_em[2]-lambda_em[1])
+                    b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                        a_ri*lambda_em[1]
+                    a_ri_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
+                        self.r.fluxErr[int_mjd_r.index(jd)]**2)
+                    b_ri_err = sqrt(self.r.flux[int_mjd_r.index(jd)]**2+\
+                        a_ri_err**2)
+
+
+                    a_iz = (
+                        self.z.flux[int_mjd_z.index(jd)] - \
+                        self.i.flux[int_mjd_i.index(jd)]
+                        )/(lambda_em[3]-lambda_em[2])
+                    b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                        a_iz*lambda_em[2]
+                    a_iz_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
+                        self.z.fluxErr[int_mjd_z.index(jd)]**2)
+                    b_iz_err = sqrt(self.i.flux[int_mjd_i.index(jd)]**2+\
+                        a_iz_err**2)
+
+
+                    # CALCULATE K-CORRECTION
+                    k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                    k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
+                    k_corr_i.append(a_iz*lambda_obs[2]+b_iz)
+                    # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                if (self.zSpec < 0.42) or (self.zPhotHost < 0.42):
+                    """
+                    g r band can be k-corrected
+                    """
+                    # choosing which interpolation to use
+                    if (self.zSpec < 0.21) or (self.zPhotHost < 0.21):
+                        a_gr = (
+                            self.r.flux[int_mjd_r.index(jd)] - \
+                            self.g.flux[int_mjd_g.index(jd)]
+                            )/(lambda_em[1]-lambda_em[0])
+                        b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                            a_gr*lambda_em[0]
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
                     
-                except ValueError:
-                    print 'Too high z caused scipy.interpolate.interp1d to fail'
-                    # print mjd[i], i
-        
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                        k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
+                        # CALCULATE K-CORRECTION ERROR
+                    else:
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
+                        a_iz = (
+                            self.z.flux[int_mjd_z.index(jd)] - \
+                            self.i.flux[int_mjd_i.index(jd)]
+                            )/(lambda_em[3]-lambda_em[2])
+                        b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                            a_iz*lambda_em[2]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
+                        k_corr_r.append(a_iz*lambda_obs[1]+b_iz)
+                        # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                if (self.zSpec < 0.89) or (self.zPhotHost < 0.89):
+                    """
+                    g band can be k-corrected.
+                    This will exclude the use of color information in 
+                    calculating distances.
+                    """
+                    if (self.zSpec < 0.33) or (self.zPhotHost < 0.33):
+                        a_gr = (
+                            self.r.flux[int_mjd_r.index(jd)] - \
+                            self.g.flux[int_mjd_g.index(jd)]
+                            )/(lambda_em[1]-lambda_em[0])
+                        b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                            a_gr*lambda_em[0]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                        # CALCULATE K-CORRECTION ERROR
+                    elif (self.zSpec < 0.61) or (self.zPhotHost < 0.61):
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
+                        # CALCULATE K-CORRECTION ERROR
+                    else:
+                        a_iz = (
+                            self.z.flux[int_mjd_z.index(jd)] - \
+                            self.i.flux[int_mjd_i.index(jd)]
+                            )/(lambda_em[3]-lambda_em[2])
+                        b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                            a_iz*lambda_em[2]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_iz*lambda_obs[0]+b_iz)
+                        # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                raise ValueError('delta redshift too big to have a k-correction')
 
         return mjd, list([k_corr_g, k_corr_r, k_corr_i])
 
@@ -804,33 +915,56 @@ if __name__ == '__main__':
         lambda_em = [el/(
             1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
             ) for el in lambda_obs]
-        mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
 
+        plt.figure()
         int_mjd_g = [int(el) for el in candidate.g.mjd]
         int_mjd_r = [int(el) for el in candidate.r.mjd]
         int_mjd_i = [int(el) for el in candidate.i.mjd]
         int_mjd_z = [int(el) for el in candidate.z.mjd]
-        jd = mjd_k_corr[0]
-        (a, b) = np.polyfit(
-            # [lambda_em[0], lambda_em[1]], 
-            [
-            lambda_em[0],
-            lambda_em[1]#,
-            # lambda_em[2],
-            # lambda_em[3],
-            ],
-            [
+        mjd = [el for el in int_mjd_g if el in int_mjd_r 
+                    and el in int_mjd_i and el in int_mjd_z]
+        jd = mjd[0]
+
+        flux = [
             candidate.g.flux[int_mjd_g.index(jd)], 
-            candidate.r.flux[int_mjd_r.index(jd)]#,
-            # candidate.i.flux[int_mjd_i.index(jd)],
-            # candidate.z.flux[int_mjd_z.index(jd)]
-            ], deg = 1, 
-            w = [
-                1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
-                1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
-            # cov=True
-            )
-        raise SystemExit
+            candidate.r.flux[int_mjd_r.index(jd)],
+            candidate.i.flux[int_mjd_i.index(jd)],
+            candidate.z.flux[int_mjd_z.index(jd)]
+            ]
+        fluxErr = [
+            candidate.g.fluxErr[int_mjd_g.index(jd)], 
+            candidate.r.fluxErr[int_mjd_r.index(jd)],
+            candidate.i.fluxErr[int_mjd_i.index(jd)],
+            candidate.z.fluxErr[int_mjd_z.index(jd)]
+            ]
+        plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
+        plt.scatter(lambda_obs, flux, color='black')
+        plt.errorbar(lambda_em, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
+        plt.scatter(lambda_em, flux, color='blue')
+        plt.show()
+        # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
+
+        
+        # (a, b) = np.polyfit(
+        #     # [lambda_em[0], lambda_em[1]], 
+        #     [
+        #     lambda_em[0],
+        #     lambda_em[1]#,
+        #     # lambda_em[2],
+        #     # lambda_em[3],
+        #     ],
+        #     [
+        #     candidate.g.flux[int_mjd_g.index(jd)], 
+        #     candidate.r.flux[int_mjd_r.index(jd)]#,
+        #     # candidate.i.flux[int_mjd_i.index(jd)],
+        #     # candidate.z.flux[int_mjd_z.index(jd)]
+        #     ], deg = 1, 
+        #     w = [
+        #         1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
+        #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
+        #     # cov=True
+        #     )
+        raise ValueError
 
         for b in candidate.lcsDict.keys():
             phase = candidate.lcsDict[b].mjd
