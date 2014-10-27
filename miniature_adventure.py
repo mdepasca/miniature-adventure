@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--fit-directory", dest="dirFit",
-        default="train_data" + os.sep + "DES_BLIND+HOSTZ_FIT",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES_FIT",
         help="Path to directory containing fitted data.")
 
     parser.add_argument(
