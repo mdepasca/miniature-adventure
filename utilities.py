@@ -489,19 +489,19 @@ def redshift_distrib(pathToDir, binSize):
         z[...] = sn.zSpec if sn.zSpec else sn.zPhotHost
         i += 1
 
-    # nBins = round((zed.max()-zed.min())/binSize)
-    print round(zed.max()*100)
-    print int(binSize*100)
-    bins = [range(0, int(zed.max()*100), int(binSize*100))[i]/100. for i in 
-        range(len(range(0, int(zed.max()*100), int(binSize*100))))]
-    bins.append(bins[-1]+binSize)
-    print bins
+    nBins = round((zed.max()-zed.min())/binSize)
+    # print round(zed.max()*100)
+    # print int(binSize*100)
+    # bins = [range(0, int(zed.max()*100), int(binSize*100))[i]/100. for i in 
+    #     range(len(range(0, int(zed.max()*100), int(binSize*100))))]
+    # bins.append(bins[-1]+binSize)
+    # print bins
     plt.figure()
-    plt.hist(zed, bins=bins, color='0.60', edgecolor='0.50')
+    bins = plt.hist(zed, bins=nBins, color='0.60', edgecolor='0.30')
     plt.xlabel('redshift z')
     plt.ylabel('number of observations')
 
-    return zed
+    return zed, bins
 
 def get_sn(catalog, band, idx):
     """
@@ -714,6 +714,7 @@ if __name__ == '__main__':
             plt.ylim(ylim[1], ylim[0])
             plt.errorbar(epoch, mag, 
                  yerr=errMag, fmt=None, ecolor='black', zorder=1)
+            plt.scatter(epoch, mag, color='black')
         else:
             fig, ax = plt.subplots(nrows=2, ncols=1, 
                 figsize=(16.5, 11.7), 
@@ -723,9 +724,11 @@ if __name__ == '__main__':
             print 'fluxes'
             ax[0].errorbar(epoch, flux, 
                 yerr=errFlux, fmt=None, ecolor='black', zorder=1)
+            ax[0].scatter(epoch, flux, color='black')
 
             ax[1].errorbar(corr_epoch, corr_flux,
                 yerr=errFlux, fmt=None, ecolor='red', zorder=1)
+            ax[1].scatter(corr_epoch, corr_flux, color='red')
 
         print "  The process took {:5.3f} secs.".format(time.time()-start_time)
         plt.show()
