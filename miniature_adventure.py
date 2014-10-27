@@ -82,8 +82,8 @@ if __name__ == "__main__":
         action="store_true")
 
     parser.add_argument(
-        "--training-directory", dest="dirData",
-        default="train_data" + os.sep + "DES_BLIND+HOSTZ",
+        "--data-directory", dest="dirData",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES",
         help="Path to directory containing training data.")
 
     parser.add_argument(
@@ -720,7 +720,7 @@ if __name__ == "__main__":
         """
         Saving on text files
         """
-        fileHeader = "# distMatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
+        fileHeader = "distMatrix[{:<d}:{:<d},{:<d}:{:<d}] --- ".format(
             i_start, i_end, j_start, j_end
             ) + \
             "Created by {:<}".format(socket.gethostname())
