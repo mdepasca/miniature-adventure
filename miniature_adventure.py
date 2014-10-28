@@ -264,7 +264,7 @@ if __name__ == "__main__":
                 print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
                                 
-            # Setting epoch 0 point to epoch or r maximum
+            
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
@@ -331,19 +331,30 @@ if __name__ == "__main__":
         lsDirData.sort()
         lsDirData.remove('')
         
-        filePath = 'peaked.dat'.format(socket.gethostname())
-        peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
-        filePath = 'nopeaked.dat'.format(socket.gethostname())
-        tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
-        if tmp.size == 1:
-            nopeakIdx = np.asarray([tmp])
-        else:    
-            nopeakIdx = np.asarray(tmp)
+        # filePath = 'peaked.dat'.format(socket.gethostname())
+        # peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # filePath = 'nopeaked.dat'.format(socket.gethostname())
+        # tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # if tmp.size == 1:
+        #     nopeakIdx = np.asarray([tmp])
+        # else:    
+        #     nopeakIdx = np.asarray(tmp)
         
-        filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
+        filePath = 'PEAKED.LIST'
+        peakList = np.loadtxt(prodDir + filePath, dtype=np.str)
+        filePath = 'NOPEAKED.LIST'
+        tmp = np.loadtxt(prodDir + filePath, dtype=np.str)
+        if tmp.size == 1:
+            nopeakList = np.asarray([tmp])
+        else:    
+            nopeakList = np.asarray(tmp)
+        
+
+        filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(prodDir + filePath, 'w')
         prog = 0        
-        for i in nopeakIdx[start:end]:
+        # for i in nopeakIdx[start:end]:
+        for i in nopeakList[start:end]:
 
             z = 0 # goes on peakIdx to index the progress bar
             
@@ -351,22 +362,25 @@ if __name__ == "__main__":
             READ DATA FROM FILE 
             in Supernova object
             """
-            filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             try:
                 tmpSN = util.get_sn_from_file(filePath)
 
-                print "Progress: {:<d}".format(prog)
+                print "Progress: {:<d} -- {:<}".format(prog, filePath)
                 prog += 1
 
                 ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)#  "          "
                 widgets = [ccIndent, Percentage(), ' ',
                    Bar(marker='#',left='[',right=']'),
                    ' ', ETA()]
-                pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
+                # pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
+                pbar = ProgressBar(widgets=widgets, maxval=len(peakList)).start()
             except IOError:
+                print "IOError: {:<}".format(filePath)
                 continue
             
             if tmpSN.r.badCurve:
+                print "IOError: {:<}".format(filePath)
                 continue
             """
             create SupernovaFit object
@@ -385,11 +399,12 @@ if __name__ == "__main__":
 
             ccMax = list()#np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
-            for j in peakIdx:
+            # for j in peakIdx:
+            for j in peakList:
                 """
                 READ DATA FROM FILE
                 """
-                filePath = args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
+                filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
@@ -439,7 +454,7 @@ if __name__ == "__main__":
             re-writing file of not peaked lc to include information on maximum
             position from CC.
             """
-            filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
 
             reWrite.write(filePath+'\n')
