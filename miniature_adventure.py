@@ -469,6 +469,9 @@ if __name__ == "__main__":
 
     """
     if args.distMatrix:
+        if not os.path.exists(path.abspath(prodDir + 'distance_matrix' + os.sep)):
+            os.makedirs(path.abspath(prodDir + 'distance_matrix' + os.sep))
+            
         """
         Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
