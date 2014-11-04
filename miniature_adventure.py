@@ -842,7 +842,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 10000
+        offset = 100
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
