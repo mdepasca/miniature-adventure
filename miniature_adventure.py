@@ -941,21 +941,18 @@ if __name__ == "__main__":
 
                 xlim = dictAx[b][r[b], c[b]].get_xlim()
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
+
                 if not data.badCurve:
-                    if fit.peaked:
-                        data.set_shifted_mjd(
-                            fit_r.mjd[fit_r.max_flux_index])
-                    else:
-                        data.set_shifted_mjd(
-                            fit_r.mjd[fit_r.max_flux_index])
-                        # for b in bands:
-                        data.shiftedMjd = [
-                            data.shiftedMjd[l] + 
-                            fit.ccMjdMaxFlux for l in range(len(
-                                data.shiftedMjd
-                                ))
-                        ]
-                        # data.shiftedMjd += fit.ccMjdMaxFlux
+                    epoch = util.time_correct(data.mjd, 
+                        candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+
+                    epoch = [val-fit_r.mjd[fit_r.max_flux_index] for val in epoch]
+                    if fit.peaked == False:
+                        epoch = [val+fit.ccMjdMaxFlux for val in epoch]
+
+                    flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
+                        candidate.MWEBV, b)
+
 
                     bottom = min(data.flux) - np.median(data.fluxErr)
                     up = max(data.flux) + np.median(data.fluxErr)
