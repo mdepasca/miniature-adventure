@@ -584,7 +584,7 @@ def gp_fit(
     else:
         gpModel.optimize(optimizer='scg')
 
-    predX = reshape_for_GPy(np.arange(min(X), max(X), 1.))
+    predX = reshape_for_GPy(np.arange(min(X), max(X)+1, 1.))
 
     # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
