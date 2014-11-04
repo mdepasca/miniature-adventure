@@ -830,9 +830,13 @@ if __name__ == "__main__":
             lsDirFit.remove('')
 
         if 'catalog' not in globals():
-            vecCandidates = np.genfromtxt(
-                args.dirData+os.sep+fNameCandidatesList, dtype=None)
-           
+            p = subprocess.Popen("ls DES_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirData+os.sep)
+            lsDirData = p.stdout.read()
+            lsDirData = lsDirData.split('\n')
+            lsDirData.sort()
+            lsDirData.remove('')
+                       
 
         print indent + 'Plotting ...'
         nrows = 5
@@ -882,7 +886,7 @@ if __name__ == "__main__":
         for i in range(nrows*ncols):
             # getting the data from file
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + vecCandidates[offset+i])
+                args.dirData + os.sep + lsDirData[offset+i])
 
             """
             reading fit data from file
