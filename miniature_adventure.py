@@ -954,9 +954,17 @@ if __name__ == "__main__":
                         candidate.MWEBV, b)
 
 
-                    bottom = min(data.flux) - np.median(data.fluxErr)
-                    up = max(data.flux) + np.median(data.fluxErr)
-                    dictAx[b][r[b], c[b]].set_ylim(bottom, up)
+                    if min(fit_b.flux) < min(data.flux):
+                        y_min = min(fit_b.flux) - 3*max(fit_b.fluxErr)
+                    else:
+                        y_min = min(data.flux) - np.median(data.fluxErr)
+
+                    if max(fit_b.flux) > max(data.flux):
+                        y_max = max(fit_b.flux) + 3*max(fit_b.fluxErr)
+                    else:
+                        y_max = max(data.flux) + np.median(data.fluxErr)
+
+                    dictAx[b][r[b], c[b]].set_ylim(y_min, y_max)
 
                     fluxUpLim = [val for val in [
                         fit_b.flux[i] + fit_b.fluxErr[i] 
@@ -1046,7 +1054,7 @@ if __name__ == "__main__":
                 
         for b in dictFig.keys():
             dictFig[b].savefig(
-                'products/test_band_{:<1}_{:0>6d}to{:0>6d}.pdf'.format(b,
+                'products/plots/test_band_{:<1}_{:0>6d}to{:0>6d}.pdf'.format(b,
                     offset, nrows*ncols+offset), 
                 dpi=300
                 )
