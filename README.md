@@ -1,7 +1,10 @@
 miniature-adventure
 ===================
 
-A photometric supernova classifier for SUDARE survey
+A photometric supernova classifier
+
+- Simulated dataset SIMGEN_PUBLIC_DES.tar.gz at http://sdssdp62.fnal.gov/sdsssn/SIMGEN_PUBLIC/
+  have to be unpacked in directory *train_data*
 
 - USES:
   - GPy devel branch (https://github.com/SheffieldML/GPy/tree/devel/GPy) 

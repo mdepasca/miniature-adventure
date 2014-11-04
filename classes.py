@@ -11,6 +11,7 @@ import warnings
 
 warnings.filterwarnings('error', message=".*divide by zero encountered in double_scalars.*", category=RuntimeWarning)
 from math import sqrt
+from scipy import interpolate, polyfit
 
 if __name__ == '__main__':
     import utilities as util
@@ -80,7 +81,6 @@ class LightCurve():
         """
         Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
-        # self.shiftedMjd = np.subtract(self.mjd, distance)
         self.shiftedMjd = [self.mjd[i]-distance for i in range(len(self.mjd))]
     
     @property
@@ -222,6 +222,180 @@ class Supernova():
     def __cmp__(self, other):
         return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
+    def k_correct_flux(self):
+        lambda_obs = [479.66, 638.26, 776.90, 910.82]
+        zed_gr = lambda_obs[1]/lambda_obs[0] - 1
+        zed_ri = lambda_obs[2]/lambda_obs[1] - 1
+        zed_iz = lambda_obs[3]/lambda_obs[2] - 1
+
+        lambda_em = [el/(
+            1+(self.zSpec if self.zSpec else self.zPhotHost)
+            ) for el in lambda_obs]
+
+        # check for existence of observations in all the 4 lcs
+        if self.g.badCurve or self.r.badCurve or self.i.badCurve \
+        or self.z.badCurve:
+            raise TypeError("K-correction not possible: not all bands\
+                have observations")
+        else:
+            # intersection of epochs in 4 bands
+            print len(self.g.mjd), \
+                len(self.r.mjd), \
+                len(self.i.mjd), \
+                len(self.z.mjd)
+
+            # list of low resolution spectra
+            k_corr_g = list()
+            k_corr_r = list()
+            k_corr_i = list()
+
+            int_mjd_g = [int(round(el)) for el in self.g.mjd]
+            int_mjd_r = [int(round(el)) for el in self.r.mjd]
+            int_mjd_i = [int(round(el)) for el in self.i.mjd]
+            int_mjd_z = [int(round(el)) for el in self.z.mjd]
+
+            mjd = [el for el in int_mjd_g if el in int_mjd_r 
+                    and el in int_mjd_i and el in int_mjd_z]
+
+            """
+            interpolating between points as y = ax + b
+            """
+            for jd in mjd:
+                if (self.zSpec < 0.17) or (self.zPhotHost < 0.17):
+                    """
+                    g r i band can be k-corrected
+                    """
+                    a_gr = (
+                        self.r.flux[int_mjd_r.index(jd)] - \
+                        self.g.flux[int_mjd_g.index(jd)]
+                        )/(lambda_em[1]-lambda_em[0])
+                    b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                        a_gr*lambda_em[0]
+
+                    a_gr_err = sqrt(self.r.fluxErr[int_mjd_r.index(jd)]**2+\
+                        self.g.fluxErr[int_mjd_g.index(jd)]**2)
+                    b_gr_err = sqrt(self.g.flux[int_mjd_g.index(jd)]**2+\
+                        a_gr_err**2)
+
+
+                    a_ri = (
+                        self.i.flux[int_mjd_i.index(jd)] - \
+                        self.r.flux[int_mjd_r.index(jd)]
+                        )/(lambda_em[2]-lambda_em[1])
+                    b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                        a_ri*lambda_em[1]
+                    a_ri_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
+                        self.r.fluxErr[int_mjd_r.index(jd)]**2)
+                    b_ri_err = sqrt(self.r.flux[int_mjd_r.index(jd)]**2+\
+                        a_ri_err**2)
+
+
+                    a_iz = (
+                        self.z.flux[int_mjd_z.index(jd)] - \
+                        self.i.flux[int_mjd_i.index(jd)]
+                        )/(lambda_em[3]-lambda_em[2])
+                    b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                        a_iz*lambda_em[2]
+                    a_iz_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
+                        self.z.fluxErr[int_mjd_z.index(jd)]**2)
+                    b_iz_err = sqrt(self.i.flux[int_mjd_i.index(jd)]**2+\
+                        a_iz_err**2)
+
+
+                    # CALCULATE K-CORRECTION
+                    k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                    k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
+                    k_corr_i.append(a_iz*lambda_obs[2]+b_iz)
+                    # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                if (self.zSpec < 0.42) or (self.zPhotHost < 0.42):
+                    """
+                    g r band can be k-corrected
+                    """
+                    # choosing which interpolation to use
+                    if (self.zSpec < 0.21) or (self.zPhotHost < 0.21):
+                        a_gr = (
+                            self.r.flux[int_mjd_r.index(jd)] - \
+                            self.g.flux[int_mjd_g.index(jd)]
+                            )/(lambda_em[1]-lambda_em[0])
+                        b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                            a_gr*lambda_em[0]
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
+                    
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                        k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
+                        # CALCULATE K-CORRECTION ERROR
+                    else:
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
+                        a_iz = (
+                            self.z.flux[int_mjd_z.index(jd)] - \
+                            self.i.flux[int_mjd_i.index(jd)]
+                            )/(lambda_em[3]-lambda_em[2])
+                        b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                            a_iz*lambda_em[2]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
+                        k_corr_r.append(a_iz*lambda_obs[1]+b_iz)
+                        # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                if (self.zSpec < 0.89) or (self.zPhotHost < 0.89):
+                    """
+                    g band can be k-corrected.
+                    This will exclude the use of color information in 
+                    calculating distances.
+                    """
+                    if (self.zSpec < 0.33) or (self.zPhotHost < 0.33):
+                        a_gr = (
+                            self.r.flux[int_mjd_r.index(jd)] - \
+                            self.g.flux[int_mjd_g.index(jd)]
+                            )/(lambda_em[1]-lambda_em[0])
+                        b_gr = self.g.flux[int_mjd_g.index(jd)] - \
+                            a_gr*lambda_em[0]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
+                        # CALCULATE K-CORRECTION ERROR
+                    elif (self.zSpec < 0.61) or (self.zPhotHost < 0.61):
+                        a_ri = (
+                            self.i.flux[int_mjd_i.index(jd)] - \
+                            self.r.flux[int_mjd_r.index(jd)]
+                            )/(lambda_em[2]-lambda_em[1])
+                        b_ri = self.r.flux[int_mjd_r.index(jd)] - \
+                            a_ri*lambda_em[1]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
+                        # CALCULATE K-CORRECTION ERROR
+                    else:
+                        a_iz = (
+                            self.z.flux[int_mjd_z.index(jd)] - \
+                            self.i.flux[int_mjd_i.index(jd)]
+                            )/(lambda_em[3]-lambda_em[2])
+                        b_iz = self.i.flux[int_mjd_i.index(jd)] - \
+                            a_iz*lambda_em[2]
+
+                        # CALCULATE K-CORRECTION
+                        k_corr_g.append(a_iz*lambda_obs[0]+b_iz)
+                        # CALCULATE K-CORRECTION ERROR
+                    continue
+
+                raise ValueError('delta redshift too big to have a k-correction')
+
+        return mjd, list([k_corr_g, k_corr_r, k_corr_i])
 
 class SupernovaFit():
     ccMjdMaxFlux = 0
@@ -331,9 +505,8 @@ class SupernovaFit():
         """
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
-        distance = -99
-        bigDistance = 100
-
+        distFlag = 5
+        
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
 
@@ -356,7 +529,7 @@ class SupernovaFit():
         mjdIntersection = [el for el in mjd1 if el in mjd2]
 
         if len(mjdIntersection) < 2:
-            distance = bigDistance
+            distance = distFlag
         else:
             flux1Int = [
                 flux1[i] for i in [mjd1.index(el) for el in mjdIntersection]
@@ -435,13 +608,13 @@ class SupernovaFit():
                 continue
 
             if bandArr.size == 0:
-                bandArr = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                bandArr = np.empty(len(self.lcsDict[b].mjd), dtype=np.str)
                 bandArr[:] = b
                 mjd = self.lcsDict[b].mjd
                 flux = self.lcsDict[b].flux
                 fluxErr = self.lcsDict[b].fluxErr
             else:
-                tmp = np.empty(self.lcsDict[b].mjd.size, dtype=np.str)
+                tmp = np.empty(len(self.lcsDict[b].mjd), dtype=np.str)
                 tmp[:] = b
                 bandArr = np.concatenate((bandArr, tmp))
                 mjd = np.concatenate((mjd, self.lcsDict[b].mjd))
@@ -700,14 +873,11 @@ class SupernovaeCatalog():
 
 if __name__ == '__main__':
     indent = "          "
+    lambda_obs = [479.66, 638.26, 776.90, 910.82]
     dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     fCandidatesList = "DES_BLIND+HOSTZ.LIST"
     candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)
-    catalogFit = CandidatesCatalog()
     kern = GPy.kern.RBF(1)
-
-    print args.candidate1
-    print args.candidate2
 
     if args.band not in ['g', 'r', 'i', 'z']:
         print 'Band {:<} not recognised! Changing to r'.format(args.band)
@@ -725,9 +895,12 @@ if __name__ == '__main__':
         args.candidate2 = np.random.random_integers(
             low=0, high=18321)
 
+    print args.candidate1
+    print args.candidate2
 
     # Getting observation data
     candidates = list()
+    fit = list()
     candidates.append(Supernova(
         dirData+os.sep+candidatesFileList[args.candidate1]))
 
@@ -736,7 +909,63 @@ if __name__ == '__main__':
 
     for candidate in candidates:
         # Create SupernovaFit objects
-        candidateFit = SupernovaFit(candidate.SNID)
+        # candidateFit = SupernovaFit(candidate.SNID)
+        print 'candidate z = {:>6.4f}'.format(
+            candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+        lambda_em = [el/(
+            1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+            ) for el in lambda_obs]
+
+        plt.figure()
+        int_mjd_g = [int(el) for el in candidate.g.mjd]
+        int_mjd_r = [int(el) for el in candidate.r.mjd]
+        int_mjd_i = [int(el) for el in candidate.i.mjd]
+        int_mjd_z = [int(el) for el in candidate.z.mjd]
+        mjd = [el for el in int_mjd_g if el in int_mjd_r 
+                    and el in int_mjd_i and el in int_mjd_z]
+        jd = mjd[0]
+
+        flux = [
+            candidate.g.flux[int_mjd_g.index(jd)], 
+            candidate.r.flux[int_mjd_r.index(jd)],
+            candidate.i.flux[int_mjd_i.index(jd)],
+            candidate.z.flux[int_mjd_z.index(jd)]
+            ]
+        fluxErr = [
+            candidate.g.fluxErr[int_mjd_g.index(jd)], 
+            candidate.r.fluxErr[int_mjd_r.index(jd)],
+            candidate.i.fluxErr[int_mjd_i.index(jd)],
+            candidate.z.fluxErr[int_mjd_z.index(jd)]
+            ]
+        plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
+        plt.scatter(lambda_obs, flux, color='black')
+        plt.errorbar(lambda_em, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
+        plt.scatter(lambda_em, flux, color='blue')
+        plt.show()
+        # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
+
+        
+        # (a, b) = np.polyfit(
+        #     # [lambda_em[0], lambda_em[1]], 
+        #     [
+        #     lambda_em[0],
+        #     lambda_em[1]#,
+        #     # lambda_em[2],
+        #     # lambda_em[3],
+        #     ],
+        #     [
+        #     candidate.g.flux[int_mjd_g.index(jd)], 
+        #     candidate.r.flux[int_mjd_r.index(jd)]#,
+        #     # candidate.i.flux[int_mjd_i.index(jd)],
+        #     # candidate.z.flux[int_mjd_z.index(jd)]
+        #     ], deg = 1, 
+        #     w = [
+        #         1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
+        #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
+        #     # cov=True
+        #     )
+        raise ValueError
+
         for b in candidate.lcsDict.keys():
             phase = candidate.lcsDict[b].mjd
             flux = candidate.lcsDict[b].flux
@@ -758,10 +987,7 @@ if __name__ == '__main__':
                 sys.stdout = saveOut
                 fout.close()
 
-                candidateFit.set_lightcurve(b, 
-                    predMjd.reshape(predMjd.size),
-                    predFlux.reshape(predFlux.size), 
-                    predErr.reshape(predErr.size))
+                candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
                 
                 print indent + \
                     "{:<} {:<}".format(candidate.SNID, b)
@@ -772,12 +998,13 @@ if __name__ == '__main__':
                     util.bcolors.ENDC
 
         candidateFit.shift_mjds()
-        catalogFit.add_candidate(candidateFit)
+        fit.append(candidateFit)
+        # catalogFit.add_candidate(candidateFit)
 
-    if catalogFit.candidates[0].peaked and catalogFit.candidates[1].peaked:
+    if fit[0].peaked and fit[1].peaked:
         print 'Distance between the 2 normalized lcs in ' + \
         '{:<} band = {:<2.4f}'.format(args.band,
-            catalogFit.candidates[0].get_distance(catalogFit.candidates[1], 
+            fit[0].get_distance(fit[1], 
             args.band, reset_masks=False))
 
         # if plt.get_fignums():
@@ -787,18 +1014,18 @@ if __name__ == '__main__':
 
         # plt.figure(figNum)
         plt.scatter(
-            catalogFit.candidates[0].lcsDict[args.band].shiftedMjd.compressed(),
-            catalogFit.candidates[0].normalized_flux(args.band))
+            fit[0].lcsDict[args.band].shiftedMjd,
+            fit[0].normalized_flux(args.band))
 
         plt.scatter(
-            catalogFit.candidates[1].lcsDict[args.band].shiftedMjd.compressed(),
-            catalogFit.candidates[1].normalized_flux(args.band), c='orange')
+            fit[1].lcsDict[args.band].shiftedMjd,
+            fit[1].normalized_flux(args.band), c='orange')
 
         plt.show()
     else:
         print 'One of the 2 candidate has not r-band peak: '
-        print 'Candidate 1 - {:<}'.format(catalogFit.candidates[0].peaked)
-        print 'Candidate 2 - {:<}'.format(catalogFit.candidates[1].peaked)
+        print 'Candidate 1 - {:<}'.format(fit[0].peaked)
+        print 'Candidate 2 - {:<}'.format(fit[1].peaked)
 
 
     # return catalogFit

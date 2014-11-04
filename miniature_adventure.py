@@ -82,13 +82,13 @@ if __name__ == "__main__":
         action="store_true")
 
     parser.add_argument(
-        "--training-directory", dest="dirData",
-        default="train_data" + os.sep + "DES_BLIND+HOSTZ",
+        "--data-directory", dest="dirData",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES",
         help="Path to directory containing training data.")
 
     parser.add_argument(
         "--fit-directory", dest="dirFit",
-        default="train_data" + os.sep + "DES_BLIND+HOSTZ_FIT",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES_FIT",
         help="Path to directory containing fitted data.")
 
     parser.add_argument(
@@ -142,38 +142,24 @@ if __name__ == "__main__":
 
     """
 
-    PERFORM LCs FITTING
+    PERFORMS LCs FITTING
 
     """
     if args.fit or args.fitTraining:
         whileOn = True
         i = 0
-        filePath = prodDir + 'PEAKED_{:<}.LIST'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.LIST')
-                    filePath = filePath[0:6] + '_{:<}({:<d}).LIST'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = prodDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
+            socket.gethostname(), time.time()
+            )
+   
         fPeaked = open(filePath, 'w')
 
         whileOn = True
         i = 0
-        filePath = prodDir + 'NOPEAKED_{:<}.LIST'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.LIST')
-                    filePath = filePath[0:8] + '_{:<}({:<d}).LIST'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = prodDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
+            socket.gethostname(), time.time()
+            )
+  
         fNopeaked = open(filePath, 'w')
 
 
@@ -188,12 +174,15 @@ if __name__ == "__main__":
         print "\n" + indent + "List of candidates contained in: " \
             + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
-        vecCandidates = np.genfromtxt(
-                args.dirData+os.sep+fNameCandidatesList, dtype=None)
-        # tenPercent = vecCandidates.size / 10
-        # const = 0
+        p = subprocess.Popen("ls DES_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirData+os.sep)
+        lsDirData = p.stdout.read()
+        lsDirData = lsDirData.split('\n')
+        lsDirData.sort()
+        lsDirData.remove('')
+
         print "\n" + indent \
-            + "Number of candidates = {:<d}".format(vecCandidates.size)
+            + "Number of candidates = {:<d}".format(len(lsDirData))
 
         print "\n" + indent \
             + "Data are fitted using GP with Radial Basis Function kernel."
@@ -214,7 +203,7 @@ if __name__ == "__main__":
         
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + vecCandidates[i]
+                args.dirData + os.sep + lsDirData[i]
                 )
 
             if args.fitTraining:
@@ -227,16 +216,26 @@ if __name__ == "__main__":
             # candidateFit = cls.SupernovaFit(candidate.SNID)
             candidateFit = cls.SupernovaFit(candidate)
             for b in candidate.lcsDict.keys(): 
+                epoch = util.time_correct(candidate.lcsDict[b].mjd, 
+                    candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
-                phase = candidate.lcsDict[b].mjd
-                flux = candidate.lcsDict[b].flux
+                flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
+                    candidate.MWEBV, b)
                 errFlux = candidate.lcsDict[b].fluxErr
 
                 # test_prior should be deleted as option. Prior too weak.
                 # 
                 # Fitting Lightcurve
 
-                if (candidate.lcsDict[b].badCurve) or (flux.size <= 3):
+                """
+                K--correction reduces the number of observation in each band.
+                For this reason it has to be performed here, before checking
+                flux length.
+
+                ---> K--correction
+                """
+
+                if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
                         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
@@ -252,7 +251,7 @@ if __name__ == "__main__":
 
                 
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                phase, flux, errFlux, 
+                                                epoch, flux, errFlux, 
                                                 kern, n_restarts=10, 
                                                 parallel=False, # this solves some memory leakage. The execution speed is not affected...
                                                 test_length=True)
@@ -260,24 +259,16 @@ if __name__ == "__main__":
                 fout.close()
 
                 candidateFit.set_lightcurve(b, 
-                    predMjd.reshape(predMjd.size),
-                    predFlux.reshape(predFlux.size), 
-                    predErr.reshape(predErr.size))
-                
-                
+                    predMjd, predFlux, predErr)
+
                 print indent + \
                     "{:<} {:<} {:<}".format(i, candidate.SNID, b)
-                # else:
-                #     candidateFit.lcsDict[b].badCurve = True
-                #     print indent + bcolors.FAIL + \
-                #         "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
-                #         bcolors.txtrst
                                 
-            # Setting phase 0 point to phase or r maximum
+            
             if candidateFit.r.badCurve is False:
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
-                    path.splitext(vecCandidates[i])[0] + "_FIT.DAT"
+                    path.splitext(lsDirData[i])[0] + "_FIT.DAT"
                 candidateFit.save_on_txt(filePath)
                 
                 if candidateFit.peaked:
@@ -293,34 +284,20 @@ if __name__ == "__main__":
         # ferr.close()
         whileOn = True
         i = 0
-        filePath = 'peaked_{:<}.dat'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(prodDir + filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:6] + '_{:<}({:<d}).dat'.format(
-                        socket.gethostname(),
-                        i
-                        )
-            else:
-                whileOn = False    
+        filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
+
         np.savetxt(prodDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
         whileOn = True
         i = 0
-        filePath = prodDir + 'nopeaked_{:<}.dat'.format(socket.gethostname())
-        while whileOn:
-            if path.exists(prodDir + filePath):
-                    i += 1
-                    pklIdx = filePath.rfind('.dat')
-                    filePath = filePath[0:8] + '_{:<}({:<d}).dat'.format(
-                        socket.gethostname(),
-                        i
-                        )   
-            else:
-                whileOn = False    
-        np.savetxt(prodDir + filePath, nopeakIdx,
+        filePath = prodDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
+            socket.gethostname(), time.time()
+            )
+
+        np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
     """
@@ -339,7 +316,7 @@ if __name__ == "__main__":
         dirData. It is then filtered using the above variables.
         """
         start = 0
-        end = 825
+        end = 2
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate cross-correlation of not peaked- with " + \
             "peaked-lcs ..." +  bcolors.txtrst
@@ -354,19 +331,30 @@ if __name__ == "__main__":
         lsDirData.sort()
         lsDirData.remove('')
         
-        filePath = 'peaked_{:<}_FULL.dat'.format(socket.gethostname())
-        peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
-        filePath = 'nopeaked_{:<}_FULL.dat'.format(socket.gethostname())
-        tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
-        if tmp.size == 1:
-            nopeakIdx = np.asarray([tmp])
-        else:    
-            nopeakIdx = np.asarray(tmp)
+        # filePath = 'peaked.dat'.format(socket.gethostname())
+        # peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # filePath = 'nopeaked.dat'.format(socket.gethostname())
+        # tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # if tmp.size == 1:
+        #     nopeakIdx = np.asarray([tmp])
+        # else:    
+        #     nopeakIdx = np.asarray(tmp)
         
-        filePath = 're-written_files_{:<5.3f}.dat'.format(time.time())
+        filePath = 'PEAKED.LIST'
+        peakList = np.loadtxt(prodDir + filePath, dtype=np.str)
+        filePath = 'NOPEAKED.LIST'
+        tmp = np.loadtxt(prodDir + filePath, dtype=np.str)
+        if tmp.size == 1:
+            nopeakList = np.asarray([tmp])
+        else:    
+            nopeakList = np.asarray(tmp)
+        
+
+        filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(prodDir + filePath, 'w')
         prog = 0        
-        for i in nopeakIdx[start:end]:
+        # for i in nopeakIdx[start:end]:
+        for i in nopeakList[start:end]:
 
             z = 0 # goes on peakIdx to index the progress bar
             
@@ -374,22 +362,25 @@ if __name__ == "__main__":
             READ DATA FROM FILE 
             in Supernova object
             """
-            filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             try:
                 tmpSN = util.get_sn_from_file(filePath)
 
-                print "Progress: {:<d}".format(prog)
+                print "Progress: {:<d} -- {:<}".format(prog, filePath)
                 prog += 1
 
                 ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)#  "          "
                 widgets = [ccIndent, Percentage(), ' ',
                    Bar(marker='#',left='[',right=']'),
                    ' ', ETA()]
-                pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
+                # pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
+                pbar = ProgressBar(widgets=widgets, maxval=len(peakList)).start()
             except IOError:
+                print "IOError: {:<}".format(filePath)
                 continue
             
             if tmpSN.r.badCurve:
+                print "IOError: {:<}".format(filePath)
                 continue
             """
             create SupernovaFit object
@@ -406,13 +397,14 @@ if __name__ == "__main__":
             """
             notPeaked.shift_mjds()
 
-            ccMax = np.zeros(peakIdx.size)
+            ccMax = list()#np.zeros(peakIdx.size)
             k = 0 # goes on ccMax
-            for j in peakIdx:
+            # for j in peakIdx:
+            for j in peakList:
                 """
                 READ DATA FROM FILE
                 """
-                filePath = args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
+                filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
@@ -441,28 +433,28 @@ if __name__ == "__main__":
                     )
                 xcorr = np.arange(ycorr.size)
                 lags = xcorr - (
-                    notPeaked.normalized_flux('r').size-1
+                    len(notPeaked.normalized_flux('r'))-1
                     )
                 distancePerLag = (
                     notPeaked.r.shiftedMjd[-1] - \
                     notPeaked.r.shiftedMjd[0])/float(
-                                        notPeaked.r.shiftedMjd.size
+                                        len(notPeaked.r.shiftedMjd)
                                         )
                 offsets = -lags*distancePerLag
                 # raise SystemExit
-                ccMax[k] = offsets[np.argmax(ycorr)]
-
-                k += 1
+                # ccMax[k] = offsets[np.argmax(ycorr)]
+                ccMax.append(offsets[np.argmax(ycorr)])
+                # k += 1
                 
                 pbar.update(z+1)
                 z += 1
 
-            notPeaked.ccMjdMaxFlux = ccMax.mean()
+            notPeaked.ccMjdMaxFlux = np.mean(ccMax)#ccMax.mean()
             """
             re-writing file of not peaked lc to include information on maximum
             position from CC.
             """
-            filePath = args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
 
             reWrite.write(filePath+'\n')
@@ -477,6 +469,9 @@ if __name__ == "__main__":
 
     """
     if args.distMatrix:
+        if not os.path.exists(path.abspath(prodDir + 'distance_matrix' + os.sep)):
+            os.makedirs(path.abspath(prodDir + 'distance_matrix' + os.sep))
+            
         """
         Calculate distance between fitted lightcurves.
         Distance values are saved in a R matrix. This will be used by the R 
@@ -504,7 +499,9 @@ if __name__ == "__main__":
         """
         setting value for big distance
         """
-        bigDistance = 10
+        distFlag = 5
+        missColCount = 0
+        missRowlist = list()
         bandDict = {
             'g':0,
             'r':1,
@@ -514,16 +511,19 @@ if __name__ == "__main__":
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
-        # creating numpy matrix
-        Pymatrix = np.zeros(( 
-            len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
-            dtype=float
-            )
+        # creating numpy matrix: list of 4 lists
+        distList = list([[], [], [], []])
+        nCols = 0
+        # distList = np.zeros((4, 
+        #     len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
+        #     dtype=float
+        #     )
+
 
         pbar = ProgressBar(widgets=widgets, maxval=(i_end-i_start)).start()
 
         for i in range(i_start, i_end):
-
+            missColCount = 0
             """
             Reading in i-candidate
             """
@@ -531,17 +531,26 @@ if __name__ == "__main__":
                 args.dirFit+os.sep+lsDirFit[i]
                 )
             if tmpSN.r.badCurve:
-                raise SystemExit("{:<} Has bad curve in r band - " + \
-                    "THE FILE HAS TO BE DELETED".format(lsDirFit[i]))
+                # nothing has to be added to the distance matrix. Print and 
+                #
+                # continue to nex object
+
+                # for b in bands:
+                    # distList[bandDict[b], i-i_start, j-j_start] = nullVal
+                print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
+                    "THE FILE HAS TO BE DELETED" +\
+                    " indices {:<d}, {:<d}".format(i, j)
+                missRowlist.append(i)
+                continue
                 
             iCandidate = cls.SupernovaFit(tmpSN)
             
-            for l in tmpSN.lcsDict.keys():
+            for b in tmpSN.lcsDict.keys():
                 # set_lightcurve set also if the lc is peaked or not
-                iCandidate.set_lightcurve(l, 
-                    tmpSN.lcsDict[l].mjd,
-                    tmpSN.lcsDict[l].flux,
-                    tmpSN.lcsDict[l].fluxErr
+                iCandidate.set_lightcurve(b, 
+                    tmpSN.lcsDict[b].mjd,
+                    tmpSN.lcsDict[b].flux,
+                    tmpSN.lcsDict[b].fluxErr
                     )
 
             """
@@ -551,7 +560,7 @@ if __name__ == "__main__":
             if iCandidate.peaked == False:
                 # print i, iCandidate.SNID
                 """
-                keeping to perform check with other non peaed LC
+                keeping to perform check with other non peaked LC
                 """
                 iElMax = iCandidate.r.shiftedMjd.index(0.)
                 """
@@ -577,12 +586,26 @@ if __name__ == "__main__":
 
                 if j == i:
                     # filling elements on the distance matrix diagonal
-                    Pymatrix[i-i_start, j-j_start] += 0.
+                    for b in bands:
+                        # adding one element to each sub list in distList
+                        distList[bandDict[b]].append(0.)
+                        # distList[bandDict[b], i-i_start, j-j_start] = 0.
                     continue
 
                 if j < i:
                     # filling matrix elements below the diagonal
-                    Pymatrix[i-i_start, j-j_start] += Pymatrix[j-j_start, i-i_start]
+                    if j in missRowlist: 
+                        missColCount += 1
+                        continue
+                    for b in bands:
+                        # appending the symmetric element in the list: i-i_start
+                        distList[bandDict[b]].append(
+                            distList[bandDict[b]][
+                                (j-j_start-missColCount)*nCols+\
+                                    i-i_start-len(missRowlist)
+                                ])
+                        # distList[bandDict[b], i-i_start, j-j_start] = \
+                        #             distList[bandDict[b], j-j_start, i-i_start]
                     continue # jump to the next iteration of the loop
 
                 """
@@ -596,15 +619,23 @@ if __name__ == "__main__":
                     print j, len(lsDirFit)
                     raise IndexError("list index out of range")
                 if tmpSN.r.badCurve:
-                    raise SystemExit("{:<} Has bad curve in r band -"+\
-                        " THE FILE HAS TO BE DELETED".format(lsDirFit[j]))
+                    # nothing has to be added to the distance matrix. Print and 
+                    #
+                    # continue to nex object
+
+                    # for b in bands:
+                    #     distList[bandDict[b], i-i_start, j-j_start] = nullVal
+                    print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
+                        " THE FILE HAS TO BE DELETED:" +\
+                        " indices {:<d}, {:<d}".format(i, j)
+                    continue
 
                 jCandidate = cls.SupernovaFit(tmpSN)
-                for l in tmpSN.lcsDict.keys():
-                    jCandidate.set_lightcurve(l, 
-                        tmpSN.lcsDict[l].mjd, 
-                        tmpSN.lcsDict[l].flux, 
-                        tmpSN.lcsDict[l].fluxErr
+                for b in tmpSN.lcsDict.keys():
+                    jCandidate.set_lightcurve(b, 
+                        tmpSN.lcsDict[b].mjd, 
+                        tmpSN.lcsDict[b].flux, 
+                        tmpSN.lcsDict[b].fluxErr
                         )
 
                 """
@@ -613,7 +644,7 @@ if __name__ == "__main__":
                 jCandidate.shift_mjds()
                 if jCandidate.peaked == False:
                     """
-                    keeping to perform check with other non peaed LC
+                    keeping to perform check with other non peaked LC
                     """
                     jElMax = jCandidate.r.shiftedMjd.index(0.)
                     """
@@ -629,56 +660,123 @@ if __name__ == "__main__":
 
                 jElSize = jCandidate.r.size
 
-                
-                # if (jCandidate.peaked == False) and (iPeaked == False):
-                #     # maximum values are at opposite sides
-                #     if (iElMax == 0. and jElMax == jElSize-1.) \
-                #     or (iElMax == iElSize-1. and jElMax == 0.) \
-                #     and not jCandidate.lcsDict[b].badCurve \
-                #     and not iCandidate.lcsDict[b].badCurve:
-                #         for b in bands:
-                #             Pymatrix[i-i_start, j-j_start] += bigDistance
-                #         continue
-
                 for b in bands:
                     if not jCandidate.lcsDict[b].badCurve \
                     and not iCandidate.lcsDict[b].badCurve:
-                        Pymatrix[i-i_start, j-j_start] += iCandidate.get_distance(
-                            jCandidate, 
-                            b)
+                        distList[bandDict[b]].append(
+                            iCandidate.get_distance(jCandidate, b)
+                            )
+                        # distList[bandDict[b], i-i_start, j-j_start] = \
+                        #     iCandidate.get_distance(jCandidate, b)
                     else:
                         # in case of bad curve
-                        # print i, j
-                        Pymatrix[i-i_start, j-j_start] += bigDistance
+                        """
+                        This works like a flag. These elements will be set 
+                        equal to a neutral value (the mean of the other)
+                        """
+                        distList[bandDict[b]].append(distFlag)
+                        # distList[bandDict[b], i-i_start, j-j_start] = distFlag
 
+            if (i == i_start):
+                nCols = len(distList[0])
             pbar.update(i-i_start+1)
         pbar.finish()
 
-        """
-        Create R matrix
-        """
-        filePath = prodDir + 'distance_matrix' + os.sep + \
-            'Pymatrix_{:<}_{:<5.3f}.txt'.format(
-                socket.gethostname(), time.time()
+        distMatrix = np.zeros((4, 
+            len(distList[0])/nCols, nCols),
+            dtype=float
             )
-        fileHeader = "# Pymatrix[{:<d}:{:<d},{:<d}:{:<d}]  --- ".format(
+
+        for b in bands:
+            distMatrix[bandDict[b]] = np.reshape(
+                distList[bandDict[b]], (len(distList[bandDict[b]])/nCols, nCols)
+                )
+
+        # fixing flagged elements
+        # raise SystemExit
+        if distMatrix[0, distMatrix[0] == distFlag].size > 0: 
+            ind = np.where(distMatrix[0] == distFlag)
+            distMatrix[0, ind[0], ind[1]] = np.add(
+                np.add(
+                    distMatrix[1, ind[0], ind[1]], 
+                    distMatrix[2, ind[0], ind[1]]
+                    ), 
+                distMatrix[3, ind[0], ind[1]]
+                )/3.
+
+
+        if distMatrix[1, distMatrix[1] == distFlag].size > 0:
+            ind = np.where(distMatrix[1] == distFlag)
+            # distMatrix[1, ind[0], ind[1]] = distMatrix[1,:,:].max()
+            distMatrix[1, ind[0], ind[1]] = np.add(
+                np.add(
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[2, ind[0], ind[1]]
+                    ), 
+                distMatrix[3, ind[0], ind[1]]
+                )/3.
+
+        if distMatrix[2, distMatrix[2] == distFlag].size > 0: 
+            ind = np.where(distMatrix[2] == distFlag)
+            # distMatrix[2, ind[0], ind[1]] = distMatrix[2].max()
+            distMatrix[2, ind[0], ind[1]] = np.add(
+                np.add(
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[1, ind[0], ind[1]]
+                    ), 
+                distMatrix[3, ind[0], ind[1]]
+                )/3.
+
+        if distMatrix[3, distMatrix[3] == distFlag].size > 0: 
+            ind = np.where(distMatrix[3] == distFlag)
+            # distMatrix[3, ind[0], ind[1]] = distMatrix[3].max()
+            distMatrix[3, ind[0], ind[1]] = np.add(
+                np.add(
+                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[1, ind[0], ind[1]]
+                    ), 
+                distMatrix[2, ind[0], ind[1]]
+                )/3.
+        
+        distMatrixSum = np.sum(distMatrix, 0)
+        """
+        Saving on text files
+        """
+        fileHeader = "distMatrix[{:<d}:{:<d},{:<d}:{:<d}] --- ".format(
             i_start, i_end, j_start, j_end
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-        np.savetxt(filePath, Pymatrix, fmt='%6.4f', header=fileHeader)
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrix[0], fmt='%6.4f', header=fileHeader)
 
-        # filePath = prodDir + 'Rmatrix_{:<}_{:<5.3f}.dat'.format(
-        #     socket.gethostname(), time.time()
-        #     )
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrix[1], fmt='%6.4f', header=fileHeader)
 
-        # Rmatrix = ro.Matrix(Pymatrix)
-        # write_table = ro.r['write.table']
-        # """
-        # write Rmatrix on dat file to use later.
-        # """
-        # write_table(Rmatrix, filePath, row_names=False, col_names=False)
-        
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrix[2], fmt='%6.4f', header=fileHeader)
+
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrix[3], fmt='%6.4f', header=fileHeader)
+
+
+        filePath = prodDir + 'distance_matrix' + os.sep + \
+            'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrixSum, fmt='%6.4f', header=fileHeader)
 
     """
 
@@ -688,11 +786,6 @@ if __name__ == "__main__":
 
 
     if args.diffuse:
-        if 'Rmatrix' not in globals():
-            print indent + 'Loading catalog from dump file ...'
-            Rmatrix = util.open_pkl('Rmatrix.pkl')
-            # Rmatrix = util.open_pkl('Rmatrix_train.pkl')
-
         if 'diffusionMap' not in globals():
             diffusionMap = importr('diffusionMap')
 
