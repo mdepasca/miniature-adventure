@@ -816,6 +816,7 @@ if __name__ == "__main__":
     """
 
     if args.plot:
+        timeMark = time.time()
         """
         getting file list from directory
         File will be sorted by SNID
@@ -841,7 +842,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 25
+        offset = 10000
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -885,14 +886,16 @@ if __name__ == "__main__":
 
         for i in range(nrows*ncols):
             # getting the data from file
+            candidateIdx = np.random.random_integers(
+                low=0, high=21319)
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + lsDirData[offset+i])
-
+                args.dirData + os.sep + lsDirData[i+offset]#candidateIdx]
+                )
             """
             reading fit data from file
             """
             tmpSN = util.get_sn_from_file(
-                    args.dirFit+os.sep+lsDirFit[offset+i]
+                    args.dirFit+os.sep+lsDirFit[i+offset]#candidateIdx]
                     )
             """
             Initializing SupernovaFit object
@@ -942,7 +945,7 @@ if __name__ == "__main__":
                 xlim = dictAx[b][r[b], c[b]].get_xlim()
                 ylim = dictAx[b][r[b], c[b]].get_ylim()
 
-                if not data.badCurve:
+                if not data.badCurve and not fit_b.badCurve:
                     epoch = util.time_correct(data.mjd, 
                         candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
@@ -950,19 +953,19 @@ if __name__ == "__main__":
                     if fit.peaked == False:
                         epoch = [val+fit.ccMjdMaxFlux for val in epoch]
 
-                    flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
+                    flux = util.correct_for_absorption(data.flux, 
                         candidate.MWEBV, b)
 
 
-                    if min(fit_b.flux) < min(data.flux):
+                    if min(fit_b.flux) < min(flux):
                         y_min = min(fit_b.flux) - 3*max(fit_b.fluxErr)
                     else:
-                        y_min = min(data.flux) - np.median(data.fluxErr)
+                        y_min = min(flux) - np.median(data.fluxErr)
 
-                    if max(fit_b.flux) > max(data.flux):
+                    if max(fit_b.flux) > max(flux):
                         y_max = max(fit_b.flux) + 3*max(fit_b.fluxErr)
                     else:
-                        y_max = max(data.flux) + np.median(data.fluxErr)
+                        y_max = max(flux) + np.median(data.fluxErr)
 
                     dictAx[b][r[b], c[b]].set_ylim(y_min, y_max)
 
@@ -1031,10 +1034,10 @@ if __name__ == "__main__":
                         color='#7f0000', 
                         linewidth=2)
 
-                    dictAx[b][r[b], c[b]].scatter(data.shiftedMjd, data.flux, 
+                    dictAx[b][r[b], c[b]].scatter(epoch, flux, 
                         s=10, label=str(candidate.SNID), c='black', marker='x')
 
-                    dictAx[b][r[b], c[b]].errorbar(data.shiftedMjd, data.flux,
+                    dictAx[b][r[b], c[b]].errorbar(epoch, flux,
                         data.fluxErr, fmt=None, color='black', ecolor='black')
 
                     
@@ -1051,11 +1054,12 @@ if __name__ == "__main__":
                     dictAx[b][r[b], c[b]].legend(
                         loc='best', framealpha=0.3, fontsize='10')
                 c[b] += 1
-                
+        
+        
         for b in dictFig.keys():
             dictFig[b].savefig(
-                'products/plots/test_band_{:<1}_{:0>6d}to{:0>6d}.pdf'.format(b,
-                    offset, nrows*ncols+offset), 
+                'products/plots/test_band_{:<1}_{:<f}.pdf'.format(b,
+                    timeMark), 
                 dpi=300
                 )
 
