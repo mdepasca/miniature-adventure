@@ -842,7 +842,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 100
+        offset = 125
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -973,63 +973,42 @@ if __name__ == "__main__":
                         fit_b.flux[i] + fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            +np.array(fit_b.fluxErr))>np.array(fit_b.flux),
-                        facecolor='red', alpha=0.4, linewidth=0.5)
                     fluxLowLim = [val for val in [
                         fit_b.flux[i] - fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
+
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxLowLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            -np.array(fit_b.fluxErr))<np.array(fit_b.flux),
+                        fluxUpLim, fluxLowLim, 
                         facecolor='red', alpha=0.4, linewidth=0.5)
+                    
 
                     fluxUpLim = [val for val in [
                         fit_b.flux[i] + 2*fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            +2*np.array(fit_b.fluxErr))>np.array(fit_b.flux)
-                                                    +np.array(fit_b.fluxErr),
-                        facecolor='red', alpha=0.2, linewidth=0.5)
                     fluxLowLim = [val for val in [
                         fit_b.flux[i] - 2*fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxLowLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            -2*np.array(fit_b.fluxErr))<np.array(fit_b.flux)
-                                                    +np.array(fit_b.fluxErr),
+                        fluxUpLim, fluxLowLim, 
                         facecolor='red', alpha=0.2, linewidth=0.5)
-
+                    
+                   
                     fluxUpLim = [val for val in [
                         fit_b.flux[i] + 3*fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            +3*np.array(fit_b.fluxErr))>np.array(fit_b.flux)
-                                                    +2*np.array(fit_b.fluxErr),
-                        facecolor='red', alpha=0.1, linewidth=0.5)
                     fluxLowLim = [val for val in [
                         fit_b.flux[i] - 3*fit_b.fluxErr[i] 
                             for i in range(len(fit_b.flux))
                         ]]
                     dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxLowLim, fit_b.flux, 
-                        where=(np.array(fit_b.flux)
-                            -3*np.array(fit_b.fluxErr))<np.array(fit_b.flux)
-                                                    -2*np.array(fit_b.fluxErr),
+                        fluxUpLim, fluxLowLim, 
                         facecolor='red', alpha=0.1, linewidth=0.5)
-
+                    
+                    
                     dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
                         color='#7f0000', 
                         linewidth=2)
