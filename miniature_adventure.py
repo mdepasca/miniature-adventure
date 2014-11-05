@@ -842,7 +842,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 125
+        offset = 200
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -1008,7 +1008,7 @@ if __name__ == "__main__":
                         fluxUpLim, fluxLowLim, 
                         facecolor='red', alpha=0.1, linewidth=0.5)
                     
-                    
+
                     dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
                         color='#7f0000', 
                         linewidth=2)
