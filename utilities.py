@@ -224,8 +224,8 @@ def rename_bad_r_lc_file(path):
     lsList.sort()
     lsList.remove('')
     countBad = 0
-    tmpSN = get_sn_from_file(path+lsList[i])
     for i in range(len(lsList)):
+        tmpSN = get_sn_from_file(path+lsList[i])
         if tmpSN.r.badCurve:
             os.rename(path+lsList[i], path+lsList[i]+'.BADrLC')
             countBad += 1
