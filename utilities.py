@@ -209,11 +209,38 @@ def index_to_filename(indexList, inFileName, outFileName):
     outFileList = npLines[indexList]
     np.savetxt(outFileName, outFileList, fmt='%s', newline='')
 
+def rename_bad_r_lc_file(path):
+    """Renames files of fitted lc with a bad lc in r band
+
+    """
+    if path[-1] != os.sep:
+        path = path + os.sep
+
+    p = subprocess.Popen("ls *FIT.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=path)
+    lsList = p.stdout.read()
+    lsList = lsList.split('\n')
+    lsList.sort()
+    lsList.remove('')
+    countBad = 0
+    for i range(len(lsList)):
+        tmpSN = util.get_sn_from_file(path+lsList[i])
+        if tmpSN.r.badCurve:
+            os.rename(path+lsList[i], path+lsList[i]+'.BADrLC')
+            countBad += 1
+
+    return countBad
+
+
+
+
 def extract_training_set(path):
     """Finds files from spectroscopically indentified SNe and write them into
     a list, along with their index in the full list of files in `path`
     """
-
+    if path[-1] != os.sep:
+        path = path + os.sep
+        
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=path)
     lsList = p.stdout.read()
