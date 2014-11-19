@@ -38,13 +38,16 @@ diffuse.and.classify <- function(dmap.esp.val, distance.matrix, training.set){
 }
 
 ## Load the data
+if (!exists('dump.table')){
+    dump.table <- read.table('train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP', header=TRUE, skip=1)
+}
 
 ## Reading indeces of training set SNe
-if (!exists('trainSet')){
+if (!exists('training.set')){
     message("Building training set...")
-    training.set.snIa <- read.table('products/SIMGEN_PUBLIC_DES_FIT.Ia.TRAIN', col.names=c('idx', 'path', 'type'))
-    training.set.snIbc <- read.table('products/SIMGEN_PUBLIC_DES_FIT.Ibc.TRAIN', col.names=c('idx', 'path', 'type'))
-    training.set.snII <- read.table('products/SIMGEN_PUBLIC_DES_FIT.II.TRAIN', col.names=c('idx', 'path', 'type'))
+    training.set.snIa <- read.table('products/SIMGEN_PUBLIC_DES_FIT.Ia.TRAIN', col.names=c('idx', 'snid', 'path', 'type'))
+    training.set.snIbc <- read.table('products/SIMGEN_PUBLIC_DES_FIT.Ibc.TRAIN', col.names=c('idx', 'snid', 'path', 'type'))
+    training.set.snII <- read.table('products/SIMGEN_PUBLIC_DES_FIT.II.TRAIN', col.names=c('idx', 'snid', 'path', 'type'))
  
     training.set <- rbind(training.set.snIa[1], training.set.snIbc[1], training.set.snII[1])
     training.set <- cbind(training.set, rbind(training.set.snIa[3], training.set.snIbc[3], training.set.snII[3]))
@@ -64,8 +67,8 @@ if (!exists('distMat')){
 }
 
 ## reducing training set to exclude LCs not computed
-if (!exists('trainSetRed')){
-    trainSetRed <- trainSet[trainSet$idx < dim(big.distMat)[1], ]
+if (!exists('training.set.red')){
+    training.set.red <- training.set[training.set$idx < dim(big.distMat)[1], ]
 }
 ## if (!exists('big.trainSetRed')){
 ##     big.trainSetRed <- as.big.matrix(trainSetRed)
