@@ -8,6 +8,7 @@ import gzip
 import GPy 
 import classes 
 import time
+import os
 from os import path
 import argparse
 import matplotlib.pyplot as plt
