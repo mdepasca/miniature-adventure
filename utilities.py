@@ -262,36 +262,72 @@ def extract_training_set(path):
         tmpSN = get_sn_from_file(path+lsList[i])
         SNType = tmpSN.SNTypeInt
         if SNType != -9:
-            outFileTrain.write("{:0>5d}   {:>}   train\n".format(i, path+lsList[i]))
+            outFileTrain.write(
+                "{:0>5d}      {:0>6d}   {:>}   train\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
         else:
-            outFileTest.write("{:0>5d}   {:>}   test\n".format(i, path+lsList[i]))
+            outFileTest.write(
+                "{:0>5d}      {:0>6d}   {:>}   test\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
         if SNType == 1:
-            outFileIa.write("{:0>5d}   {:>}   snIa\n".format(i, path+lsList[i]))
+            outFileIa.write(
+                "{:0>5d}      {:0>6d}   {:>}   snIa\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
         if SNType == 21 or SNType == 22 or SNType == 23:
-            outFileII.write("{:0>5d}   {:>}   snII\n".format(i, path+lsList[i]))
+            outFileII.write(
+                "{:0>5d}      {:0>6d}   {:>}   snII\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue 
 
         if SNType == 3 or SNType == 32 or SNType == 33:
-            outFileIbc.write("{:0>5d}   {:>}   snIbc\n".format(i, path+lsList[i]))
+            outFileIbc.write(
+                "{:0>5d}      {:0>6d}   {:>}   snIbc\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
         if SNType == 11:
-            outFileIaPec.write("{:0>5d}   {:>}   pec\n".format(i, path+lsList[i]))
+            outFileIaPec.write(
+                "{:0>5d}      {:0>6d}   {:>}   pec\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
         if SNType == 66:
-            outFileOther.write("{:0>5d}   {:>}   other\n".format(i, path+lsList[i]))
+            outFileOther.write(
+                "{:0>5d}      {:0>6d}   {:>}   other\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
         if SNType == -1:
-            outFileIbc.write("{:0>5d}   {:>}   snIbc\n".format(i, path+lsList[i]))
+            outFileIbc.write(
+                "{:0>5d}      {:0>6d}   {:>}   snIbc\n".format(
+                    i, tmpSN.SNID, path+lsList[i]
+                    )
+                )
             continue
 
-        outFileOther.write("{:0>5d}   {:>}   other\n".format(i, path+lsList[i]))
+        outFileOther.write(
+            "{:0>5d}      {:0>6d}   {:>}   other\n".format(
+                i, tmpSN.SNID, path+lsList[i]
+                )
+            )
 
     outFileTest.close()
     outFileTrain.close()
