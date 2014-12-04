@@ -769,8 +769,8 @@ if __name__ == '__main__':
         else:
             figNum = 1
 
-        # GPModel.plot_f(fignum=figNum)
-        # corr_GPModel.plot_f(fignum=figNum)
+        #GPModel.plot_f(fignum=figNum)
+        corr_GPModel.plot_f(fignum=figNum)
 
         if args.mag:
             print 'mags'
