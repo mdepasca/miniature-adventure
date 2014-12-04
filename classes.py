@@ -9,7 +9,11 @@ import time
 import argparse
 import warnings
 
-warnings.filterwarnings('error', message=".*divide by zero encountered in double_scalars.*", category=RuntimeWarning)
+warnings.filterwarnings(
+    'error', 
+    message=".*divide by zero encountered in double_scalars.*", 
+    category=RuntimeWarning
+    )
 from math import sqrt
 from scipy import interpolate, polyfit
 
