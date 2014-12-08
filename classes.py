@@ -78,7 +78,7 @@ class LightCurve():
         self.set_badCurve()
 
     def set_badCurve(self): 
-        if len(self.flux) == 0:
+        if (len(self.flux) == 0) or (max(self.flux) == 0):
             self.badCurve = True
 
     def set_shifted_mjd(self, distance):
