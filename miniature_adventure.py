@@ -146,16 +146,14 @@ if __name__ == "__main__":
 
     """
     if args.fit or args.fitTraining:
-        whileOn = True
-        i = 0
+        
         filePath = prodDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
    
         fPeaked = open(filePath, 'w')
 
-        whileOn = True
-        i = 0
+        
         filePath = prodDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
@@ -282,8 +280,7 @@ if __name__ == "__main__":
         fNopeaked.close()
         # sys.stderr = saveErr
         # ferr.close()
-        whileOn = True
-        i = 0
+        
         filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
@@ -291,8 +288,7 @@ if __name__ == "__main__":
         np.savetxt(prodDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
-        whileOn = True
-        i = 0
+        
         filePath = prodDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
