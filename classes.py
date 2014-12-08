@@ -41,6 +41,14 @@ if __name__ == '__main__':
         help="Photometric band.")
     args = parser.parse_args()
 
+class photoBand():
+    def __init__(self, name, effLambda):
+        """
+        Initialize the photometric filter with `name' and
+        effective lambda, `effLambda', in nanometers.
+        """
+        self.name = name
+        self.effLambda = effLambda
 
 class LightCurve():
     """
@@ -227,12 +235,14 @@ class Supernova():
         return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
 
     def k_correct_flux(self):
+        band_g = photoBand('g', 479.66)
+
         lambda_obs = [479.66, 638.26, 776.90, 910.82]
         zed_gr = lambda_obs[1]/lambda_obs[0] - 1
         zed_ri = lambda_obs[2]/lambda_obs[1] - 1
         zed_iz = lambda_obs[3]/lambda_obs[2] - 1
 
-        lambda_em = [el/(
+        lambda_rf = [el/(
             1+(self.zSpec if self.zSpec else self.zPhotHost)
             ) for el in lambda_obs]
 
@@ -272,9 +282,9 @@ class Supernova():
                     a_gr = (
                         self.r.flux[int_mjd_r.index(jd)] - \
                         self.g.flux[int_mjd_g.index(jd)]
-                        )/(lambda_em[1]-lambda_em[0])
+                        )/(lambda_rf[1]-lambda_rf[0])
                     b_gr = self.g.flux[int_mjd_g.index(jd)] - \
-                        a_gr*lambda_em[0]
+                        a_gr*lambda_rf[0]
 
                     a_gr_err = sqrt(self.r.fluxErr[int_mjd_r.index(jd)]**2+\
                         self.g.fluxErr[int_mjd_g.index(jd)]**2)
@@ -285,9 +295,9 @@ class Supernova():
                     a_ri = (
                         self.i.flux[int_mjd_i.index(jd)] - \
                         self.r.flux[int_mjd_r.index(jd)]
-                        )/(lambda_em[2]-lambda_em[1])
+                        )/(lambda_rf[2]-lambda_rf[1])
                     b_ri = self.r.flux[int_mjd_r.index(jd)] - \
-                        a_ri*lambda_em[1]
+                        a_ri*lambda_rf[1]
                     a_ri_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
                         self.r.fluxErr[int_mjd_r.index(jd)]**2)
                     b_ri_err = sqrt(self.r.flux[int_mjd_r.index(jd)]**2+\
@@ -297,9 +307,9 @@ class Supernova():
                     a_iz = (
                         self.z.flux[int_mjd_z.index(jd)] - \
                         self.i.flux[int_mjd_i.index(jd)]
-                        )/(lambda_em[3]-lambda_em[2])
+                        )/(lambda_rf[3]-lambda_rf[2])
                     b_iz = self.i.flux[int_mjd_i.index(jd)] - \
-                        a_iz*lambda_em[2]
+                        a_iz*lambda_rf[2]
                     a_iz_err = sqrt(self.i.fluxErr[int_mjd_i.index(jd)]**2+\
                         self.z.fluxErr[int_mjd_z.index(jd)]**2)
                     b_iz_err = sqrt(self.i.flux[int_mjd_i.index(jd)]**2+\
@@ -322,15 +332,15 @@ class Supernova():
                         a_gr = (
                             self.r.flux[int_mjd_r.index(jd)] - \
                             self.g.flux[int_mjd_g.index(jd)]
-                            )/(lambda_em[1]-lambda_em[0])
+                            )/(lambda_rf[1]-lambda_rf[0])
                         b_gr = self.g.flux[int_mjd_g.index(jd)] - \
-                            a_gr*lambda_em[0]
+                            a_gr*lambda_rf[0]
                         a_ri = (
                             self.i.flux[int_mjd_i.index(jd)] - \
                             self.r.flux[int_mjd_r.index(jd)]
-                            )/(lambda_em[2]-lambda_em[1])
+                            )/(lambda_rf[2]-lambda_rf[1])
                         b_ri = self.r.flux[int_mjd_r.index(jd)] - \
-                            a_ri*lambda_em[1]
+                            a_ri*lambda_rf[1]
                     
                         # CALCULATE K-CORRECTION
                         k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
@@ -340,15 +350,15 @@ class Supernova():
                         a_ri = (
                             self.i.flux[int_mjd_i.index(jd)] - \
                             self.r.flux[int_mjd_r.index(jd)]
-                            )/(lambda_em[2]-lambda_em[1])
+                            )/(lambda_rf[2]-lambda_rf[1])
                         b_ri = self.r.flux[int_mjd_r.index(jd)] - \
-                            a_ri*lambda_em[1]
+                            a_ri*lambda_rf[1]
                         a_iz = (
                             self.z.flux[int_mjd_z.index(jd)] - \
                             self.i.flux[int_mjd_i.index(jd)]
-                            )/(lambda_em[3]-lambda_em[2])
+                            )/(lambda_rf[3]-lambda_rf[2])
                         b_iz = self.i.flux[int_mjd_i.index(jd)] - \
-                            a_iz*lambda_em[2]
+                            a_iz*lambda_rf[2]
 
                         # CALCULATE K-CORRECTION
                         k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
@@ -366,9 +376,9 @@ class Supernova():
                         a_gr = (
                             self.r.flux[int_mjd_r.index(jd)] - \
                             self.g.flux[int_mjd_g.index(jd)]
-                            )/(lambda_em[1]-lambda_em[0])
+                            )/(lambda_rf[1]-lambda_rf[0])
                         b_gr = self.g.flux[int_mjd_g.index(jd)] - \
-                            a_gr*lambda_em[0]
+                            a_gr*lambda_rf[0]
 
                         # CALCULATE K-CORRECTION
                         k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
@@ -377,9 +387,9 @@ class Supernova():
                         a_ri = (
                             self.i.flux[int_mjd_i.index(jd)] - \
                             self.r.flux[int_mjd_r.index(jd)]
-                            )/(lambda_em[2]-lambda_em[1])
+                            )/(lambda_rf[2]-lambda_rf[1])
                         b_ri = self.r.flux[int_mjd_r.index(jd)] - \
-                            a_ri*lambda_em[1]
+                            a_ri*lambda_rf[1]
 
                         # CALCULATE K-CORRECTION
                         k_corr_g.append(a_ri*lambda_obs[0]+b_ri)
@@ -388,9 +398,9 @@ class Supernova():
                         a_iz = (
                             self.z.flux[int_mjd_z.index(jd)] - \
                             self.i.flux[int_mjd_i.index(jd)]
-                            )/(lambda_em[3]-lambda_em[2])
+                            )/(lambda_rf[3]-lambda_rf[2])
                         b_iz = self.i.flux[int_mjd_i.index(jd)] - \
-                            a_iz*lambda_em[2]
+                            a_iz*lambda_rf[2]
 
                         # CALCULATE K-CORRECTION
                         k_corr_g.append(a_iz*lambda_obs[0]+b_iz)
@@ -916,7 +926,7 @@ if __name__ == '__main__':
         # candidateFit = SupernovaFit(candidate.SNID)
         print 'candidate z = {:>6.4f}'.format(
             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
-        lambda_em = [el/(
+        lambda_rf = [el/(
             1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
             ) for el in lambda_obs]
 
@@ -943,19 +953,19 @@ if __name__ == '__main__':
             ]
         plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
         plt.scatter(lambda_obs, flux, color='black')
-        plt.errorbar(lambda_em, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
-        plt.scatter(lambda_em, flux, color='blue')
+        plt.errorbar(lambda_rf, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
+        plt.scatter(lambda_rf, flux, color='blue')
         plt.show()
         # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
 
         
         # (a, b) = np.polyfit(
-        #     # [lambda_em[0], lambda_em[1]], 
+        #     # [lambda_rf[0], lambda_rf[1]], 
         #     [
-        #     lambda_em[0],
-        #     lambda_em[1]#,
-        #     # lambda_em[2],
-        #     # lambda_em[3],
+        #     lambda_rf[0],
+        #     lambda_rf[1]#,
+        #     # lambda_rf[2],
+        #     # lambda_rf[3],
         #     ],
         #     [
         #     candidate.g.flux[int_mjd_g.index(jd)], 
