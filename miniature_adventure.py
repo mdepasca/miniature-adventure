@@ -234,11 +234,19 @@ if __name__ == "__main__":
                 # Fitting Lightcurve
 
                 """
-                K--correction reduces the number of observation in each band.
+                K--correction reduces the number of observation in each band
+                (Not always there are observations in all the four bands taken
+                the same MJD).
                 For this reason it has to be performed here, before checking
                 flux length.
 
                 ---> K--correction
+                """
+
+                """
+                Save pre processed data, before fitting. This will same time 
+                when plotting... 
+                NOT YET IMPLEMENTED, MORE A COMFORT THEN A NEED
                 """
 
                 if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
@@ -248,8 +256,7 @@ if __name__ == "__main__":
                         bcolors.txtrst
                     continue
 
-                # if (not candidate.lcsDict[b].badCurve) and \
-                #     (flux.size >= 3):
+                # Diverting warnings to log file
                 saveOut = sys.stdout
                 fout = open('out.log', 'w')
                 # fout = open('/dev/null', 'w')
@@ -275,6 +282,7 @@ if __name__ == "__main__":
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
                     path.splitext(lsDirData[i])[0] + "_FIT.DAT"
+                    
                 candidateFit.save_on_txt(filePath)
                 
                 if candidateFit.peaked:
