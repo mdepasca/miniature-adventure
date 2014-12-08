@@ -211,14 +211,22 @@ if __name__ == "__main__":
                 else:
                     print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
 
-            # candidateFit = cls.SupernovaFit(candidate.SNID)
+            # Creating SupernovaFit object
             candidateFit = cls.SupernovaFit(candidate)
-            for b in candidate.lcsDict.keys(): 
-                epoch = util.time_correct(candidate.lcsDict[b].mjd, 
-                    candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
-                flux = util.correct_for_absorption(candidate.lcsDict[b].flux, 
-                    candidate.MWEBV, b)
+            for b in candidate.lcsDict.keys(): 
+                # Correcting for time dilution
+                epoch = util.time_correct(
+                    candidate.lcsDict[b].mjd, 
+                    candidate.zSpec if candidate.zSpec else candidate.zPhotHost
+                    )
+
+                # Correcting for absorption
+                flux = util.correct_for_absorption(
+                    candidate.lcsDict[b].flux, 
+                    candidate.MWEBV, b
+                    )
+        
                 errFlux = candidate.lcsDict[b].fluxErr
 
                 # test_prior should be deleted as option. Prior too weak.
