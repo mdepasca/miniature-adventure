@@ -3,6 +3,8 @@ Implementation of general use functions.
 """
 import numpy as np
 import numpy.ma as ma
+import pandas as pd
+from pandas import DataFrame
 import cPickle 
 import gzip 
 import GPy 
@@ -233,6 +235,46 @@ def rename_bad_r_lc_file(path):
     return countBad
 
 
+def extract_redshift_data(path, outFile):
+    """
+    Produces a text file to be read from R.
+    Columns are:
+        - SNID
+        - Redshift (spectroscopic or photometric)
+        - Training flag: 1 if training 0 if test
+    """
+
+    if path[-1] != os.sep:
+        path = path + os.sep
+
+    p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=path)
+    lsList = p.stdout.read()
+    lsList = lsList.split('\n')
+    lsList.sort()
+    lsList.remove('')
+
+    snid = np.empty(len(lsList), dtype=np.int)
+    redshift = np.empty(len(lsList), dtype=np.float)
+    trainFlag = np.zeros(len(lsList), dtype=np.int)
+
+    for i in range(len(lsList)):
+        tmpSN = get_sn_from_file(path+lsList[i])
+
+        snid[i] = tmpSN.SNID
+        redshift[i] = tmpSN.zSpec if (tmpSN.zSpec != None) else tmpSN.zPhotHost
+        trainFlag[i] = 1 if (tmpSN.zSpec != None) else 0
+
+    df = pd.DataFrame(
+        data=zip(snid, redshift, trainFlag), 
+        columns=['SNID', 'redshift', 'train_flag'])
+
+    df.to_csv(
+        'products/'+outFile, sep=';', index=False, 
+        float_format='%5.4f', header=True)
+    # fout = open(fileOut, 'w', newline='\n')
+    
+    
 
 
 def extract_training_set(path):
@@ -487,6 +529,7 @@ def time_correct(mjd, zed):
 
 
 def k_correction():
+    # it is performed per SN
     pass
 
 
