@@ -131,10 +131,51 @@ else:
     pass
 
 
+
+
+
+def flux_error_to_mag_error(fluxErr, flux):
+    # error prop. zErr = abs(dF(x)/dx) xErr
+    magErr = np.multiply(np.abs(np.divide(-2.5, np.log(10) * flux)), 
+                         np.abs(fluxErr)) 
+
+    return magErr
+
+"""
+----------------------------------------------------------------------------
+
+
+
+
+
+
+INPUT/OUTPUT on file
+
+
+
+
+
+
+
+"""
+def open_gzip_pkl_catalog(path):
+    """Opens gzipped cPickle file containing supernova catalogue (DEPRECATED).
+
+    Keyword arguments:
+    path -- path to catalogue.
+    """
+    f = gzip.open(path, 'rb')
+    catalog = pkl.load(f)
+    f.close()
+
+    return catalog
+
 def open_pkl(filePath):
-    # print '>>> Loading pkl file from: ' + filePath
-    # elTime = time.time()
-    
+    """Loads data from cPickle file (deprecated).
+
+    Keyword Argument:
+    filePath -- string, path to cPickle file.
+    """    
     fileHandler = open(filePath,'r')
     data = cPickle.load(fileHandler)
     fileHandler.close()
@@ -145,18 +186,12 @@ def open_pkl(filePath):
 
 
 def dump_pkl(filePath, dataStruct):
-    # print '>>> Dumping data structure into: ' + filePath
-    # ERROR_STATE = 0
-    # whileOn = True
-    # i = 0
-    # while whileOn:
-    #     if path.exists(filePath):
-    #             i += 1
-    #             pklIdx = filePath.rfind('.pkl')
-    #             if i > 1: pklIdx -= 3
-    #             filePath = filePath[0:pklIdx] + '({:<1}).pkl'.format(i)
-    #     else:
-    #         whileOn = False            
+    """Dumps dataStruct on file using cPickle module (deprecated).
+
+    Keyword arguments:
+    filePath -- string, the path where to save.
+    dataStruct -- the data structure to save.
+    """
 
     fileHandler = open(filePath,'w')
         
@@ -164,14 +199,12 @@ def dump_pkl(filePath, dataStruct):
     fileHandler.close()
 
 
-def flux_error_to_mag_error(fluxErr, flux):
-    # error prop. zErr = abs(dF(x)/dx) xErr
-    magErr = np.multiply(np.abs(np.divide(-2.5, np.log(10) * flux)), 
-                         np.abs(fluxErr)) 
-
-    return magErr
-
 def check_lc_from_file(fileDir):
+    """Creates a `Supernova` objects from files in specified directory and checks for bad light curves.
+
+    Keyword arguments:
+    fileDir -- string, directory in which to look for files.
+    """
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=fileDir)
     lsDir = p.stdout.read()
@@ -187,6 +220,12 @@ def check_lc_from_file(fileDir):
 
 
 def create_file(indexList, outFilePath):
+    """Creates file contaning list of files 'DES_SN*_FIT.DAT' in directory train_data/DES_BLIND+HOSTZ_FIT/.
+
+    Keyword arguments:
+    indexList -- Python list, contains supernova IDs.
+    outFilePath -- string, path where to create the output file.
+    """
     # indexArr = np.loadtxt(indexFile, dtype=np.int)
     outFile = open(outFilePath, 'w')
     
@@ -203,18 +242,27 @@ def create_file(indexList, outFilePath):
     outFile.close()
 
 def index_to_filename(indexList, inFileName, outFileName):
-    """Filters inFileName to outFileName according to indexList
+    """Filters a list of files using specified indexes. 
+
+    Keyword arguments:
+    indexList -- Python list, indices to keep in the output.
+    inFileName -- path to file containing list of files.
+    outFileName -- path to output file.
     """
     inFile = open(inFileName, "r")
     lines = inFile.readlines()
     inFile.close()
+
     npLines = np.array(lines, dtype=np.str)
+    
     outFileList = npLines[indexList]
     np.savetxt(outFileName, outFileList, fmt='%s', newline='')
 
 def rename_bad_r_lc_file(path):
-    """Renames files of fitted lc with a bad lc in r band
+    """Renames files of fitted lc with a bad lc in r band to extension '.BADrLC'.
 
+    Keyword arguments:
+    path -- string, path to directory in which to find files to checked.
     """
     if path[-1] != os.sep:
         path = path + os.sep
@@ -236,12 +284,18 @@ def rename_bad_r_lc_file(path):
 
 
 def extract_redshift_data(path, outFile):
-    """
-    Produces a text file to be read from R.
-    Columns are:
-        - SNID
-        - Redshift (spectroscopic or photometric)
-        - Training flag: 1 if training 0 if test
+    """Extract redshift from files and produces a CSV file, to be read from R to study redshift distribution.
+
+    Keyword arguments:
+    path -- where to find supernova files.
+    outFile -- path to output file.
+
+    Notes:
+    The output CSV file will have 4 columns:
+    SNID -- integer
+    Redshift -- float, spectroscopic or photometric
+    Training flag -- 1 for training 0 for test
+    SN Type -- from 'SIMGEN_PUBLIC_DES.DUMP' file
     """
 
     if path[-1] != os.sep:
@@ -254,9 +308,17 @@ def extract_redshift_data(path, outFile):
     lsList.sort()
     lsList.remove('')
 
+    dump = pd.read_csv(
+        'train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP', 
+        sep=' ', skiprows=0, header=1, usecols=[1,2], 
+        skipinitialspace=True, engine='c')
+
+    dump = dump.convert_objects(convert_numeric=True, copy=False)
+
     snid = np.empty(len(lsList), dtype=np.int)
     redshift = np.empty(len(lsList), dtype=np.float)
     trainFlag = np.zeros(len(lsList), dtype=np.int)
+    genType = np.zeros(len(lsList), dtype=np.int)
 
     for i in range(len(lsList)):
         tmpSN = get_sn_from_file(path+lsList[i])
@@ -264,22 +326,30 @@ def extract_redshift_data(path, outFile):
         snid[i] = tmpSN.SNID
         redshift[i] = tmpSN.zSpec if (tmpSN.zSpec != None) else tmpSN.zPhotHost
         trainFlag[i] = 1 if (tmpSN.zSpec != None) else 0
+        genType[i] = dump['GENTYPE'][dump['CID']==snid[i]]
 
     df = pd.DataFrame(
-        data=zip(snid, redshift, trainFlag), 
-        columns=['SNID', 'redshift', 'train_flag'])
+        data=zip(snid, redshift, trainFlag, genType), 
+        columns=['SNID', 'redshift', 'train_flag', 'genType'])
 
     df.to_csv(
         'products/'+outFile, sep=';', index=False, 
         float_format='%5.4f', header=True)
-    # fout = open(fileOut, 'w', newline='\n')
     
-    
-
-
 def extract_training_set(path):
-    """Finds files from spectroscopically indentified SNe and write them into
-    a list, along with their index in the full list of files in `path`
+    """Creates files dividing supernovae in training and test sets. It creates also files list training set supernovae by type
+    
+    Keyword arguments:
+    path -- where to find supernova light curves files
+
+    Notes:
+    Created files are saved in directory 'products/'. Their name are, so far, fixed.
+    SIMGEN_PUBLIC_DES_FIT.TEST
+    SIMGEN_PUBLIC_DES_FIT.TRAIN
+    SIMGEN_PUBLIC_DES_FIT.[SNType].TRAIN
+
+    Possible modifications:
+    Add input parameter specifying output files name head
     """
     if path[-1] != os.sep:
         path = path + os.sep
@@ -291,14 +361,14 @@ def extract_training_set(path):
     lsList.sort()
     lsList.remove('')
 
-    outFileTest = open('products/SIMGEN_PUBLIC_DES_FIT.TEST', 'w')
+    outFileTest  = open('products/SIMGEN_PUBLIC_DES_FIT.TEST', 'w')
     outFileTrain = open('products/SIMGEN_PUBLIC_DES_FIT.TRAIN', 'w')
-    outFileIa = open('products/SIMGEN_PUBLIC_DES_FIT.Ia.TRAIN', 'w')
-    outFileII = open('products/SIMGEN_PUBLIC_DES_FIT.II.TRAIN', 'w')
-    outFileIbc = open('products/SIMGEN_PUBLIC_DES_FIT.Ibc.TRAIN', 'w')
+    outFileIa    = open('products/SIMGEN_PUBLIC_DES_FIT.Ia.TRAIN', 'w')
+    outFileII    = open('products/SIMGEN_PUBLIC_DES_FIT.II.TRAIN', 'w')
+    outFileIbc   = open('products/SIMGEN_PUBLIC_DES_FIT.Ibc.TRAIN', 'w')
     outFileIaPec = open('products/SIMGEN_PUBLIC_DES_FIT.IaPec.TRAIN', 'w')
     outFileOther = open('products/SIMGEN_PUBLIC_DES_FIT.Other.TRAIN', 'w')
-    outFileRej = open('products/SIMGEN_PUBLIC_DES_FIT.Rej.TRAIN', 'w')
+    outFileRej   = open('products/SIMGEN_PUBLIC_DES_FIT.Rej.TRAIN', 'w')
 
     for i in range(len(lsList)):
         tmpSN = get_sn_from_file(path+lsList[i])
@@ -385,7 +455,8 @@ def rewrite_file(fileName):
     It removes `#` at beginning of the first 10 lines, leaving as it is the
     first line.
     If necessary it adds `MJD_MAX_FLUX-CCF:      0.000`.
-    Adds trivial column `OBS`.
+    Adds column `OBS` containing row names.
+    --- DEPRECATED ---
     """
 
     inFile = file(fileName, 'r')
@@ -451,7 +522,23 @@ def rewrite_file(fileName):
 
     outFile.close()
 
+"""
+----------------------------------------------------------------------------
 
+
+
+
+
+
+DATA PROCESSING
+
+
+
+
+
+
+
+"""
 def flux_to_mag(flux, limFlux=False):
     """
     Converts fluxes to magnitudes using the following law (from Kessler+2010):
@@ -522,45 +609,59 @@ def mag_to_flux(mag, limMag=False):
 
 
 def time_correct(mjd, zed):
-    """
-    correct for time dilation
+    """Corrects for time dilation.
+
+    Keyword arguments:
+    mjd -- Python list, contains measurements epochs in MJDs.
+    zed -- float, redshift to use for correction.
     """
     return [mjd[i]/(1.+zed) for i in range(len(mjd))]
 
 
 def k_correction():
+    """Empty function
+    """
     # it is performed per SN
     pass
 
 
 Rband = dict([('g', 3.237), ('r', 2.176), ('i', 1.595), ('z', 1.217)])
 def correct_for_absorption(flux, ebv, band):
-    """
-    correct for MW dust absorption.
-    From the `ebv' and `band' uses the correct R_band obtained from 
-    Schlafly & Finkbeiner 2011.
+    """Corrects for MW dust absorption.
+
+    Keyword arguments:
+    flux -- Python list containing fluxes.
+    ebv -- float, MW E(B-V).
+    band -- photometric band in which correction has to be applied.
+
+    Returns:
+    Python list containing values of flux corrected by absorption.
+
+    Notes:
+    From the `ebv' and `band' uses the correct R_band obtained from Schlafly & Finkbeiner 2011.
+
     general law A_band = R_band * E(B-V)
 
-    A_band has to be turned in flux units
+    A_band has to be turned in flux units.
     """
 
     a_mag = Rband[band] * ebv
     a_flux = 10**(0.4*a_mag)
     return [flux[i]*a_flux for i in range(len(flux))]
 
-def open_gzip_pkl_catalog(path):
-    f = gzip.open(path, 'rb')
-    catalog = pkl.load(f)
-    f.close()
-
-    return catalog
-
 
 def pick_random_sn(catalog, band):
-    """
-    Extract random observation in specified band from catalog. 
-    Returns epoch, flux, flux errors arrays and index in the catalog.
-    epoch has zeropoint on the maximum flux in r band
+    """Extracts light curve in specified band of random supernova from catalogue (DEPRECATED: no more catalogue).
+
+    Keyword arguments:
+    catalog -- supernova catalog (class SupernovaCatalog).
+    band -- photometric band identifying light curve.
+
+    Returns:
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD of maximum flux in r band.
+    flux -- NumPy array of fluxes.
+    fluxErr -- NumPy array of errors on flux measurements.
+    idx -- index of supernova in the catalogue.
     """
     idx = np.random.random_integers(low=0, high=len(catalog.SNID))
     numObs = len(catalog.sne[idx].lcsDict[band].mjd)
@@ -577,8 +678,15 @@ def pick_random_sn(catalog, band):
 
 
 def redshift_distrib(pathToDir, binSize):
-    """
-    returns the distribution of redshift values with bin size *binSize*
+    """Plots the distribution of redshift values as an histogram with specified bin size.
+
+    Keyword arguments:
+    pathToDir -- directory in which supernova files are stored
+    binSize -- the size of histogram bin.
+
+    Returns:
+    zed -- NumPy array containing redshifts.
+    bins -- bins limits.
     """
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=pathToDir)
@@ -610,11 +718,19 @@ def redshift_distrib(pathToDir, binSize):
 
     return zed, bins
 
+
 def get_sn(catalog, band, idx):
-    """
-    Extract specified supernova observation in specified band from catalog.
-    Returns time, flux, flux errors arrays.
-    Time has zeropoint on the maximum flux in r band
+    """Extract specified supernova observation in specified band from catalogue (DEPRECATED: no more catalogue).
+
+    Keyword arguments:
+    catalog -- supernova catalogue of class SupernovaCatalog.
+    band -- string specifying photometric band to use.
+    idx -- index of supernova inside catalogue.
+
+    Returns:
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD of maximum flux in r band.
+    flux -- NumPy array of fluxes.
+    fluxErr -- NumPy array of errors on flux measurements.
     """
 
     numObs = len(catalog.sne[idx].lcsDict[band].mjd)
@@ -630,24 +746,57 @@ def get_sn(catalog, band, idx):
     return epoch, flux, errFlux
 
 def get_sn_from_file(pathToSN):
-    """Reads photometric data of SN from file formatted by SNPhotCC"""
+    """Reads photometric data of SN from file formatted as in SNPhotCC
 
+    Keyword arguments:
+    pathToSN -- path to file from which extract data.
+
+    Returns:
+    sn -- object of class Supernova.
+    """
     sn = classes.Supernova(pathToSN)
     return sn
 
 def reshape_for_GPy(vec):
+    """Reshape input as a 'column' vector for input in GPy functions.
+
+    Keyword arguments:
+    vec -- NumPy array to be reshaped.
+
+    Returns:
+    Reshaped vec
+    """
     return np.reshape(vec, (len(vec), 1))
 
 
-def gp_fit(
-    X, Y, errY, kernel, n_restarts=0, parallel=True,
-    test_length=False,
-    test_prior=False,
-    verbose=False):
-    """
-    Performs gaussian process regression
-    NOTE
-    check on shape of input should be added
+def gp_fit(X, Y, errY, kernel, 
+           n_restarts=0, parallel=True,
+           test_length=False,
+           test_prior=False,
+           verbose=False
+           ):
+    """Performs Gaussian Process regression using GPy functionalities.
+
+    Keyword arguments:
+    X -- NumPy array, independent values shaped as column array.
+    Y -- NumPy array, dependent values shaped as column array.
+    errY -- NumPy array, error values for independent variable, shaped as column array.
+    kernel -- the GPy kernel to use.
+    n_restarts -- number of restarts to optimise hyper parameters.
+    parallel -- Flag whether to activate or not parallel computation in optimisation.
+    test_length -- Flag whether to activate or not testing of random value of length scale hyper parameter.
+    test_prior -- Flag whether to activate or not the use of a prior.
+    verbose -- Flag whether to activate or not verbosity.
+
+    Returns:
+    predX -- list of X values at which an interpolation (prediction) has been made.
+    predY -- list of Y values predicted using GPy.
+    var -- list of variance values for each predY.
+    gpModel -- the Gaussian process model from GPy use to predict predY.
+    
+    Notes:
+    GPy code can be found at http://sheffieldml.github.io/GPy/.
+    Check on shape of input should be added.
     """
  
     medXStep = np.median(np.abs(np.subtract(X[0:-2], X[1:-1])))
