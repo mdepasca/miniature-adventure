@@ -112,13 +112,23 @@ else:
     pass
     
 if __name__ == "__main__":
-    start = 0
-    stop = 5
+    os.system("clear")
+
     indent = "          "
     prodDir = "products"+os.sep
-    os.system("clear")
+
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
+
+    # 
+    # 
+
+    start = 0
+    stop = 5
+
+    # 
+    # 
+
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
     
