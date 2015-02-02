@@ -199,6 +199,22 @@ if __name__ == "__main__":
         # 
         # optimize_restarts parallel using multiprocessing
         
+        """
+        Receiving input on number of bands to keep. K-correction cannot
+        be determined for all bands.
+        """
+        try:
+            mode = int(raw_input(indent + 'Number of bands to keep ' + \
+                'after K-correction [1-4]:'))
+        except ValueError:
+            raise ValueError: "An integer is expected!"
+        if mode < 1 or mode > 4:
+            raise ValueError: "The number of bands has to be between 1 and 4!"
+
+
+        """
+        The pre-processing could be only on selected number of bands
+        """
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i]
@@ -243,6 +259,8 @@ if __name__ == "__main__":
                 ---> K--correction
                 """
 
+                
+                
                 """
                 Save pre processed data, before fitting. This will same time 
                 when plotting... 
