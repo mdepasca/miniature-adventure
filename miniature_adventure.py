@@ -88,7 +88,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--fit-directory", dest="dirFit",
-        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES_FIT",
+        # default="train_data" + os.sep + "SIMGEN_PUBLIC_DES_FIT",
         help="Path to directory containing fitted data.")
 
     parser.add_argument(
@@ -128,6 +128,8 @@ if __name__ == "__main__":
 
     # 
     # 
+    if args.dirFit == None:
+        args.dirFit = args.dirData + '_FIT'
 
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
@@ -138,8 +140,7 @@ if __name__ == "__main__":
     # should be possible to change the next two variables
     # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     # args.dirFit = "fit_data" + os.sep
-    fNameCandidatesList = "DES_BLIND+HOSTZ.LIST"
-
+    
     print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
     print indent + "*    Miniature Adventure    *"
     print indent + "*    -------------------    *"
@@ -179,10 +180,8 @@ if __name__ == "__main__":
 
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
-        print "\n" + indent + "List of candidates contained in: " \
-            + os.curdir + args.dirData + os.sep + fNameCandidatesList
 
-        p = subprocess.Popen("ls DES_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+        p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirData+os.sep)
         lsDirData = p.stdout.read()
         lsDirData = lsDirData.split('\n')
@@ -217,9 +216,9 @@ if __name__ == "__main__":
             mode = int(raw_input(indent + 'Number of bands to keep ' + \
                 'after K-correction [1-4]:'))
         except ValueError:
-            raise ValueError: "An integer is expected!"
+            raise ValueError("An integer is expected!")
         if mode < 1 or mode > 4:
-            raise ValueError: "The number of bands has to be between 1 and 4!"
+            raise ValueError("The number of bands has to be between 1 and 4!")
 
 
         """
@@ -882,7 +881,7 @@ if __name__ == "__main__":
         print indent + 'Plotting ...'
         nrows = 5
         ncols = 5
-        offset = 200
+        offset = 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
                     tight_layout=True
@@ -1075,12 +1074,15 @@ if __name__ == "__main__":
                 c[b] += 1
         
         
+        print indent + "Plots saved in files:"
         for b in dictFig.keys():
             dictFig[b].savefig(
                 'products/plots/test_band_{:<1}_{:<f}.pdf'.format(b,
                     timeMark), 
                 dpi=300
                 )
+            print indent + " - products/plots/" + \
+                "test_band_{:<1}_{:<f}.pdf".format(b,timeMark)
 
         plt.close('all')
     print "\n" + indent \
