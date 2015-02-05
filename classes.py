@@ -214,15 +214,15 @@ class Supernova():
                     self.decDeg = float(data[0])
                 elif tag == "MWEBV":
                     self.MWEBV = float(data[0])
-                elif tag == "REDSHIFT_SPEC":
+                elif (tag == "REDSHIFT_SPEC") or (tag == "REDSHIFT_FINAL"):
                     if float(data[0]) == -9:
                         self.zSpec = None
                     else:
                         self.zSpec = float(data[0])
                         self.zSpecErr = float(data[2])
-                elif tag == "HOST_GALAXY_GALID":
+                elif (tag == "HOST_GALAXY_GALID") or (tag == "HOSTGAL_OBJID"):
                     self.hostGalaxyID = int(data[0])
-                elif tag == "HOST_GALAXY_PHOTO-Z":
+                elif (tag == "HOST_GALAXY_PHOTO-Z") or (tag == "HOSTGAL_PHOTOZ"):
                     self.zPhotHost = float(data[0])
                     self.zPhotHostErr = float(data[2])
                 elif tag == "MJD_MAX_FLUX-CCF":
