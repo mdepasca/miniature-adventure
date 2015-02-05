@@ -658,7 +658,8 @@ def pick_random_sn(catalog, band):
     band -- photometric band identifying light curve.
 
     Returns:
-    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD of maximum flux in r band.
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD 
+             of maximum flux in r band.
     flux -- NumPy array of fluxes.
     fluxErr -- NumPy array of errors on flux measurements.
     idx -- index of supernova in the catalogue.
@@ -678,7 +679,8 @@ def pick_random_sn(catalog, band):
 
 
 def redshift_distrib(pathToDir, binSize):
-    """Plots the distribution of redshift values as an histogram with specified bin size.
+    """Plots the distribution of redshift values as an histogram with specified 
+    bin size.
 
     Keyword arguments:
     pathToDir -- directory in which supernova files are stored
@@ -728,7 +730,8 @@ def get_sn(catalog, band, idx):
     idx -- index of supernova inside catalogue.
 
     Returns:
-    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD of maximum flux in r band.
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD 
+             of maximum flux in r band.
     flux -- NumPy array of fluxes.
     fluxErr -- NumPy array of errors on flux measurements.
     """
