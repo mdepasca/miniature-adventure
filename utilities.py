@@ -781,9 +781,9 @@ def gp_fit(X, Y, errY, kernel,
     """Performs Gaussian Process regression using GPy functionalities.
 
     Keyword arguments:
-    X -- NumPy array, independent values shaped as column array.
-    Y -- NumPy array, dependent values shaped as column array.
-    errY -- NumPy array, error values for independent variable, shaped as column array.
+    X -- list, independent values shaped as column array.
+    Y -- list, dependent values shaped as column array.
+    errY -- list, error values for independent variable, shaped as column array.
     kernel -- the GPy kernel to use.
     n_restarts -- number of restarts to optimise hyper parameters.
     parallel -- Flag whether to activate or not parallel computation in optimisation.
@@ -801,7 +801,7 @@ def gp_fit(X, Y, errY, kernel,
     GPy code can be found at http://sheffieldml.github.io/GPy/.
     Check on shape of input should be added.
     """
- 
+    
     medXStep = np.median(np.abs(np.subtract(X[0:-2], X[1:-1])))
     maxXStep = X[-1] - X[0]
     if verbose:
@@ -809,10 +809,19 @@ def gp_fit(X, Y, errY, kernel,
         print "  X range {:<5.3f}".format(maxXStep)
 
     rsX = reshape_for_GPy(X)
-    rsY = reshape_for_GPy(Y)
+    if max(Y)/1000 > 1:
+        print(max(Y))
+        rsY = reshape_for_GPy([el/1000. for el in Y])
+        print min(rsY)
+    else:
+        rsY = reshape_for_GPy(Y)
 
     gpModel = GPy.models.GPHeteroscedasticRegression(rsX, rsY, kernel)
-    gpModel['.*Gaussian_noise'] = errY
+
+    if max(Y)/1000 > 1:
+        gpModel['.*Gaussian_noise'] = [el/1000. for el in errY]
+    else:
+        gpModel['.*Gaussian_noise'] = errY
 
     # Block to capture unwanted output from .constrain_fixed() function
     # with Capturing() as output:
@@ -847,6 +856,10 @@ def gp_fit(X, Y, errY, kernel,
 
     # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
+
+    if max(Y)/1000 > 1:
+        meanY = meanY*1000
+        var = var * 1000
     return list(predX.reshape(predX.size)), \
         list(meanY.reshape(meanY.size)), list(var.reshape(var.size)), gpModel
 
