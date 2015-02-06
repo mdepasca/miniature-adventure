@@ -5,6 +5,7 @@ import subprocess
 import sys
 import socket
 import time
+import warnings
 # garbage collector
 import gc
 
@@ -18,11 +19,11 @@ import classes as cls
 import utilities as util
 from utilities import bcolors
 
-import rpy2.robjects as ro
-from rpy2.robjects.packages import importr
-from rpy2.robjects.numpy2ri import numpy2ri
-# Activate automatic conversion of ndarray to R objects
-ro.conversion.py2ri = numpy2ri
+# import rpy2.robjects as ro
+# from rpy2.robjects.packages import importr
+# from rpy2.robjects.numpy2ri import numpy2ri
+# # Activate automatic conversion of ndarray to R objects
+# ro.conversion.py2ri = numpy2ri
 
 from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar, \
                         AnimatedMarker, Timer, Counter
@@ -120,6 +121,14 @@ if __name__ == "__main__":
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
 
+    print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
+    print indent + "*    Miniature Adventure    *"
+    print indent + "*    -------------------    *"
+    print indent + "*    lightcurves fitting    *"
+    print indent + "*             and           *"
+    print indent + "*      SN classification    *"
+    print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
+
     # 
     # 
 
@@ -129,7 +138,14 @@ if __name__ == "__main__":
     # 
     # 
     if args.dirFit == None:
-        args.dirFit = args.dirData + '_FIT'
+        yesno = str(raw_input(indent + 'Directory containing fit to light ' + 
+            'curves is set to ' + args.dirData + '_FIT. OK? [y/n]: '))
+        if yesno == 'y':
+            args.dirFit = args.dirData + '_FIT'
+        elif yesno == 'n':
+            # ask for new dir
+            pass
+        # check for other values
 
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
@@ -141,13 +157,6 @@ if __name__ == "__main__":
     # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     # args.dirFit = "fit_data" + os.sep
     
-    print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
-    print indent + "*    Miniature Adventure    *"
-    print indent + "*    -------------------    *"
-    print indent + "*    lightcurves fitting    *"
-    print indent + "*             and           *"
-    print indent + "*      SN classification    *"
-    print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
     
     start_time = time.time()
 
@@ -870,7 +879,7 @@ if __name__ == "__main__":
             lsDirFit.remove('')
 
         if 'catalog' not in globals():
-            p = subprocess.Popen("ls DES_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            p = subprocess.Popen("ls *_SN*.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirData+os.sep)
             lsDirData = p.stdout.read()
             lsDirData = lsDirData.split('\n')
@@ -879,8 +888,8 @@ if __name__ == "__main__":
                        
 
         print indent + 'Plotting ...'
-        nrows = 5
-        ncols = 5
+        nrows = 2
+        ncols = 2
         offset = 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
@@ -933,145 +942,153 @@ if __name__ == "__main__":
             """
             reading fit data from file
             """
-            tmpSN = util.get_sn_from_file(
-                    args.dirFit+os.sep+lsDirFit[i+offset]#candidateIdx]
-                    )
-            """
-            Initializing SupernovaFit object
-            """
-            fit = cls.SupernovaFit(tmpSN)
-            for l in tmpSN.lcsDict.keys():
-                fit.set_lightcurve(l,
-                    tmpSN.lcsDict[l].mjd,
-                    tmpSN.lcsDict[l].flux, 
-                    tmpSN.lcsDict[l].fluxErr
-                    )
-            fit.shift_mjds()
-            """
-            Fixing shiftedMjd for not-peaked LCs
-            """
-            if fit.peaked == False:
-                """
-                correcting using CC results
-                """
-                for b in bands:
-                    fit.lcsDict[b].shiftedMjd = [
-                        fit.lcsDict[b].shiftedMjd[l] + 
-                        fit.ccMjdMaxFlux for l in range(len(
-                            fit.lcsDict[b].shiftedMjd
-                            ))
-                    ]
+            try:
+                tmpSN = util.get_sn_from_file(
+                        args.dirFit+os.sep+lsDirFit[i+offset]#candidateIdx]
+                        )
+            except IndexError:
+                warnStr = 'IndexError: list index out of range. '+\
+                    'i={:<d}.'.format(i+offset)
+                print warnings.warn(warnStr)
 
-            for b in dictAx.keys():
-                data = candidate.lcsDict[b]
-
+                print '\n'+indent+'Saving files as they are and stopping.'
+            else:
+                """
+                Initializing SupernovaFit object
+                """
+                fit = cls.SupernovaFit(tmpSN)
+                for l in tmpSN.lcsDict.keys():
+                    fit.set_lightcurve(l,
+                        tmpSN.lcsDict[l].mjd,
+                        tmpSN.lcsDict[l].flux, 
+                        tmpSN.lcsDict[l].fluxErr
+                        )
+                fit.shift_mjds()
                 """
                 Fixing shiftedMjd for not-peaked LCs
                 """
-                # if fit.peaked == False:
-                #     fit.lcsDict[b].shiftedMjd = np.ma.add(
-                #         fit.lcsDict[b].shiftedMjd, 
-                #         fit.ccMjdMaxFlux
-                #         )
-                fit_b = fit.lcsDict[b]
+                if fit.peaked == False:
+                    """
+                    correcting using CC results
+                    """
+                    for b in bands:
+                        fit.lcsDict[b].shiftedMjd = [
+                            fit.lcsDict[b].shiftedMjd[l] + 
+                            fit.ccMjdMaxFlux for l in range(len(
+                                fit.lcsDict[b].shiftedMjd
+                                ))
+                        ]
 
-                fit_r = fit.lcsDict['r']
-                
-                if c[b] > nrows-1:
-                    c[b] = 0
-                    r[b] += 1
+                for b in dictAx.keys():
+                    data = candidate.lcsDict[b]
 
-                xlim = dictAx[b][r[b], c[b]].get_xlim()
-                ylim = dictAx[b][r[b], c[b]].get_ylim()
+                    """
+                    Fixing shiftedMjd for not-peaked LCs
+                    """
+                    # if fit.peaked == False:
+                    #     fit.lcsDict[b].shiftedMjd = np.ma.add(
+                    #         fit.lcsDict[b].shiftedMjd, 
+                    #         fit.ccMjdMaxFlux
+                    #         )
+                    fit_b = fit.lcsDict[b]
 
-                if not data.badCurve and not fit_b.badCurve:
-                    epoch = util.time_correct(data.mjd, 
-                        candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+                    fit_r = fit.lcsDict['r']
+                    
+                    if c[b] > nrows-1:
+                        c[b] = 0
+                        r[b] += 1
 
-                    epoch = [val-fit_r.mjd[fit_r.max_flux_index] for val in epoch]
-                    if fit.peaked == False:
-                        epoch = [val+fit.ccMjdMaxFlux for val in epoch]
+                    xlim = dictAx[b][r[b], c[b]].get_xlim()
+                    ylim = dictAx[b][r[b], c[b]].get_ylim()
 
-                    flux = util.correct_for_absorption(data.flux, 
-                        candidate.MWEBV, b)
+                    if not data.badCurve and not fit_b.badCurve:
+                        epoch = util.time_correct(data.mjd, 
+                            candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+
+                        epoch = [val-fit_r.mjd[fit_r.max_flux_index] for val in epoch]
+                        if fit.peaked == False:
+                            epoch = [val+fit.ccMjdMaxFlux for val in epoch]
+
+                        flux = util.correct_for_absorption(data.flux, 
+                            candidate.MWEBV, b)
 
 
-                    if min(fit_b.flux) < min(flux):
-                        y_min = min(fit_b.flux) - 3*max(fit_b.fluxErr)
+                        if min(fit_b.flux) < min(flux):
+                            y_min = min(fit_b.flux) - 3*max(fit_b.fluxErr)
+                        else:
+                            y_min = min(flux) - np.median(data.fluxErr)
+
+                        if max(fit_b.flux) > max(flux):
+                            y_max = max(fit_b.flux) + 3*max(fit_b.fluxErr)
+                        else:
+                            y_max = max(flux) + np.median(data.fluxErr)
+
+                        dictAx[b][r[b], c[b]].set_ylim(y_min, y_max)
+
+                        fluxUpLim = [val for val in [
+                            fit_b.flux[i] + fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+                        fluxLowLim = [val for val in [
+                            fit_b.flux[i] - fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                            fluxUpLim, fluxLowLim, 
+                            facecolor='red', alpha=0.4, linewidth=0.5)
+                        
+
+                        fluxUpLim = [val for val in [
+                            fit_b.flux[i] + 2*fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+                        fluxLowLim = [val for val in [
+                            fit_b.flux[i] - 2*fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                            fluxUpLim, fluxLowLim, 
+                            facecolor='red', alpha=0.2, linewidth=0.5)
+                        
+                       
+                        fluxUpLim = [val for val in [
+                            fit_b.flux[i] + 3*fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+                        fluxLowLim = [val for val in [
+                            fit_b.flux[i] - 3*fit_b.fluxErr[i] 
+                                for i in range(len(fit_b.flux))
+                            ]]
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                            fluxUpLim, fluxLowLim, 
+                            facecolor='red', alpha=0.1, linewidth=0.5)
+                        
+
+                        dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
+                            color='#7f0000', 
+                            linewidth=2)
+
+                        dictAx[b][r[b], c[b]].scatter(epoch, flux, 
+                            s=10, label=str(candidate.SNID), c='black', marker='x')
+
+                        dictAx[b][r[b], c[b]].errorbar(epoch, flux,
+                            data.fluxErr, fmt=None, color='black', ecolor='black')
+
+                        
+                        if not fit.peaked:
+                            pass
+
+                        dictAx[b][r[b], c[b]].legend(
+                            loc='best', framealpha=0.3, fontsize='10')
                     else:
-                        y_min = min(flux) - np.median(data.fluxErr)
-
-                    if max(fit_b.flux) > max(flux):
-                        y_max = max(fit_b.flux) + 3*max(fit_b.fluxErr)
-                    else:
-                        y_max = max(flux) + np.median(data.fluxErr)
-
-                    dictAx[b][r[b], c[b]].set_ylim(y_min, y_max)
-
-                    fluxUpLim = [val for val in [
-                        fit_b.flux[i] + fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-                    fluxLowLim = [val for val in [
-                        fit_b.flux[i] - fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fluxLowLim, 
-                        facecolor='red', alpha=0.4, linewidth=0.5)
-                    
-
-                    fluxUpLim = [val for val in [
-                        fit_b.flux[i] + 2*fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-                    fluxLowLim = [val for val in [
-                        fit_b.flux[i] - 2*fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fluxLowLim, 
-                        facecolor='red', alpha=0.2, linewidth=0.5)
-                    
-                   
-                    fluxUpLim = [val for val in [
-                        fit_b.flux[i] + 3*fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-                    fluxLowLim = [val for val in [
-                        fit_b.flux[i] - 3*fit_b.fluxErr[i] 
-                            for i in range(len(fit_b.flux))
-                        ]]
-                    dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                        fluxUpLim, fluxLowLim, 
-                        facecolor='red', alpha=0.1, linewidth=0.5)
-                    
-
-                    dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
-                        color='#7f0000', 
-                        linewidth=2)
-
-                    dictAx[b][r[b], c[b]].scatter(epoch, flux, 
-                        s=10, label=str(candidate.SNID), c='black', marker='x')
-
-                    dictAx[b][r[b], c[b]].errorbar(epoch, flux,
-                        data.fluxErr, fmt=None, color='black', ecolor='black')
-
-                    
-                    if not fit.peaked:
-                        pass
-
-                    dictAx[b][r[b], c[b]].legend(
-                        loc='best', framealpha=0.3, fontsize='10')
-                else:
-                    label = str(candidate.SNID)+" BAD CURVE"
-                    dictAx[b][r[b], c[b]].plot([0, 1], [0, 1], color='red',
-                        label=label)
-                    dictAx[b][r[b], c[b]].plot([0, 1], [1, 0], color='red')
-                    dictAx[b][r[b], c[b]].legend(
-                        loc='best', framealpha=0.3, fontsize='10')
-                c[b] += 1
+                        label = str(candidate.SNID)+" BAD CURVE"
+                        dictAx[b][r[b], c[b]].plot([0, 1], [0, 1], color='red',
+                            label=label)
+                        dictAx[b][r[b], c[b]].plot([0, 1], [1, 0], color='red')
+                        dictAx[b][r[b], c[b]].legend(
+                            loc='best', framealpha=0.3, fontsize='10')
+                    c[b] += 1
         
         
         print indent + "Plots saved in files:"
