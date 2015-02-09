@@ -728,7 +728,7 @@ class SupernovaFit():
                 time.gmtime().tm_sec))
         fOut.write("SURVEY:  {:<}\n".format(survey))
         fOut.write("SNID:  {:<d}\n".format(self.SNID))
-        fOut.write("GPKERNEL: {:<}\n".format.self.kern)
+        fOut.write("GPKERNEL: {:<}\n".format(self.kern))
         # if self.SNTypeInt :
         fOut.write("SNTYPE: {:>d}\n".format(self.SNTypeInt))
         # if self.RADeg :
