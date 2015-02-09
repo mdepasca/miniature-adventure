@@ -121,13 +121,15 @@ if __name__ == "__main__":
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
 
-    print indent + bcolors.bldpur + "* * * * * * * * * * * * * * *"
+    print bcolors.bldpur 
+    print indent + "* * * * * * * * * * * * * * *"
     print indent + "*    Miniature Adventure    *"
     print indent + "*    -------------------    *"
     print indent + "*    lightcurves fitting    *"
     print indent + "*             and           *"
     print indent + "*      SN classification    *"
-    print indent + "* * * * * * * * * * * * * * *" + bcolors.txtrst
+    print indent + "* * * * * * * * * * * * * * *"
+    print bcolors.txtrst
 
     # 
     # 
@@ -143,14 +145,15 @@ if __name__ == "__main__":
         if yesno == 'y':
             args.dirFit = args.dirData + '_FIT'
         elif yesno == 'n':
+            args.dirFit = str(raw_input(indent + 'Specify new directory '\
+                +'for fit: '))
             # ask for new dir
-            pass
+            # pass
         # check for other values
 
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
     
-    KERN_RATQUAD = "RatQuad"
     # modelList = np.zeros(0, dtype=np.object)
 
     # should be possible to change the next two variables
@@ -204,8 +207,10 @@ if __name__ == "__main__":
             + "Data are fitted using GP with Radial Basis Function kernel."
 
         # kern = GPy.kern.RatQuad(1)
-        kern = GPy.kern.RBF(1)
-    
+        # kern = GPy.kern.RBF(1)
+        # kern = GPy.kern.Matern32(1)
+        kern = GPy.kern.Matern52(1)
+
         # Redirecting stderr output to file
         # saveErr = sys.stderr
         # ferr = open('error.log', 'w')
@@ -1092,14 +1097,16 @@ if __name__ == "__main__":
         
         
         print indent + "Plots saved in files:"
+        if not os.path.exists(path.abspath('products/plots/' + args.dirFit)):
+            os.makedirs('products/plots/' + args.dirFit)
         for b in dictFig.keys():
             dictFig[b].savefig(
-                'products/plots/test_band_{:<1}_{:<f}.pdf'.format(b,
-                    timeMark), 
+                'products/plots/' + args.dirFit + \
+                '/test_band_{:<1}_{:<f}.pdf'.format(b,timeMark), 
                 dpi=300
                 )
-            print indent + " - products/plots/" + \
-                "test_band_{:<1}_{:<f}.pdf".format(b,timeMark)
+            print indent + " - products/plots/" + args.dirFit + \
+                "/test_band_{:<1}_{:<f}.pdf".format(b,timeMark)
 
         plt.close('all')
     print "\n" + indent \
