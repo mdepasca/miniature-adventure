@@ -206,6 +206,9 @@ class Supernova():
                             print "Filter not recognized: {:<}".format(passband)
                 elif tag == "SNID":
                     self.SNID = int(data[0])
+                # SupernovaFit attribute
+                elif tag == "GPKERNEL":
+                    self.GPkern = data[0]
                 elif tag == "SNTYPE":
                     self.SNTypeInt = int(data[0])                    
                 elif tag == "RA":
@@ -725,7 +728,7 @@ class SupernovaFit():
                 time.gmtime().tm_sec))
         fOut.write("SURVEY:  {:<}\n".format(survey))
         fOut.write("SNID:  {:<d}\n".format(self.SNID))
-        fOut.write("GP KERNEL: {:<}\n".format.self.kern)
+        fOut.write("GPKERNEL: {:<}\n".format.self.kern)
         # if self.SNTypeInt :
         fOut.write("SNTYPE: {:>d}\n".format(self.SNTypeInt))
         # if self.RADeg :
