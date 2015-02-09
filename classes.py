@@ -451,7 +451,7 @@ class Supernova():
 class SupernovaFit():
     ccMjdMaxFlux = 0
 
-    def __init__(self, supernova):
+    def __init__(self, supernova, GPkern=''):
         # check on supernova type HAS TO BE ADDED
         self.g = LightCurve("g")
         self.r = LightCurve("r")
@@ -462,6 +462,7 @@ class SupernovaFit():
                         "i":self.i, 
                         "z":self.z}
         self.peaked = False
+        self.kern = GPkern
         if hasattr(supernova, 'ccMjdMaxFlux'):
             self.ccMjdMaxFlux = supernova.ccMjdMaxFlux
         self.SNID = supernova.SNID
@@ -724,7 +725,7 @@ class SupernovaFit():
                 time.gmtime().tm_sec))
         fOut.write("SURVEY:  {:<}\n".format(survey))
         fOut.write("SNID:  {:<d}\n".format(self.SNID))
-
+        fOut.write("GP KERNEL: {:<}\n".format.self.kern)
         # if self.SNTypeInt :
         fOut.write("SNTYPE: {:>d}\n".format(self.SNTypeInt))
         # if self.RADeg :
