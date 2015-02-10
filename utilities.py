@@ -787,6 +787,7 @@ def gp_fit(X, Y, errY, kernel,
     kernel -- the GPy kernel to use.
     n_restarts -- number of restarts to optimise hyper parameters.
     parallel -- Flag whether to activate or not parallel computation in optimisation.
+                This solves some memory leakage. The execution speed is not affected...
     test_length -- Flag whether to activate or not testing of random value of length scale hyper parameter.
     test_prior -- Flag whether to activate or not the use of a prior.
     verbose -- Flag whether to activate or not verbosity.
@@ -816,6 +817,8 @@ def gp_fit(X, Y, errY, kernel,
     else:
         rsY = reshape_for_GPy(Y)
 
+    origYMean = np.mean(Y)
+    rsY = rsY - origYMean
     gpModel = GPy.models.GPHeteroscedasticRegression(rsX, rsY, kernel)
 
     if max(Y)/1000 > 1:
@@ -828,6 +831,7 @@ def gp_fit(X, Y, errY, kernel,
     [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
          for i in range(len(X))
          ]
+
 
     if test_length:
         np.random.RandomState
@@ -857,6 +861,7 @@ def gp_fit(X, Y, errY, kernel,
     # _raw_predict is from GPy/core/gp.py
     meanY, var = gpModel._raw_predict(predX, full_cov=False)
 
+    meanY = meanY + origYMean
     if max(Y)/1000 > 1:
         meanY = meanY*1000
         var = var * 1000
@@ -878,35 +883,26 @@ if __name__ == '__main__':
     
     dataSN = "../DES_BLIND+HOSTZ/"
 
-    if args.catalog is None:
-        '''
-        The use of SN catalog as from Newling has been deprecated. Its 
-        handling is too timecosuming. Getting data from SN file seems much
-        faster
-        '''
+    if args.candidate is None:
+        # Picking random candidate
+        #
+        # high set max number of SN in SNPhotCC 
+        candidateIdx = np.random.random_integers(
+            low=0, high=18321)
+        print candidateIdx
+        args.candidate = np.genfromtxt(
+            dataSN+"DES_BLIND+HOSTZ.LIST", dtype=None)[candidateIdx]
 
-        if args.candidate is None:
-            # Picking random candidate
-            #
-            # high set max number of SN in SNPhotCC 
-            candidateIdx = np.random.random_integers(
-                low=0, high=18321)
-            print candidateIdx
-            args.candidate = np.genfromtxt(
-                dataSN+"DES_BLIND+HOSTZ.LIST", dtype=None)[candidateIdx]
-
-            # Setting path and getting data
-            pathToSN = dataSN + args.candidate
-        else:
-            pathToSN = dataSN + \
-                        "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
-        sn = get_sn_from_file(pathToSN)
-
-        epoch = sn.lcsDict[args.band].mjd
-        flux = sn.lcsDict[args.band].flux
-        errFlux = sn.lcsDict[args.band].fluxErr
+        # Setting path and getting data
+        pathToSN = dataSN + args.candidate
     else:
-        pass
+        pathToSN = dataSN + \
+                    "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
+    sn = get_sn_from_file(pathToSN)
+
+    epoch = sn.lcsDict[args.band].mjd
+    flux = sn.lcsDict[args.band].flux
+    errFlux = sn.lcsDict[args.band].fluxErr
     
     print "  Candidate ID          {:>06}".format(args.candidate)
     print "  Testing lengthscale ? {:<5}".format(args.testLength)
@@ -937,7 +933,7 @@ if __name__ == '__main__':
     # to be done)
     if not sn.lcsDict[args.band].badCurve:
         if args.mag:
-            predEupoch, mu, var, GPModel = gp_fit(
+            predEpoch, mu, var, GPModel = gp_fit(
                                             epoch, mag, errMag, 
                                             kern, n_restarts=10, 
                                             test_length=args.testLength, 
