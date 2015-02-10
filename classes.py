@@ -208,7 +208,7 @@ class Supernova():
                     self.SNID = int(data[0])
                 # SupernovaFit attribute
                 elif tag == "GPKERNEL":
-                    self.GPkern = data[0]
+                    self.kern = data[0]
                 elif tag == "SNTYPE":
                     self.SNTypeInt = int(data[0])                    
                 elif tag == "RA":
@@ -800,135 +800,6 @@ class CandidatesCatalog():
     @property
     def size(self):
         return self.SNID.size
-
-
-class SupernovaeCatalog():
-    """
-    Class variables are
-    sne     (object array)  array of SupernovaFit objects
-    zSpec   (float array) the spectroscopically observed redshift 
-            (None if no spctrscp) 
-    zPhotHost   (float array)   the redshift of the host galaxy
-    SNID    (int array) the IDs of the Supernovae
-    SNType  (int array) The types of the supernovae
-    """
-    def __init__(self, dataDir, load_all):
-        """
-        This class loads in all the light curve data under dataDir into a big 
-        list, and creates a series of top level arrays that we can use to cut 
-        the catalog by z, type etc. load_all: Do you want to
-        load all of the data, or will your computer then crash?
-        """
-        
-        print ">>> Loading data from text files ..."
-        inFileNames = glob.glob(dataDir+os.path.sep+"DES_SN*.DAT")
-        self.sne = np.zeros(0, dtype=np.object)
-        self.zPhotHost = np.zeros(0, dtype=np.float32)
-        self.SNID = np.zeros(0, dtype=np.int)
-        self.SNType = np.zeros(0, dtype=np.int)
-        count = 0
-        for inFileName in inFileNames:
-            count += 1
-            # Progress update
-            tenPercent = len(inFileNames)/10
-            for j in range(0,11):
-                if count == j*tenPercent:
-                    print "... "+str(j*10)+"% complete ..."
-            
-            
-            inFile = file(inFileName, "r")  
-            for i in range(4):
-                line = inFile.readline()
-            inFile.close()
-            
-            SNTYPE = line.split(":")[-1].split()[0]
-            if SNTYPE == '-9' and load_all == False:
-                pass        
-
-            else:   
-                sn = Supernova(inFileName)            
-                self.SNType = np.append(self.SNType, sn.SNTypeInt)
-                self.SNID   = np.append(self.SNID, sn.SNID)
-                self.sne    = np.append(self.sne, sn)
-
-        self.zPhotHost = np.nan_to_num(self.zPhotHost)
-            
-    def findSupernovae(self, SNType, zSpecLow, zSpecHigh):
-        """
-        Given a SNType code and a redshift range, return a list of matching 
-        supernovae in the catalog.      
-        """
-        typeMask = np.equal(self.SNType, SNType)
-        zSpecMask = np.logical_and(np.greater(self.zSpec, zSpecLow), 
-                                   np.less(self.zSpec, zSpecHigh))
-        mask = np.logical_and(typeMask, zSpecMask)
-        foundSupernovae = self.sne[mask]
-        
-        return foundSupernovae
-
-    def getSNTypeStr(self, SNTypeInt):
-        """Given a SNTypeInt, returns a string, e.g. 'Ia'
-        
-        Mapping to type names (from DES_BLIND+HOSTZ.README):
-        
-            1  (Ia)
-            2  (II)
-            3  (Ib/c)
-            11  (pec. Ia)
-            66  (other)
-            -1  (rejected)
-            -9 (unknown)
-            
-        """
-        
-        if SNTypeInt == 1:
-            SNTypeStr="Ia"
-        elif SNTypeInt == 2:
-            SNTypeStr="II"
-        elif SNTypeInt == 3:
-            SNTypeStr="Ib/c"
-        elif SNTypeInt == 11:
-            SNTypeStr="pec. Ia"
-        elif SNTypeInt == 66:
-            SNTypeStr="other"
-        elif SNTypeInt == -1:
-            SNTypeStr="rejected"
-        elif SNTypeInt == -9:
-            SNTypeStr="unclassified"
-        
-        return SNTypeStr
-
-    def getSNTypeInt(self, SNTypeStr):
-        """Given a SNTypeStr, returns the corresponding int, e.g. 1
-        
-        Mapping to type names (from DES_BLIND+HOSTZ.README):
-        
-            1  (Ia)
-            2  (II)
-            3  (Ib/c)
-            11  (pec. Ia)
-            66  (other)
-            -1  (rejected)
-            -9 (unknown)
-            
-        """
-            
-        if SNTypeStr == "Ia":
-            SNTypeInt = 1
-        elif SNTypeStr == "II":
-            SNTypeInt = 2
-        elif SNTypeStr == "Ib/c":
-            SNTypeInt = 3
-        elif SNTypeStr == "pec. Ia":
-            SNTypeInt = 11
-        elif SNTypeStr == "other":
-            SNTypeInt = 66
-        elif SNTypeStr == "rejected":
-            SNTypeInt = -1
-        elif SNTypeStr == "unclassified":
-            SNTypeInt = -9
-        
-        return SNTypeInt
 
 
 if __name__ == '__main__':
