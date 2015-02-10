@@ -35,22 +35,23 @@ if __name__ == "__main__":
         description = "SN lightcurve fitter and classifier.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    group = parser.add_mutually_exclusive_group()
+    actionGroup = parser.add_argument_group('ACTION')
 
-    group.add_argument(
+    inputGroup = parser.add_argument_group('INPUT')
+
+    """
+
+    ACTION OPTIONS
+    
+    """
+
+    actionGroup.add_argument(
         "--fit", dest="fit",
         action="store_true",
         help="Fit lightcurves with Gaussian processes method."
         )
-
-    group.add_argument(
-        "--fit-training", dest="fitTraining",
-        action="store_true",
-        help="Fit lightcurves from the training set \
-        with Gaussian processes method."
-        )
     
-    parser.add_argument(
+    actionGroup.add_argument(
         "--cross-correlation", dest="crossCor",
         action="store_true",
         help="Performs cross correlation between non peaked lcs (with maximum in \
@@ -58,50 +59,62 @@ if __name__ == "__main__":
             an estimate for maximum in r-band. VERY TIME CONSUMING."
         )
 
-    parser.add_argument(
+    actionGroup.add_argument(
         "--distance-matrix", dest="distMatrix",
         action="store_true",
         help="Calculate distance between fitted lightcurves in same band. \
         It is use to build a diffusion map (see Coifman & Lafon (2006) \
         and Lafon & Lee (2006)).")
 
-    parser.add_argument(
+    actionGroup.add_argument(
         "--diffuse", dest="diffuse",
         action="store_true",
         help="Computes the diffusion map coefficients. Run together or after \
         --distance-matrix option. Uses `diffusionMap` R package developed \
         by Joseph Richards.")
 
-    parser.add_argument(
+    actionGroup.add_argument(
         "--train", dest="train",
         action="store_true",
         help="Train the classifier - Random Forest. Uses `randomForest` R \
         package.")
 
-    parser.add_argument(
+    actionGroup.add_argument(
         "--classify", dest="classify",
         action="store_true")
 
-    parser.add_argument(
-        "--data-directory", dest="dirData",
-        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES",
-        help="Path to directory containing training data.")
-
-    parser.add_argument(
-        "--fit-directory", dest="dirFit",
-        # default="train_data" + os.sep + "SIMGEN_PUBLIC_DES_FIT",
-        help="Path to directory containing fitted data.")
-
-    parser.add_argument(
-        "--fit-file", dest="fitFile",
-        help="Path to file in which to dump fitting results.")
-
-    parser.add_argument(
+    actionGroup.add_argument(
         "--plot", dest="plot",
         action="store_true",
         help="Save on `pdf` file the plot of fitting curve over data.")
 
-    parser.add_argument(
+    """
+
+    INPUT OPTIONS
+    
+    """
+
+    inputGroup.add_argument(
+        "--data-directory", dest="dirData",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES",
+        help="Path to directory containing training data.")
+
+    inputGroup.add_argument(
+        "--fit-directory", dest="dirFit",
+        default="results" + os.sep + "FIT",
+        help="Path to directory containing fitted data.")
+
+    inputGroup.add_argument(
+        "--mag", dest="mag",
+        action="store_true",
+        help="Reads in magnitudes from file."
+        )
+
+    inputGroup.add_argument(
+        "--fit-file", dest="fitFile",
+        help="Path to file in which to dump fitting results.")
+
+    inputGroup.add_argument(
         "-f", "--file",
         help="")
 
@@ -116,7 +129,7 @@ if __name__ == "__main__":
     # os.system("clear")
 
     indent = "          "
-    prodDir = "products"+os.sep
+    resDir = "results"+os.sep
 
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
@@ -139,16 +152,15 @@ if __name__ == "__main__":
 
     # 
     # 
-    if args.dirFit == None:
-        yesno = str(raw_input(indent + 'Directory containing fit to light ' + 
-            'curves is set to ' + args.dirData + '_FIT. OK? [y/n]: '))
+    if args.dirFit == 'results/FIT':
+        yesno = str(raw_input(indent + 'Set fit directory other then default (' + \
+            parser.get_default('dirFit') + ')? (y/n)'))
         if yesno == 'y':
-            args.dirFit = args.dirData + '_FIT'
-        elif yesno == 'n':
             args.dirFit = str(raw_input(indent + 'Specify new directory '\
                 +'for fit: '))
-            # ask for new dir
-            # pass
+        else:
+            print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
+    
         # check for other values
 
     if not os.path.exists(path.abspath(args.dirFit)):
@@ -168,16 +180,16 @@ if __name__ == "__main__":
     PERFORMS LCs FITTING
 
     """
-    if args.fit or args.fitTraining:
+    if args.fit:
         
-        filePath = prodDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = resDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
    
         fPeaked = open(filePath, 'w')
 
         
-        filePath = prodDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = resDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
   
@@ -185,11 +197,8 @@ if __name__ == "__main__":
 
 
         # Relevant input data
-        if args.fit:
-            print "\n" + indent + "[1] * Fit lightcurves ..."
-        if args.fitTraining:
-            print "\n" + indent + "[1] * Fit lightcurves from training set ..."
-
+        print "\n" + indent + "[1] * Fit lightcurves ..."
+        
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
 
@@ -203,13 +212,20 @@ if __name__ == "__main__":
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(len(lsDirData))
 
-        print "\n" + indent \
-            + "Data are fitted using GP with Radial Basis Function kernel."
+        """
 
-        kern = GPy.kern.RatQuad(1)
-        # kern = GPy.kern.RBF(1)
+
+        GP kernel specification
+        
+
+        """
+        # kern = GPy.kern.RatQuad(1)
+        kern = GPy.kern.RBF(1)
         # kern = GPy.kern.Matern32(1)
         # kern = GPy.kern.Matern52(1)
+
+        print "\n" + indent \
+            + "Data will be smoothed using GP kernel " + kern.name
 
         # Redirecting stderr output to file
         # saveErr = sys.stderr
@@ -238,17 +254,12 @@ if __name__ == "__main__":
         """
         The pre-processing could be only on selected number of bands
         """
+        print indent + \
+                    "INDEX | SN ID | BAND"
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i]
                 )
-
-            if args.fitTraining:
-                # if SN type is not provided, skip to the next item
-                if candidate.SNTypeInt == -9:
-                    continue
-                else:
-                    print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
 
             # Creating SupernovaFit object
             candidateFit = cls.SupernovaFit(candidate, kern.name)
@@ -293,7 +304,7 @@ if __name__ == "__main__":
                 if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
-                        "{:<} {:<} {:<}".format(i, candidate.SNID, b) + \
+                        "{:<}   {:<}   {:<}".format(i, candidate.SNID, b) + \
                         bcolors.txtrst
                     continue
 
@@ -311,8 +322,8 @@ if __name__ == "__main__":
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 epoch, flux, errFlux, 
                                                 kern, n_restarts=35, 
-                                                parallel=True,
-                                                test_length=False)
+                                                parallel=False,
+                                                test_length=True)
                 # sys.stdout = saveOut
                 # fout.close()
 
@@ -320,7 +331,7 @@ if __name__ == "__main__":
                     predMjd, predFlux, predErr)
 
                 print indent + \
-                    "{:<} {:<} {:<} --- DONE".format(i, candidate.SNID, b)
+                    "{:>5d}   {:>5d}   {:>4s} --- DONE".format(i, candidate.SNID, b)
                                 
             
             if candidateFit.r.badCurve is False:
@@ -346,11 +357,11 @@ if __name__ == "__main__":
             socket.gethostname(), time.time()
             )
 
-        np.savetxt(prodDir + filePath, peakIdx,
+        np.savetxt(resDir + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
         
-        filePath = prodDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
+        filePath = resDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
 
@@ -389,18 +400,18 @@ if __name__ == "__main__":
         lsDirData.remove('')
         
         # filePath = 'peaked.dat'.format(socket.gethostname())
-        # peakIdx = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # peakIdx = np.loadtxt(resDir + filePath, dtype=np.int)
         # filePath = 'nopeaked.dat'.format(socket.gethostname())
-        # tmp = np.loadtxt(prodDir + filePath, dtype=np.int)
+        # tmp = np.loadtxt(resDir + filePath, dtype=np.int)
         # if tmp.size == 1:
         #     nopeakIdx = np.asarray([tmp])
         # else:    
         #     nopeakIdx = np.asarray(tmp)
         
         filePath = 'PEAKED.LIST'
-        peakList = np.loadtxt(prodDir + filePath, dtype=np.str)
+        peakList = np.loadtxt(resDir + filePath, dtype=np.str)
         filePath = 'NOPEAKED.LIST'
-        tmp = np.loadtxt(prodDir + filePath, dtype=np.str)
+        tmp = np.loadtxt(resDir + filePath, dtype=np.str)
         if tmp.size == 1:
             nopeakList = np.asarray([tmp])
         else:    
@@ -408,7 +419,7 @@ if __name__ == "__main__":
         
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
-        reWrite = open(prodDir + filePath, 'w')
+        reWrite = open(resDir + filePath, 'w')
         prog = 0        
         # for i in nopeakIdx[start:end]:
         for i in nopeakList[start:end]:
@@ -526,8 +537,8 @@ if __name__ == "__main__":
 
     """
     if args.distMatrix:
-        if not os.path.exists(path.abspath(prodDir + 'distance_matrix' + os.sep)):
-            os.makedirs(path.abspath(prodDir + 'distance_matrix' + os.sep))
+        if not os.path.exists(path.abspath(resDir + 'distance_matrix' + os.sep)):
+            os.makedirs(path.abspath(resDir + 'distance_matrix' + os.sep))
             
         """
         Calculate distance between fitted lightcurves.
@@ -804,32 +815,32 @@ if __name__ == "__main__":
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-        filePath = prodDir + 'distance_matrix' + os.sep + \
+        filePath = resDir + 'distance_matrix' + os.sep + \
             'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[0], fmt='%6.4f', header=fileHeader)
 
-        filePath = prodDir + 'distance_matrix' + os.sep + \
+        filePath = resDir + 'distance_matrix' + os.sep + \
             'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[1], fmt='%6.4f', header=fileHeader)
 
-        filePath = prodDir + 'distance_matrix' + os.sep + \
+        filePath = resDir + 'distance_matrix' + os.sep + \
             'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[2], fmt='%6.4f', header=fileHeader)
 
-        filePath = prodDir + 'distance_matrix' + os.sep + \
+        filePath = resDir + 'distance_matrix' + os.sep + \
             'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[3], fmt='%6.4f', header=fileHeader)
 
 
-        filePath = prodDir + 'distance_matrix' + os.sep + \
+        filePath = resDir + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
@@ -971,6 +982,8 @@ if __name__ == "__main__":
                 Initializing SupernovaFit object
                 """
                 fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
+                if i == 0:
+                    GPkern = tmpSN.kern
                 for l in tmpSN.lcsDict.keys():
                     fit.set_lightcurve(l,
                         tmpSN.lcsDict[l].mjd,
@@ -1106,15 +1119,17 @@ if __name__ == "__main__":
         
         
         print indent + "Plots saved in files:"
-        if not os.path.exists(path.abspath('products/plots/' + args.dirFit)):
-            os.makedirs("products/plots/" + args.dirFit)
+        if not os.path.exists(path.abspath(resDir + "plots/" + \
+            args.dirFit[args.dirFit.rfind('/'):])):
+            os.makedirs(resDir + "plots" + args.dirFit[args.dirFit.rfind('/'):])
         for b in dictFig.keys():
             dictFig[b].savefig(
-                "products/plots/" + args.dirFit + \
+                resDir + "plots" + args.dirFit[args.dirFit.rfind('/'):] + \
                 "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark), 
                 dpi=300
                 )
-            print indent + " - products/plots/" + args.dirFit + \
+            print indent + " - " + resDir + "plots" + \
+                args.dirFit[args.dirFit.rfind('/'):] + \
                 "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark)
 
         plt.close('all')
