@@ -113,7 +113,7 @@ else:
     pass
     
 if __name__ == "__main__":
-    os.system("clear")
+    # os.system("clear")
 
     indent = "          "
     prodDir = "products"+os.sep
@@ -206,10 +206,10 @@ if __name__ == "__main__":
         print "\n" + indent \
             + "Data are fitted using GP with Radial Basis Function kernel."
 
-        # kern = GPy.kern.RatQuad(1)
+        kern = GPy.kern.RatQuad(1)
         # kern = GPy.kern.RBF(1)
         # kern = GPy.kern.Matern32(1)
-        kern = GPy.kern.Matern52(1)
+        # kern = GPy.kern.Matern52(1)
 
         # Redirecting stderr output to file
         # saveErr = sys.stderr
@@ -251,7 +251,7 @@ if __name__ == "__main__":
                     print indent + 'SN type code {:<}'.format(candidate.SNTypeInt) 
 
             # Creating SupernovaFit object
-            candidateFit = cls.SupernovaFit(candidate)
+            candidateFit = cls.SupernovaFit(candidate, kern.name)
 
             for b in candidate.lcsDict.keys(): 
                 # Correcting for time dilution
@@ -285,7 +285,7 @@ if __name__ == "__main__":
                 
                 
                 """
-                Save pre processed data, before fitting. This will same time 
+                Save pre processed data, before fitting. This will save time 
                 when plotting... 
                 NOT YET IMPLEMENTED, MORE A COMFORT THEN A NEED
                 """
@@ -298,25 +298,29 @@ if __name__ == "__main__":
                     continue
 
                 # Diverting warnings to log file
-                saveOut = sys.stdout
-                fout = open('out.log', 'w')
-                # fout = open('/dev/null', 'w')
-                sys.stdout = fout
-
+                # saveOut = sys.stdout
+                # fout = open('out.log', 'w')
                 
+                # sys.stdout = fout
+
+                """
+                Clipping to zero negative flux values to avoid optimization to 
+                crash with some kernel.
+                """
+                flux = [0 if (el<0) else el for el in flux]
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 epoch, flux, errFlux, 
-                                                kern, n_restarts=10, 
-                                                parallel=False, # this solves some memory leakage. The execution speed is not affected...
-                                                test_length=True)
-                sys.stdout = saveOut
-                fout.close()
+                                                kern, n_restarts=35, 
+                                                parallel=True,
+                                                test_length=False)
+                # sys.stdout = saveOut
+                # fout.close()
 
                 candidateFit.set_lightcurve(b, 
                     predMjd, predFlux, predErr)
 
                 print indent + \
-                    "{:<} {:<} {:<}".format(i, candidate.SNID, b)
+                    "{:<} {:<} {:<} --- DONE".format(i, candidate.SNID, b)
                                 
             
             if candidateFit.r.badCurve is False:
@@ -893,8 +897,11 @@ if __name__ == "__main__":
                        
 
         print indent + 'Plotting ...'
-        nrows = 2
-        ncols = 2
+        '''
+        Column index is always increasing, no check on its value.
+        '''
+        nrows = 3
+        ncols = 3
         offset = 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
@@ -937,6 +944,7 @@ if __name__ == "__main__":
             dictFig[b].subplots_adjust(top=0.8)
             dictFig[b].suptitle('band {:<1}'.format(b))
 
+        GPkern = ''
         for i in range(nrows*ncols):
             # getting the data from file
             candidateIdx = np.random.random_integers(
@@ -944,6 +952,7 @@ if __name__ == "__main__":
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i+offset]#candidateIdx]
                 )
+
             """
             reading fit data from file
             """
@@ -961,7 +970,7 @@ if __name__ == "__main__":
                 """
                 Initializing SupernovaFit object
                 """
-                fit = cls.SupernovaFit(tmpSN)
+                fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
                 for l in tmpSN.lcsDict.keys():
                     fit.set_lightcurve(l,
                         tmpSN.lcsDict[l].mjd,
@@ -1098,15 +1107,15 @@ if __name__ == "__main__":
         
         print indent + "Plots saved in files:"
         if not os.path.exists(path.abspath('products/plots/' + args.dirFit)):
-            os.makedirs('products/plots/' + args.dirFit)
+            os.makedirs("products/plots/" + args.dirFit)
         for b in dictFig.keys():
             dictFig[b].savefig(
-                'products/plots/' + args.dirFit + \
-                '/test_band_{:<1}_{:<f}.pdf'.format(b,timeMark), 
+                "products/plots/" + args.dirFit + \
+                "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark), 
                 dpi=300
                 )
             print indent + " - products/plots/" + args.dirFit + \
-                "/test_band_{:<1}_{:<f}.pdf".format(b,timeMark)
+                "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark)
 
         plt.close('all')
     print "\n" + indent \
