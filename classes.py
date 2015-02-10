@@ -465,7 +465,12 @@ class SupernovaFit():
                         "i":self.i, 
                         "z":self.z}
         self.peaked = False
-        self.kern = GPkern
+        
+        if hasattr(supernova, 'kern'):
+            self.kern = supernova.kern
+        elif GPkern != '':
+            self.kern = GPkern
+
         if hasattr(supernova, 'ccMjdMaxFlux'):
             self.ccMjdMaxFlux = supernova.ccMjdMaxFlux
         self.SNID = supernova.SNID
