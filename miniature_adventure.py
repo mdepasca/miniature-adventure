@@ -258,7 +258,8 @@ if __name__ == "__main__":
                     "INDEX | SN ID | BAND"
         for i in range(start, stop):
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + lsDirData[i]
+                args.dirData + os.sep + lsDirData[i],
+                args.mag
                 )
 
             # Creating SupernovaFit object
@@ -331,7 +332,7 @@ if __name__ == "__main__":
                     predMjd, predFlux, predErr)
 
                 print indent + \
-                    "{:>5d}   {:>5d}   {:>4s} --- DONE".format(i, candidate.SNID, b)
+                    "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(i, candidate.SNID, b)
                                 
             
             if candidateFit.r.badCurve is False:
