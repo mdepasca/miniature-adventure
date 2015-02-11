@@ -94,15 +94,6 @@ if __name__ == '__main__':
     
     parser.add_argument("-b", "--band", dest="band", default='r', 
                         help="Photometric band.")
-    
-    parser.add_argument(
-        "-d", "--data-catalog", dest="catalog", default=None,
-        help="SN catalog.")
-    
-    parser.add_argument(
-        "-c", "--catalog-path", dest="path", 
-        default="train_data/snCatalog.gz",
-        help="Path to SN catalog.")
 
     parser.add_argument(
         "-t", "--test-lengthscale", dest="testLength",
@@ -748,7 +739,7 @@ def get_sn(catalog, band, idx):
     
     return epoch, flux, errFlux
 
-def get_sn_from_file(pathToSN):
+def get_sn_from_file(pathToSN, magFlag=False):
     """Reads photometric data of SN from file formatted as in SNPhotCC
 
     Keyword arguments:
@@ -757,7 +748,7 @@ def get_sn_from_file(pathToSN):
     Returns:
     sn -- object of class Supernova.
     """
-    sn = classes.Supernova(pathToSN)
+    sn = classes.Supernova(pathToSN, magFlag)
     return sn
 
 def reshape_for_GPy(vec):
@@ -881,24 +872,24 @@ if __name__ == '__main__':
               'i': 25.1, 
               'z': 24.9}
     
-    dataSN = "../DES_BLIND+HOSTZ/"
+    dataSN = "train_data/SIMGEN_PUBLIC_DES"
 
     if args.candidate is None:
         # Picking random candidate
         #
         # high set max number of SN in SNPhotCC 
         candidateIdx = np.random.random_integers(
-            low=0, high=18321)
+            low=0, high=21319)
         print candidateIdx
         args.candidate = np.genfromtxt(
-            dataSN+"DES_BLIND+HOSTZ.LIST", dtype=None)[candidateIdx]
+            dataSN+"SIMGEN_PUBLIC_DES.LIST", dtype=None)[candidateIdx]
 
         # Setting path and getting data
         pathToSN = dataSN + args.candidate
     else:
         pathToSN = dataSN + \
                     "DES_SN" + "{:>06}".format(args.candidate) + ".DAT"
-    sn = get_sn_from_file(pathToSN)
+    sn = get_sn_from_file(pathToSN, args.mag)
 
     epoch = sn.lcsDict[args.band].mjd
     flux = sn.lcsDict[args.band].flux
@@ -909,10 +900,13 @@ if __name__ == '__main__':
     print "  Magnitudes ?          {:<5}".format(args.mag)
     
     # Tranforming to magnitudes
-    if args.mag:
-        limFlux = mag_to_flux(limMag[args.band])
-        mag = flux_to_mag(flux, limFlux)
-        errMag = flux_error_to_mag_error(errFlux, flux)
+    #
+    # this is done by reading them from file
+    
+    # if args.mag:
+    #     limFlux = mag_to_flux(limMag[args.band])
+    #     mag = flux_to_mag(flux, limFlux)
+    #     errMag = flux_error_to_mag_error(errFlux, flux)
 
     # check the bias. Neale: should be added to the mean of the rational 
     # quadratic
@@ -932,31 +926,31 @@ if __name__ == '__main__':
     # 
     # to be done)
     if not sn.lcsDict[args.band].badCurve:
-        if args.mag:
-            predEpoch, mu, var, GPModel = gp_fit(
-                                            epoch, mag, errMag, 
-                                            kern, n_restarts=10, 
-                                            test_length=args.testLength, 
-                                            test_prior=args.testPrior,
-                                            verbose=args.verbose)
-        else:
-            predEpoch, mu, var, GPModel = gp_fit(
-                                            epoch, flux, errFlux, 
-                                            kern, n_restarts=10, 
-                                            test_length=args.testLength,
-                                            test_prior=args.testPrior,
-                                            verbose=args.verbose)
+        # if args.mag:
+        #     predEpoch, mu, var, GPModel = gp_fit(
+        #                                     epoch, mag, errMag, 
+        #                                     kern, n_restarts=10, 
+        #                                     test_length=args.testLength, 
+        #                                     test_prior=args.testPrior,
+        #                                     verbose=args.verbose)
+        # else:
+        predEpoch, mu, var, GPModel = gp_fit(
+                                        epoch, flux, errFlux, 
+                                        kern, n_restarts=10, 
+                                        test_length=args.testLength,
+                                        test_prior=args.testPrior,
+                                        verbose=args.verbose)
 
-            zed = sn.zSpec if sn.zSpec else sn.zPhotHost
-            corr_epoch = time_correct(epoch, zed)
-            corr_flux = correct_for_absorption(flux, sn.MWEBV, args.band)
+        zed = sn.zSpec if sn.zSpec else sn.zPhotHost
+        corr_epoch = time_correct(epoch, zed)
+        corr_flux = correct_for_absorption(flux, sn.MWEBV, args.band)
 
-            corr_predEpoch, corr_mu, corr_var, corr_GPModel = gp_fit(
-                                            corr_epoch, corr_flux, errFlux, 
-                                            kern, n_restarts=10, 
-                                            test_length=args.testLength,
-                                            test_prior=args.testPrior,
-                                            verbose=args.verbose)
+        corr_predEpoch, corr_mu, corr_var, corr_GPModel = gp_fit(
+                                        corr_epoch, corr_flux, errFlux, 
+                                        kern, n_restarts=10, 
+                                        test_length=args.testLength,
+                                        test_prior=args.testPrior,
+                                        verbose=args.verbose)
 
         
         # print GPModel['.*lengthscale|.*power']
