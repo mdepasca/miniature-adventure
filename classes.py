@@ -55,11 +55,14 @@ class LightCurve():
     Once fully initiated, instances of this class have the following important 
     properties
     band            (string) 'g','r','i' or 'z'
+    lim             (float) brightness threshold for the band (in correct units
+                            flux or mag)
     mjd             (array) modified julian dates of observations
     flux            (array) the observed flux
     fluxErr         (array) the error in the observed flux
     shifted_mjd     (array) mjd shifted such that the peak has mjd = 0. To be 
                             modified
+    magFlag         (boolean) if the flux is expressed in magnitudes
     """
     badCurve = False
     shifted_mjd = np.zeros(0)
@@ -68,14 +71,16 @@ class LightCurve():
     """
     TRY TO USE __slots__
     """
-    __slots__ = ['band', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
-        'shifted_mjd', 'normFlux', 'normErr']
-    def __init__(self, band):
+    __slots__ = ['band', 'lim', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
+        'shifted_mjd', 'normFlux', 'normErr', 'magFlag']
+    def __init__(self, band, magFlag=False, lim=0):
         self.band = band
         self.mjd = list()#np.zeros(0, dtype=float)
         self.shiftedMjd = list()#np.zeros(0, dtype=float)
         self.flux = list()#np.zeros(0, dtype=float)
         self.fluxErr = list()#np.zeros(0, dtype=float)
+        self.magFlag = magFlag
+        self.lim = lim
 
     @classmethod
     def data(band, mjd, flux, fluxErr):
@@ -86,8 +91,15 @@ class LightCurve():
         self.set_badCurve()
 
     def set_badCurve(self): 
-        if (len(self.flux) == 0) or (max(self.flux) == 0):
+
+        # this could be generalised as "if min(self.flux) <= self.lim:"
+        if len(self.flux) == 0:
             self.badCurve = True
+        elif self.magFlag:
+            if min(self.flux) <= self.lim:
+                self.badCurve = True
+        elif max(self.flux) == 0:
+                self.badCurve = True
 
     def set_shifted_mjd(self, distance):
         """
@@ -98,9 +110,9 @@ class LightCurve():
     @property
     def max_flux(self):
         if not self.badCurve:
-            result = max(self.flux)
+            result = min(self.flux) if self.magFlag else max(self.flux)
         else:
-            result = 0
+            result = self.lim
 
         return result
 
@@ -119,7 +131,7 @@ class LightCurve():
         Return the index of the maximum flux
         """
         # return np.argmax(self.flux)
-        return self.flux.index(max(self.flux))
+        return self.flux.index(min(self.flux)) if self.magFlag else: self.flux.index(max(self.flux))
 
     @property
     def size(self):
@@ -150,7 +162,7 @@ class Supernova():
     """
     TRY TO USE __slots__
     """
-    def __init__(self, inFileName):
+    def __init__(self, inFileName, magFlag=False):
         """
         Parses all the light curve data in inFileName into a Supernova object.
         """
@@ -179,8 +191,12 @@ class Supernova():
                 if tag == "OBS":
                     mjd = float(data[0])
                     passband = data[1]
-                    flux = float(data[3])
-                    fluxErr = float(data[4])
+                    if magFlag:
+                        flux = float(data[6])
+                        fluxErr = float(data[7])
+                    else:
+                        flux = float(data[3])
+                        fluxErr = float(data[4])
                     if fluxErr > 0:
                         if passband == "g":
                             self.g.mjd.append(mjd)
@@ -488,10 +504,11 @@ class SupernovaFit():
         self.zPhotHost = supernova.zPhotHost 
         self.zPhotHostErr = supernova.zPhotHostErr 
 
-    def set_lightcurve(self, band, mjd, flux, fluxErr):
+    def set_lightcurve(self, band, mjd, flux, fluxErr, magFlag=False):
         self.lcsDict[band].mjd = mjd
         self.lcsDict[band].flux = flux
         self.lcsDict[band].fluxErr = fluxErr
+        self.lcsDict[band].magFlag = magFlag
 
         self.lcsDict[band].set_badCurve()
 
@@ -653,9 +670,14 @@ class SupernovaFit():
         # OBS is used to reproduce original SNPhotCC files can be deleted 
         #
         # provided to change init method of Supernova class
-        colNames = [["OBS", "{:4s}"],
-                    ["MJD", "{0:9.3f}"], ["BAND", "{:s}"], ["FIELD", "{:6s}"],
-                    ["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"]]
+        colNames = [
+                    ["OBS", "{:4s}"],
+                    ["MJD", "{0:9.3f}"], ["BAND", "{:s}"], ["FIELD", "{:6s}"]
+                    ]
+        if self.r.magFlag:
+            colNames.extende(["MAG", "{0:7.3f}"], ["MAG_ERR", "{0:7.3f}"])
+        else:
+            colNames.extende(["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"])
 
         bandArr = np.empty(0)
         mjd = np.empty(0)
@@ -800,7 +822,6 @@ class CandidatesCatalog():
     @property
     def size(self):
         return self.SNID.size
-
 
 if __name__ == '__main__':
     indent = "          "
