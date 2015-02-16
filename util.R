@@ -20,36 +20,87 @@ redshift.distrib <- function(dump.file,save=FALSE){
     return(dump)
 }
 
-explore.lightcurves <- function(dir.path, band='r'){
+explore.lightcurves <- function(dir.path, band='r', skip=63, err.bars=FALSE, multi.plot=FALSE, save=FALSE){
     file.list <- list.files(path=dir.path, pattern='\\.DAT$', full.names=TRUE)
-    for (f in file.list){
-        print(f)
-        lc <- read.table(f, header=TRUE, skip=63, fill=TRUE)
+    lc.n <- 50                          #number of light curves to plot
+    ## print(class(file.list))
+    if (multi.plot){
+        pchs <- c(0:25)
+        ## pch.col <- heat.colors(length(file.list))
+        pch.col <- gray(0:(lc.n-1) / lc.n + 0.01)
+        i <- 0
+        j <- 1
+    }
+    if (save){
+        png(filename='light_curves.png', width=5, height= 5, units='in', res=300)
+    }
+    title <- paste(lc.n, "SN non-1a simulated by SNANA", sep=' ')
+    for (f in file.list[1:lc.n]){
+        ## print(file.list[1])
+        
+        lc <- read.table(f, header=TRUE, skip=skip, fill=TRUE)
         del.rows <- which(is.na(lc$FLUXCALERR))
         lc <- lc[-del.rows,]
         lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
-        print(class(lc$FLUXCALERR))
-        print(lc$FLUXCALERR)
-        ## plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)])
-        errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
-               lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
-               lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)])
-        cin <- readline('Press Enter to next plot: ')
+        ## print(class(lc$FLUXCALERR))
+        ## print(lc$FLUXCALERR)
+        if (err.bars){
+        ## 
+            errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
+                   lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
+                   lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)])
+        }else{
+            if (!multi.plot){
+                plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)])
+            }
+        }
+        if (multi.plot){
+            if (f == file.list[1]){
+                plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
+                     col=pch.col[j],
+                     xlim=c(56170,56360), ylim=c(0,50000), type='l',
+                     xlab='epoch [MJD]', ylab='flux [ADU]',
+                     main=title)
+            }else{
+                lines(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], pch=1, col=pch.col[j])
+            }
+            ## print(pch.col[j])
+            if (i == length(pchs)) i <- 0 else i <- i+1
+            if (j == length(pch.col)) j <- 1 else j <- j+1
+        }else{
+            cin <- readline('Press Enter to next plot: ')
+        }
     }
-    return(file.list)
+    if (save){
+        dev.off()
+    }
+    ## return(file.list)
 }
 
-explore.minmax <- function(dir.path, band='r'){
-    min.vec <- c()
-    max.vec <- c()
+explore.minmax <- function(dir.path, band='r', skip=63){
+    mjd.min.vec <- c()
+    mjd.max.vec <- c()
+    mjd.flux.max.vec <- c()
+    idx.flux.max.vec <- c()
     file.list <- list.files(path=dir.path, pattern='\\.DAT$', full.names=TRUE)
     for (f in file.list){
-        lc <- read.table(f, header=TRUE, skip=63, fill=TRUE)
+        ## message(f)
+        lc <- read.table(f, header=TRUE, skip=skip, fill=TRUE)
         del.rows <- which(is.na(lc$FLUXCALERR))
         lc <- lc[-del.rows,]
         lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
-        min.vec <- c(min.vec, min(lc$MJD))
-        max.vec <- c(max.vec, max(lc$MJD))
+        mjd.min.vec <- c(mjd.min.vec, min(lc$MJD))
+        mjd.max.vec <- c(mjd.max.vec, max(lc$MJD))
+        mjd.flux.max.vec <- c(mjd.flux.max.vec, lc$MJD[which(lc$FLUXCAL == max(lc$FLUXCAL), arr.ind=TRUE)])
+        idx.flux.max.vec <- c(idx.flux.max.vec, which(lc$FLUXCAL == max(lc$FLUXCAL), arr.ind=TRUE))
     }
-    return(c(min(min.vec), max(max.vec)))
+    d.mjd <- density(mjd.flux.max.vec)
+    d.idx <- density(idx.flux.max.vec)
+    par(mfrow=c(2,1))
+    plot(d.mjd, main='Distribution of epoch of maximum light', xlab='epoch [MJD]')
+    rug(c(min(mjd.min.vec), max(mjd.max.vec), median(mjd.flux.max.vec)))
+    plot(d.idx, main='Distribution of index of maximum light')
+    par(mfrow=c(1,1))
+    message('MIN MJD   MAX MJD    MIN MJD MAX    MAX MJD MAX ')
+    return(c(min(mjd.min.vec), max(mjd.max.vec), min(mjd.flux.max.vec), max(mjd.flux.max.vec)))
 }
