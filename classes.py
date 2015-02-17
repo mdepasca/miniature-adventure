@@ -8,6 +8,7 @@ from astropy.table import Table, Column, MaskedColumn, vstack, hstack
 import time
 import argparse
 import warnings
+import subprocess
 
 warnings.filterwarnings(
     'error', 
@@ -22,24 +23,69 @@ if __name__ == '__main__':
     import GPy
     from matplotlib import pyplot as plt
 
+    
+
     parser = argparse.ArgumentParser(
         description="Test of general functions.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument(
+    actionGroup = parser.add_argument_group('ACTION')
+    inputGroup = parser.add_argument_group('INPUT')
+
+    """
+
+    ACTION OPTIONS
+    
+    """
+    actionGroup.add_argument(
+        "--k-correction", dest='kcor', 
+        action='store_true', help='Switch on k correction.'
+        )
+
+    actionGroup.add_argument(
+        '--distance', dest='distance',
+        action='store_true', help='Calculate distance between fitted lightcurves \
+        in same band.'
+        )
+
+    actionGroup.add_argument(
+        '--test-prior', dest='testPrior',
+        action='store_true', help='Test prior in GP regression.'
+        )
+
+    """
+
+    INPUT OPTIONS
+    
+    """
+    inputGroup.add_argument(
+        "--data-directory", dest="dirData",
+        default="train_data" + os.sep + "SIMGEN_PUBLIC_DES",
+        help="Path to directory containing training data.")
+
+    inputGroup.add_argument(
+        "-b", "--band", dest="band", default='r', 
+        help="Photometric band.")
+
+    inputGroup.add_argument(
         "-c1", "--candidate1", dest="candidate1", 
         type=np.int32, default=None, 
         help="First candidate idx")
 
-    parser.add_argument(
+    inputGroup.add_argument(
         "-c2", "--candidate2", dest="candidate2", 
         type=np.int32, default=None, 
         help="Second candidate idx")    
 
-    parser.add_argument(
-        "-b", "--band", dest="band", default='r', 
-        help="Photometric band.")
+    inputGroup.add_argument(
+        "--mag", dest="mag",
+        action="store_true",
+        help="Reads in magnitudes from file."
+        )
+
     args = parser.parse_args()
+
+
 
 class photoBand():
     def __init__(self, name, effLambda):
@@ -131,13 +177,12 @@ class LightCurve():
         Return the index of the maximum flux
         """
         # return np.argmax(self.flux)
-        return self.flux.index(min(self.flux)) if self.magFlag else: self.flux.index(max(self.flux))
+        return self.flux.index(min(self.flux)) if self.magFlag else self.flux.index(max(self.flux))
 
     @property
     def size(self):
         # return self.mjd.size
         return len(self.mjd)
-
 
 class Supernova():
     """
@@ -171,10 +216,10 @@ class Supernova():
         lines = inFile.readlines()
         inFile.close()
 
-        self.g = LightCurve("g")
-        self.r = LightCurve("r")
-        self.i = LightCurve("i")
-        self.z = LightCurve("z")
+        self.g = LightCurve("g", magFlag=magFlag)
+        self.r = LightCurve("r", magFlag=magFlag)
+        self.i = LightCurve("i", magFlag=magFlag)
+        self.z = LightCurve("z", magFlag=magFlag)
 
         self.lcsDict = {'g':self.g, 
                         'r':self.r, 
@@ -675,9 +720,9 @@ class SupernovaFit():
                     ["MJD", "{0:9.3f}"], ["BAND", "{:s}"], ["FIELD", "{:6s}"]
                     ]
         if self.r.magFlag:
-            colNames.extende(["MAG", "{0:7.3f}"], ["MAG_ERR", "{0:7.3f}"])
+            colNames.extend([["MAG", "{0:7.3f}"], ["MAG_ERR", "{0:7.3f}"]])
         else:
-            colNames.extende(["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"])
+            colNames.extend([["FLUX", "{0:10.5f}"], ["FLUX_ERR", "{0:10.5f}"]])
 
         bandArr = np.empty(0)
         mjd = np.empty(0)
@@ -790,46 +835,35 @@ class SupernovaFit():
         
         fOut.close()
 
-
-class CandidatesCatalog():
-    """Used to store in memory the list of fit to candidates lightcurves.
-    Structure inspired from SupernovaeCatalog
-
-    candidate: array of Supernova objects
-    SNID: array if IDs. Follows the objs.SNID array
-    SNType: array of SN types. Useful to search for a specific type
-    """
-
-    def __init__(self):
-        self.candidates = np.zeros(0, dtype=np.object)
-        self.SNID = np.zeros(0, dtype=np.int)
-        self.SNType = np.zeros(0, dtype=np.int)
-        self.peaked = np.zeros(0, dtype=np.int)
-
-    def add_candidate(self, candidate):
-        self.candidates = np.append(self.candidates, candidate)
-        self.SNID = np.append(self.SNID, candidate.SNID)
-        self.SNType = np.append(self.SNType, candidate.SNType)
-        self.peaked = np.append(self.peaked, candidate.peaked)
-
-    def merge(self, catalog):
-        for i in range(catalog.size):
-            self.add_candidate(catalog.candidates[i])
-
-    def get_peaked(self):
-        return np.where(self.peaked)[0]
-
-    @property
-    def size(self):
-        return self.SNID.size
-
 if __name__ == '__main__':
     indent = "          "
     lambda_obs = [479.66, 638.26, 776.90, 910.82]
-    dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
-    fCandidatesList = "DES_BLIND+HOSTZ.LIST"
-    candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)
-    kern = GPy.kern.RBF(1)
+    limMagDict = {
+        'g': 25.2,
+        'r': 25.4,
+        'i': 25.1,
+        'z': 24.9
+    }
+    p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirData+os.sep)
+    lsDirData = p.stdout.read()
+    lsDirData = lsDirData.split('\n')
+    lsDirData.sort()
+    lsDirData.remove('')
+    # fCandidatesList = "DES_BLIND+HOSTZ.LIST"
+    # candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)\
+
+    """
+
+    KERNEL SPECIFICATION
+
+    """
+    # kern = GPy.kern.RBF(1)
+    kern = GPy.kern.RatQuad(1)
+
+    """
+    ---------------------- 
+    """
 
     if args.band not in ['g', 'r', 'i', 'z']:
         print 'Band {:<} not recognised! Changing to r'.format(args.band)
@@ -837,109 +871,138 @@ if __name__ == '__main__':
 
     if args.candidate1 is None:
         args.candidate1 = np.random.random_integers(
-                low=0, high=18321)
+                low=0, high=len(lsDirData))
 
     if args.candidate2 is None:
         args.candidate2 = np.random.random_integers(
-                low=0, high=18321)
+                low=0, high=len(lsDirData))
 
     while args.candidate2 == args.candidate1:
         args.candidate2 = np.random.random_integers(
-            low=0, high=18321)
+            low=0, high=len(lsDirData))
 
     print args.candidate1
     print args.candidate2
 
-    # Getting observation data
     candidates = list()
     fit = list()
-    candidates.append(Supernova(
-        dirData+os.sep+candidatesFileList[args.candidate1]))
+
+    """
+    Getting observation's data
+    """
 
     candidates.append(Supernova(
-        dirData+os.sep+candidatesFileList[args.candidate2]))
+        args.dirData+os.sep+lsDirData[args.candidate1], args.mag))
+
+    candidates.append(Supernova(
+        args.dirData+os.sep+lsDirData[args.candidate2], args.mag))
+
 
     for candidate in candidates:
-        # Create SupernovaFit objects
-        # candidateFit = SupernovaFit(candidate.SNID)
+        """
+        Setting limits in magnitudes
+        """
+        for b in candidate.lcsDict.keys():
+            if args.mag:
+                candidate.lcsDict[b].lim = limMagDict[b]
+        
+    
         print 'candidate z = {:>6.4f}'.format(
             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
-        lambda_rf = [el/(
-            1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
-            ) for el in lambda_obs]
 
-        plt.figure()
-        int_mjd_g = [int(el) for el in candidate.g.mjd]
-        int_mjd_r = [int(el) for el in candidate.r.mjd]
-        int_mjd_i = [int(el) for el in candidate.i.mjd]
-        int_mjd_z = [int(el) for el in candidate.z.mjd]
-        mjd = [el for el in int_mjd_g if el in int_mjd_r 
-                    and el in int_mjd_i and el in int_mjd_z]
-        jd = mjd[0]
+        if args.kcor:
+            lambda_rf = [el/(
+                1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
+                ) for el in lambda_obs]
 
-        flux = [
-            candidate.g.flux[int_mjd_g.index(jd)], 
-            candidate.r.flux[int_mjd_r.index(jd)],
-            candidate.i.flux[int_mjd_i.index(jd)],
-            candidate.z.flux[int_mjd_z.index(jd)]
-            ]
-        fluxErr = [
-            candidate.g.fluxErr[int_mjd_g.index(jd)], 
-            candidate.r.fluxErr[int_mjd_r.index(jd)],
-            candidate.i.fluxErr[int_mjd_i.index(jd)],
-            candidate.z.fluxErr[int_mjd_z.index(jd)]
-            ]
-        plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
-        plt.scatter(lambda_obs, flux, color='black')
-        plt.errorbar(lambda_rf, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
-        plt.scatter(lambda_rf, flux, color='blue')
-        plt.show()
-        # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
+            plt.figure()
+            int_mjd_g = [int(el) for el in candidate.g.mjd]
+            int_mjd_r = [int(el) for el in candidate.r.mjd]
+            int_mjd_i = [int(el) for el in candidate.i.mjd]
+            int_mjd_z = [int(el) for el in candidate.z.mjd]
+            mjd = [el for el in int_mjd_g if el in int_mjd_r 
+                        and el in int_mjd_i and el in int_mjd_z]
+            jd = mjd[0]
 
-        
-        # (a, b) = np.polyfit(
-        #     # [lambda_rf[0], lambda_rf[1]], 
-        #     [
-        #     lambda_rf[0],
-        #     lambda_rf[1]#,
-        #     # lambda_rf[2],
-        #     # lambda_rf[3],
-        #     ],
-        #     [
-        #     candidate.g.flux[int_mjd_g.index(jd)], 
-        #     candidate.r.flux[int_mjd_r.index(jd)]#,
-        #     # candidate.i.flux[int_mjd_i.index(jd)],
-        #     # candidate.z.flux[int_mjd_z.index(jd)]
-        #     ], deg = 1, 
-        #     w = [
-        #         1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
-        #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
-        #     # cov=True
-        #     )
-        raise ValueError
+            flux = [
+                candidate.g.flux[int_mjd_g.index(jd)], 
+                candidate.r.flux[int_mjd_r.index(jd)],
+                candidate.i.flux[int_mjd_i.index(jd)],
+                candidate.z.flux[int_mjd_z.index(jd)]
+                ]
+            fluxErr = [
+                candidate.g.fluxErr[int_mjd_g.index(jd)], 
+                candidate.r.fluxErr[int_mjd_r.index(jd)],
+                candidate.i.fluxErr[int_mjd_i.index(jd)],
+                candidate.z.fluxErr[int_mjd_z.index(jd)]
+                ]
+            plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
+            # if args.mag:
+            #     plt.xlim([plt.ylim()[1]], plt.ylim()[0]])
+            plt.scatter(lambda_obs, flux, color='black')
+            plt.errorbar(lambda_rf, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
+            plt.scatter(lambda_rf, flux, color='blue')
+            plt.show()
+            # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
 
+            
+            # (a, b) = np.polyfit(
+            #     # [lambda_rf[0], lambda_rf[1]], 
+            #     [
+            #     lambda_rf[0],
+            #     lambda_rf[1]#,
+            #     # lambda_rf[2],
+            #     # lambda_rf[3],
+            #     ],
+            #     [
+            #     candidate.g.flux[int_mjd_g.index(jd)], 
+            #     candidate.r.flux[int_mjd_r.index(jd)]#,
+            #     # candidate.i.flux[int_mjd_i.index(jd)],
+            #     # candidate.z.flux[int_mjd_z.index(jd)]
+            #     ], deg = 1, 
+            #     w = [
+            #         1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
+            #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
+            #     # cov=True
+            #     )
+            # raise ValueError
+
+        """
+        Create SupernovaFit objects
+        """
+        candidateFit = SupernovaFit(candidate, kern.name)
+
+        """
+        Looping in bands and fit of flux
+        """
         for b in candidate.lcsDict.keys():
+
             phase = candidate.lcsDict[b].mjd
             flux = candidate.lcsDict[b].flux
+
+            """
+            Clipping to limiting magnitudes when flux is above 90th mag
+            """
+            if args.mag :
+                flux = [candidate.lcsDict[b].lim if \
+                        (el>90) else el for el in flux]
+
             errFlux = candidate.lcsDict[b].fluxErr
 
             # Fitting Lightcurve
-            if (not candidate.lcsDict[b].badCurve) \
-            and (flux.size >= 3):
-                saveOut = sys.stdout
-                fout = open('test_out.log', 'w')
-                # fout = open('/dev/null', 'w')
-                sys.stdout = fout
-
+            if (not candidate.lcsDict[b].badCurve) and (len(flux) >= 3):
                 
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
-                                                test_length=True)
-                sys.stdout = saveOut
-                fout.close()
+                                                parallel=False,
+                                                test_length=False,
+                                                test_prior=args.testPrior)
+                print GPModel
 
-                candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
+                candidateFit.set_lightcurve(
+                    b, predMjd, predFlux, predErr, args.mag
+                    )
                 
                 print indent + \
                     "{:<} {:<}".format(candidate.SNID, b)
@@ -951,33 +1014,141 @@ if __name__ == '__main__':
 
         candidateFit.shift_mjds()
         fit.append(candidateFit)
-        # catalogFit.add_candidate(candidateFit)
+        
 
-    if fit[0].peaked and fit[1].peaked:
-        print 'Distance between the 2 normalized lcs in ' + \
-        '{:<} band = {:<2.4f}'.format(args.band,
-            fit[0].get_distance(fit[1], 
-            args.band, reset_masks=False))
+    if args.distance:
+        if fit[0].peaked and fit[1].peaked:
+            print 'Distance between the 2 normalized lcs in ' + \
+            '{:<} band = {:<2.4f}'.format(args.band,
+                fit[0].get_distance(fit[1], 
+                args.band))
 
-        # if plt.get_fignums():
-        #     figNum = plt.get_fignums()[-1]+1
-        # else:
-        #     figNum = 1
+            # if plt.get_fignums():
+            #     figNum = plt.get_fignums()[-1]+1
+            # else:
+            #     figNum = 1
 
-        # plt.figure(figNum)
-        plt.scatter(
-            fit[0].lcsDict[args.band].shiftedMjd,
-            fit[0].normalized_flux(args.band))
+            # plt.figure(figNum)
+        else:
+            print 'One of the 2 candidate has not r-band peak: '
+            print 'Candidate 1 - {:<}'.format(fit[0].peaked)
+            print 'Candidate 2 - {:<}'.format(fit[1].peaked)
 
-        plt.scatter(
-            fit[1].lcsDict[args.band].shiftedMjd,
-            fit[1].normalized_flux(args.band), c='orange')
+    fig, ax = plt.subplots(nrows=1, ncols=2, 
+                    figsize=(16.5, 11.7), 
+                    tight_layout=False
+                    )
+    fig.subplots_adjust(left=0.08, right=0.97, top=0.94)
+    fig.suptitle(eval('\'Band \' + args.band + \' with Prior Test\' ' + 
+        'if args.testPrior else \'Band \' + args.band + \' No prior\''))
 
-        plt.show()
+    if args.mag:
+        upperlimits = [
+            0 if el < 90 else 1 for el in candidates[0].lcsDict[args.band].fluxErr
+        ]
+        ax[0].set_ylim(candidates[0].lcsDict[args.band].lim+2, 22)
+        lowerlimits = False
     else:
-        print 'One of the 2 candidate has not r-band peak: '
-        print 'Candidate 1 - {:<}'.format(fit[0].peaked)
-        print 'Candidate 2 - {:<}'.format(fit[1].peaked)
+        upperlimits = False
+        lowerlimits = [0 if el > 0 else 1 for el in candidates[0].lcsDict[args.band].flux]
+    ax[0].plot([min(candidates[0].lcsDict[args.band].mjd), 
+        max(candidates[0].lcsDict[args.band].mjd)], 
+        [candidates[0].lcsDict[args.band].lim]*2, 
+        c='k')
+    
+    fluxUpLim = [val for val in [
+                fit[0].lcsDict[args.band].flux[i] + 
+                2*fit[0].lcsDict[args.band].fluxErr[i] 
+                    for i in range(len(fit[0].lcsDict[args.band].flux))
+                ]]
+    fluxLowLim = [val for val in [
+        fit[0].lcsDict[args.band].flux[i] - 
+        2*fit[0].lcsDict[args.band].fluxErr[i] 
+            for i in range(len(fit[0].lcsDict[args.band].flux))
+                ]]
+    ax[0].fill_between(fit[0].lcsDict[args.band].mjd, 
+        fluxUpLim, fluxLowLim, 
+        alpha=0.2, linewidth=0.5)
+    
+    ax[0].plot(
+        fit[0].lcsDict[args.band].mjd,
+        fit[0].lcsDict[args.band].flux, c='blue',
+        )
+    ax[0].errorbar(
+        candidates[0].lcsDict[args.band].mjd,
+        candidates[0].lcsDict[args.band].flux,
+        candidates[0].lcsDict[args.band].fluxErr,
+        uplims=upperlimits, lolims=lowerlimits, ecolor='blue',
+        fmt=None
+        )
+    ax[0].scatter(
+        candidates[0].lcsDict[args.band].mjd,
+        candidates[0].lcsDict[args.band].flux,
+        label=str(candidates[0].SNID)
+        )
+    ax[0].legend(
+        loc='best', framealpha=0.3, fontsize='10'
+        )
+    
+    ax[0].set_xlabel('epoch [MJD]')
+    if args.mag:
+        ax[0].set_ylabel('flux [mag]')
+    else:
+        ax[0].set_ylabel('flux [adu]')
 
+    if args.mag:
+        upperlimits = [
+            0 if el < 90 else 1 for el in candidates[1].lcsDict[args.band].fluxErr
+        ]
+        ax[1].set_ylim(candidates[1].lcsDict[args.band].lim+2, 22)
+        
+        lowerlimits = False
+    else:
+        lowerlimits = [0 if el > 0 else 1 for el in candidates[1].lcsDict[args.band].flux]
+        upperlimits = False
 
+    ax[1].plot([min(candidates[1].lcsDict[args.band].mjd), 
+            max(candidates[1].lcsDict[args.band].mjd)], 
+            [candidates[1].lcsDict[args.band].lim]*2, 
+            c='k')
+
+    fluxUpLim = [val for val in [
+                fit[1].lcsDict[args.band].flux[i] + 
+                2*fit[1].lcsDict[args.band].fluxErr[i] 
+                    for i in range(len(fit[1].lcsDict[args.band].flux))
+                ]]
+    fluxLowLim = [val for val in [
+        fit[1].lcsDict[args.band].flux[i] - 
+        2*fit[1].lcsDict[args.band].fluxErr[i] 
+            for i in range(len(fit[1].lcsDict[args.band].flux))
+                ]]
+    ax[1].fill_between(fit[1].lcsDict[args.band].mjd, 
+        fluxUpLim, fluxLowLim, 
+        alpha=0.2, linewidth=0.5)
+    ax[1].plot(
+            fit[1].lcsDict[args.band].mjd,
+            fit[1].lcsDict[args.band].flux, c='orange'
+            )
+    ax[1].errorbar(
+        candidates[1].lcsDict[args.band].mjd,
+        candidates[1].lcsDict[args.band].flux,
+        candidates[1].lcsDict[args.band].fluxErr,
+        uplims=upperlimits, lolims=lowerlimits, ecolor='orange',
+        fmt=None
+        )
+    ax[1].scatter(
+        candidates[1].lcsDict[args.band].mjd,
+        candidates[1].lcsDict[args.band].flux, c='orange',
+        label=str(candidates[1].SNID)
+        )
+    ax[1].legend(
+        loc='best', framealpha=0.3, fontsize='10'
+        )
+
+    ax[1].set_xlabel('epoch [MJD]')
+    if args.mag:
+        ax[1].set_ylabel('flux [mag]')
+    else:
+        ax[1].set_ylabel('flux [adu]')
+    plt.show()
     # return catalogFit
