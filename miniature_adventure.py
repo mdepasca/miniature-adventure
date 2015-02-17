@@ -207,9 +207,12 @@ if __name__ == "__main__":
   
         fNopeaked = open(filePath, 'w')
 
-
         # Relevant input data
         print "\n" + indent + "[1] * Fit lightcurves ..."
+
+        print "\n" + indent + "Index interval [{:<},{:<})".format(
+                args.limits[0], args.limits[1]
+                )
         
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
