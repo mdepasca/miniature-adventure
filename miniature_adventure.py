@@ -52,6 +52,11 @@ if __name__ == "__main__":
         )
     
     actionGroup.add_argument(
+        '--prior', dest='prior',
+        action='store_true', help='Use priors in GP regression.'
+        )
+
+    actionGroup.add_argument(
         "--cross-correlation", dest="crossCor",
         action="store_true",
         help="Performs cross correlation between non peaked lcs (with maximum in \
@@ -158,8 +163,8 @@ if __name__ == "__main__":
         if yesno == 'y':
             args.dirFit = str(raw_input(indent + 'Specify new directory '\
                 +'for fit: '))
-        else:
-            print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
+
+    print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
     
         # check for other values
 
@@ -219,8 +224,8 @@ if __name__ == "__main__":
         
 
         """
-        # kern = GPy.kern.RatQuad(1)
-        kern = GPy.kern.RBF(1)
+        kern = GPy.kern.RatQuad(1)
+        # kern = GPy.kern.RBF(1)
         # kern = GPy.kern.Matern32(1)
         # kern = GPy.kern.Matern52(1)
 
@@ -316,15 +321,18 @@ if __name__ == "__main__":
                 # sys.stdout = fout
 
                 """
-                Clipping to zero negative flux values to avoid optimization to 
+                Clipping to zero negative flux values, to avoid optimization to 
                 crash with some kernel.
+                When dealing with magnitudes, values above the limit of each filtere
+                will be clipped to that limit
                 """
-                flux = [0 if (el<0) else el for el in flux]
+                # flux = [0 if (el<0) else el for el in flux]
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 epoch, flux, errFlux, 
-                                                kern, n_restarts=35, 
+                                                kern, n_restarts=30, 
                                                 parallel=False,
-                                                test_length=True)
+                                                test_length=False,
+                                                test_prior=args.prior)
                 # sys.stdout = saveOut
                 # fout.close()
 
@@ -959,8 +967,9 @@ if __name__ == "__main__":
         GPkern = ''
         for i in range(nrows*ncols):
             # getting the data from file
-            candidateIdx = np.random.random_integers(
-                low=0, high=21319)
+            # candidateIdx = np.random.random_integers(
+            #     low=0, high=len(lsDirFit))
+
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i+offset]#candidateIdx]
                 )
@@ -970,7 +979,8 @@ if __name__ == "__main__":
             """
             try:
                 tmpSN = util.get_sn_from_file(
-                        args.dirFit+os.sep+lsDirFit[i+offset]#candidateIdx]
+                            args.dirFit+os.sep+lsDirFit[i+offset],
+                            magFlag=args.mag,
                         )
             except IndexError:
                 warnStr = 'IndexError: list index out of range. '+\
@@ -989,7 +999,8 @@ if __name__ == "__main__":
                     fit.set_lightcurve(l,
                         tmpSN.lcsDict[l].mjd,
                         tmpSN.lcsDict[l].flux, 
-                        tmpSN.lcsDict[l].fluxErr
+                        tmpSN.lcsDict[l].fluxErr,
+                        magFlag=args.mag
                         )
                 fit.shift_mjds()
                 """
