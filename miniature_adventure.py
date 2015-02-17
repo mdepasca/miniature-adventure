@@ -6,6 +6,7 @@ import sys
 import socket
 import time
 import warnings
+from math import floor
 # garbage collector
 import gc
 
@@ -27,6 +28,7 @@ from utilities import bcolors
 
 from progressbar import ProgressBar, SimpleProgress, ETA, Percentage, Bar, \
                         AnimatedMarker, Timer, Counter
+
 
 if __name__ == "__main__":
     # gc.set_debug(gc.DEBUG_LEAK)
@@ -53,7 +55,7 @@ if __name__ == "__main__":
     
     actionGroup.add_argument(
         '--limits', nargs=2, dest='limits',
-        default=[0, 5],
+        default=[0, 5], type=int,
         help='Starting ending indeces for fitting and cross-correlation.'
         )
 
@@ -161,7 +163,7 @@ if __name__ == "__main__":
 
     start = 0
     stop = 5
-
+    print args.limits
     # 
     # 
     if args.dirFit == 'results/FIT':
