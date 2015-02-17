@@ -109,6 +109,7 @@ if __name__ == "__main__":
         default="results" + os.sep + "FIT",
         help="Path to directory containing fitted data.")
 
+    # the use of this keyword is developed in dev_magnitudes branch
     inputGroup.add_argument(
         "--mag", dest="mag",
         action="store_true",
