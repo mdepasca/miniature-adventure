@@ -52,6 +52,12 @@ if __name__ == "__main__":
         )
     
     actionGroup.add_argument(
+        '--limits', nargs=2, dest='limits',
+        default=[0, 5],
+        help='Starting ending indeces for fitting and cross-correlation.'
+        )
+
+    actionGroup.add_argument(
         '--prior', dest='prior',
         action='store_true', help='Use priors in GP regression.'
         )
@@ -262,7 +268,7 @@ if __name__ == "__main__":
         """
         print indent + \
                     "INDEX | SN ID | BAND"
-        for i in range(start, stop):
+        for i in range(args.limits[0], args.limits[1]):
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i],
                 args.mag
@@ -330,7 +336,7 @@ if __name__ == "__main__":
                 # flux = [0 if (el<0) else el for el in flux]
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 epoch, flux, errFlux, 
-                                                kern, n_restarts=30, 
+                                                kern, n_restarts=10, 
                                                 parallel=False,
                                                 test_length=False,
                                                 test_prior=args.prior)
@@ -393,13 +399,12 @@ if __name__ == "__main__":
         full list of files. For this reason the list of files it is queried on
         dirData. It is then filtered using the above variables.
         """
-        start = 0
-        end = 2
+
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate cross-correlation of not peaked- with " + \
             "peaked-lcs ..." +  bcolors.txtrst
 
-        print "\n" + indent + "Interval [{:<},{:<})".format(start, end)
+        print "\n" + indent + "Interval [{:<},{:<})".format(args.limits[0], args.limits[1])
 
         p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirData+os.sep)
@@ -432,7 +437,7 @@ if __name__ == "__main__":
         reWrite = open(resDir + filePath, 'w')
         prog = 0        
         # for i in nopeakIdx[start:end]:
-        for i in nopeakList[start:end]:
+        for i in nopeakList[args.limits[0]:args.limits[1]]:
 
             z = 0 # goes on peakIdx to index the progress bar
             
