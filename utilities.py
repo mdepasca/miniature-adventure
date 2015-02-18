@@ -832,13 +832,11 @@ def gp_fit(X, Y, errY, kernel,
         # with Capturing() as output:
         gpModel['.*lengthscale'].constrain_fixed(length, warning=False)
     elif test_prior:
-        # # lenPrior = GPy.priors.Uniform(5,90)
-        # gpModel['.*lengthscale'].set_prior(lenPrior)
         lenPrior = GPy.priors.Gamma(6, 0.01)
-        gpModel['.*lengthscale'].set_prior(lenPrior, warning=True)
+        gpModel['.*lengthscale'].set_prior(lenPrior, warning=False)
         if kernel.name == 'RatQuad':
             powPrior = GPy.priors.Gamma(1, 0.5)
-            gpModel['.*power'].set_prior(powPrior)
+            gpModel['.*power'].set_prior(powPrior, warning=False)
     else:
         pass
     
