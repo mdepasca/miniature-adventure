@@ -196,14 +196,14 @@ if __name__ == "__main__":
     """
     if args.fit:
         
-        filePath = resDir + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = args.dirFit + os.sep + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
    
         fPeaked = open(filePath, 'w')
 
         
-        filePath = resDir + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = args.dirFit + os.sep + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
   
@@ -378,11 +378,11 @@ if __name__ == "__main__":
             socket.gethostname(), time.time()
             )
 
-        np.savetxt(resDir + filePath, peakIdx,
+        np.savetxt(args.dirFit + os.sep + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
         
-        filePath = resDir + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
+        filePath = args.dirFit + os.sep + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
 
@@ -420,18 +420,18 @@ if __name__ == "__main__":
         lsDirData.remove('')
         
         # filePath = 'peaked.dat'.format(socket.gethostname())
-        # peakIdx = np.loadtxt(resDir + filePath, dtype=np.int)
+        # peakIdx = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
         # filePath = 'nopeaked.dat'.format(socket.gethostname())
-        # tmp = np.loadtxt(resDir + filePath, dtype=np.int)
+        # tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
         # if tmp.size == 1:
         #     nopeakIdx = np.asarray([tmp])
         # else:    
         #     nopeakIdx = np.asarray(tmp)
         
         filePath = 'PEAKED.LIST'
-        peakList = np.loadtxt(resDir + filePath, dtype=np.str)
+        peakList = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
         filePath = 'NOPEAKED.LIST'
-        tmp = np.loadtxt(resDir + filePath, dtype=np.str)
+        tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
         if tmp.size == 1:
             nopeakList = np.asarray([tmp])
         else:    
@@ -439,7 +439,7 @@ if __name__ == "__main__":
         
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
-        reWrite = open(resDir + filePath, 'w')
+        reWrite = open(args.dirFit + os.sep + filePath, 'w')
         prog = 0        
         # for i in nopeakIdx[start:end]:
         for i in nopeakList[args.limits[0]:args.limits[1]]:
@@ -557,8 +557,8 @@ if __name__ == "__main__":
 
     """
     if args.distMatrix:
-        if not os.path.exists(path.abspath(resDir + 'distance_matrix' + os.sep)):
-            os.makedirs(path.abspath(resDir + 'distance_matrix' + os.sep))
+        if not os.path.exists(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep)):
+            os.makedirs(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep))
             
         """
         Calculate distance between fitted lightcurves.
@@ -835,32 +835,32 @@ if __name__ == "__main__":
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-        filePath = resDir + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[0], fmt='%6.4f', header=fileHeader)
 
-        filePath = resDir + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[1], fmt='%6.4f', header=fileHeader)
 
-        filePath = resDir + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[2], fmt='%6.4f', header=fileHeader)
 
-        filePath = resDir + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[3], fmt='%6.4f', header=fileHeader)
 
 
-        filePath = resDir + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
@@ -1142,16 +1142,16 @@ if __name__ == "__main__":
         
         
         print indent + "Plots saved in files:"
-        if not os.path.exists(path.abspath(resDir + "plots/" + \
+        if not os.path.exists(path.abspath(args.dirFit + os.sep + "plots/" + \
             args.dirFit[args.dirFit.rfind('/'):])):
-            os.makedirs(resDir + "plots" + args.dirFit[args.dirFit.rfind('/'):])
+            os.makedirs(args.dirFit + os.sep + "plots" + args.dirFit[args.dirFit.rfind('/'):])
         for b in dictFig.keys():
             dictFig[b].savefig(
-                resDir + "plots" + args.dirFit[args.dirFit.rfind('/'):] + \
+                args.dirFit + os.sep + "plots" + args.dirFit[args.dirFit.rfind('/'):] + \
                 "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark), 
                 dpi=300
                 )
-            print indent + " - " + resDir + "plots" + \
+            print indent + " - " + args.dirFit + os.sep + "plots" + \
                 args.dirFit[args.dirFit.rfind('/'):] + \
                 "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark)
 
