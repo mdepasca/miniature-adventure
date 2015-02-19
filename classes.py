@@ -734,7 +734,7 @@ class SupernovaFit():
             if self.lcsDict[b].badCurve:
                 continue
 
-            if bandArr.size == 0:
+            if len(bandArr) == 0:
                 bandArr = [b]*len(self.lcsDict[b].mjd)
                 # bandArr = np.empty(len(self.lcsDict[b].mjd), dtype=np.str)
                 # bandArr[:] = b
@@ -754,11 +754,12 @@ class SupernovaFit():
                 # flux = np.concatenate((flux, self.lcsDict[b].flux))
                 # fluxErr = np.concatenate((fluxErr, self.lcsDict[b].fluxErr))
 
-        mjdArgsort = np.argsort(mjd)
-        mjd = mjd[mjdArgsort]
-        flux = flux[mjdArgsort]
-        fluxErr = fluxErr[mjdArgsort]
-        bandArr = bandArr[mjdArgsort]
+        mjdArgsort = np.argsort(mjd)    
+
+        mjd = [mjd[i] for i in mjdArgsort]
+        flux = [flux[i] for i in mjdArgsort]
+        fluxErr = [fluxErr[i] for i in mjdArgsort]
+        bandArr = [bandArr[i] for i in mjdArgsort]
 
         """
         Adding and setting column to Table
@@ -768,27 +769,27 @@ class SupernovaFit():
             if colNames[c][0] == "BAND" \
             or colNames[c][0] == "OBS" \
             or colNames[c][0] == "FIELD":
-                col = MaskedColumn(np.zeros(mjd.size),
+                col = MaskedColumn(np.zeros(len(mjd)),
                     name=colNames[c][0],
                     format=colNames[c][1],
                     dtype=np.str, fill_value='-',
-                    mask=np.zeros(mjd.size)
+                    mask=np.zeros(len(mjd))
                     )
             else:
-                col = MaskedColumn(np.zeros(mjd.size),
+                col = MaskedColumn(np.zeros(len(mjd)),
                     name=colNames[c][0],
                     format=colNames[c][1],
                     dtype=np.float, fill_value=-9,
-                    mask=np.zeros(mjd.size))
+                    mask=np.zeros(len(mjd)))
             t.add_column(col)
 
         """
         Initializing columns
         """
 
-        t["OBS"] = np.empty(mjd.size, dtype=np.str)
+        t["OBS"] = np.empty(len(mjd), dtype=np.str)
         t["OBS"][:] = "OBS:"
-        t["FIELD"] = np.empty(mjd.size, dtype=np.str)
+        t["FIELD"] = np.empty(len(mjd), dtype=np.str)
         t["FIELD"][:] = "NULL"
         t["MJD"] = mjd
         t["BAND"] = bandArr
@@ -834,7 +835,7 @@ class SupernovaFit():
         fOut.write("# ======================================\n")
         fOut.write("# LIGHT CURVE FIT USING GAUSSIAN PROCESS\n")
         fOut.write("#\n")
-        fOut.write("# NOBS: {:<}\n".format(mjd.size))
+        fOut.write("# NOBS: {:<}\n".format(len(mjd)))
 
         ascii.write(t, output=fOut, delimiter='  ', 
             format='fixed_width_two_line')
