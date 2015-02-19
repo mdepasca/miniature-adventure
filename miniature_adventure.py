@@ -158,14 +158,6 @@ if __name__ == "__main__":
     print indent + "* * * * * * * * * * * * * * *"
     print bcolors.txtrst
 
-    # 
-    # 
-
-    start = 0
-    stop = 5
-    print args.limits
-    # 
-    # 
     if args.dirFit == 'results/FIT':
         yesno = str(raw_input(indent + 'Set fit directory other then default (' + \
             parser.get_default('dirFit') + ')? (y/n)'))
@@ -242,7 +234,7 @@ if __name__ == "__main__":
         # kern = GPy.kern.Matern52(1)
 
         print "\n" + indent \
-            + "Data will be smoothed using GP kernel " + kern.name
+            + "Data will be smoothed using GP kernel " + kern.name.upper()
 
         # Redirecting stderr output to file
         # saveErr = sys.stderr
@@ -260,7 +252,7 @@ if __name__ == "__main__":
         be determined for all bands.
         """
         try:
-            mode = int(raw_input(indent + 'Number of bands to keep ' + \
+            mode = int(raw_input('\n' + indent + 'Number of bands to keep ' + \
                 'after K-correction [1-4]:'))
         except ValueError:
             raise ValueError("An integer is expected!")
@@ -271,7 +263,7 @@ if __name__ == "__main__":
         """
         The pre-processing could be only on selected number of bands
         """
-        print indent + \
+        print '\n' + indent + \
                     "INDEX | SN ID | BAND"
         for i in range(args.limits[0], args.limits[1]):
             candidate = util.get_sn_from_file(
@@ -297,8 +289,6 @@ if __name__ == "__main__":
         
                 errFlux = candidate.lcsDict[b].fluxErr
 
-                # test_prior should be deleted as option. Prior too weak.
-                # 
                 # Fitting Lightcurve
 
                 """
@@ -355,7 +345,7 @@ if __name__ == "__main__":
                     "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(i, candidate.SNID, b)
                                 
             
-            if candidateFit.r.badCurve is False:
+            if not candidateFit.r.badCurve:
                 # candidateFit.shift_mjds()
                 filePath = args.dirFit + os.sep + \
                     path.splitext(lsDirData[i])[0] + "_FIT.DAT"
@@ -447,8 +437,8 @@ if __name__ == "__main__":
             z = 0 # goes on peakIdx to index the progress bar
             
             """
-            READ DATA FROM FILE 
-            in Supernova object
+            READ DATA FROM NOT-PEAKED FILE 
+            creates a Supernova object
             """
             filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
             try:
@@ -468,7 +458,7 @@ if __name__ == "__main__":
                 continue
             
             if tmpSN.r.badCurve:
-                print "IOError: {:<}".format(filePath)
+                print "IOError (BAD r curve): {:<}".format(filePath)
                 continue
             """
             create SupernovaFit object
@@ -490,7 +480,7 @@ if __name__ == "__main__":
             # for j in peakIdx:
             for j in peakList:
                 """
-                READ DATA FROM FILE
+                READ DATA FROM PEAKED FILE
                 """
                 filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
@@ -931,8 +921,8 @@ if __name__ == "__main__":
         '''
         Column index is always increasing, no check on its value.
         '''
-        nrows = 3
-        ncols = 3
+        nrows = 5
+        ncols = 5
         offset = 0
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
                     figsize=(16.5, 11.7), 
@@ -1013,6 +1003,9 @@ if __name__ == "__main__":
                         tmpSN.lcsDict[l].fluxErr,
                         magFlag=args.mag
                         )
+                if fit.r.badCurve:
+                    continue
+
                 fit.shift_mjds()
                 """
                 Fixing shiftedMjd for not-peaked LCs
@@ -1148,12 +1141,12 @@ if __name__ == "__main__":
         for b in dictFig.keys():
             dictFig[b].savefig(
                 args.dirFit + os.sep + "plots" + args.dirFit[args.dirFit.rfind('/'):] + \
-                "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark), 
+                "/" + GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark), 
                 dpi=300
                 )
             print indent + " - " + args.dirFit + os.sep + "plots" + \
                 args.dirFit[args.dirFit.rfind('/'):] + \
-                "/" + GPkern + "_band_{:<1}_{:<f}.pdf".format(b,timeMark)
+                "/" + GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark)
 
         plt.close('all')
     print "\n" + indent \
