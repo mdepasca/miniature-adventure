@@ -327,23 +327,37 @@ if __name__ == "__main__":
                 crash with some kernel.
                 When dealing with magnitudes, values above the limit of each filtere
                 will be clipped to that limit
+
+                flux = [0 if (el<0) else el for el in flux]
                 """
-                # flux = [0 if (el<0) else el for el in flux]
-                predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                epoch, flux, errFlux, 
-                                                kern, n_restarts=10, 
-                                                parallel=False,
-                                                test_length=False,
-                                                test_prior=args.prior)
-                # sys.stdout = saveOut
-                # fout.close()
+                
+                try:
+                    predMjd, predFlux, predErr, GPModel = util.gp_fit(
+                                                    epoch, flux, errFlux, 
+                                                    kern, n_restarts=10, 
+                                                    parallel=False,
+                                                    test_length=False,
+                                                    test_prior=args.prior)
+                    # sys.stdout = saveOut
+                    # fout.close()
 
-                candidateFit.set_lightcurve(b, 
-                    predMjd, predFlux, predErr)
+                    candidateFit.set_lightcurve(b, 
+                        predMjd, predFlux, predErr)
 
-                print indent + \
-                    "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(i, candidate.SNID, b)
-                                
+                    print indent + \
+                        "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
+                                                        i, candidate.SNID, b
+                            )
+                except linalg.LinAlgError:
+                    """
+                    if LinAlgError light curve won't be saved.
+                    """
+                    print indent + \
+                        "{:>5d}   {:>5d}   {:>4s}  >  FAIL".format(
+                                                        i, candidate.SNID, b
+                            ) + bcolors.FAIL + 'LinAlgError' + bcolors.txtrst
+                    candidateFit.r.badCurve = True
+                    break                                   
             
             if not candidateFit.r.badCurve:
                 # candidateFit.shift_mjds()
