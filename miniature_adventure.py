@@ -1259,10 +1259,10 @@ if __name__ == "__main__":
 
 
         bands = candidate.lcsDict.keys() if args.allBands else args.band
-            """
-            Pre-process data so to be compared with fit (made from 
-            pre-precessed data)
-            """
+        """
+        Pre-process data so to be compared with fit (made from 
+        pre-precessed data)
+        """
         for b in bands:
             if not candidate.lcsDict[b].badCurve and 
             not fit.lcsDict[b].badCurve:
