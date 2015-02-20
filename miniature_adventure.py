@@ -65,6 +65,13 @@ if __name__ == "__main__":
         )
 
     actionGroup.add_argument(
+        '--length', dest='testLength'
+        action='store_true',
+        help='Set length scale hyper parameter to random value to ease \
+            optimization.'
+        )
+
+    actionGroup.add_argument(
         "--cross-correlation", dest="crossCor",
         action="store_true",
         help="Performs cross correlation between non peaked lcs (with maximum in \
@@ -365,7 +372,7 @@ if __name__ == "__main__":
                                                     epoch, flux, errFlux, 
                                                     kern, n_restarts=10, 
                                                     parallel=False,
-                                                    test_length=False,
+                                                    test_length=args.testLength,
                                                     test_prior=args.prior)
                     # sys.stdout = saveOut
                     # fout.close()
@@ -1265,7 +1272,7 @@ if __name__ == "__main__":
         """
         for b in bands:
             if (not candidate.lcsDict[b].badCurve) and (not fit.lcsDict[b].badCurve):
-                
+
                 candidate = util.pre_process(candidate, b)
 
                 candidate.lcsDict[b].mjd = [el - fit.r.mjd[fit.r.max_flux_index] 
