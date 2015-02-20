@@ -101,6 +101,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Save on `pdf` file the plot of fitting curve over data.")
 
+    actionGroup.add_argument(
+        '--nice-plots', dest='nicePlots',
+        action='store_true',
+        help='Produces plot suitable for publication (pdf, 300dpi).'
+        )
+
     """
 
     INPUT OPTIONS
@@ -131,6 +137,12 @@ if __name__ == "__main__":
     inputGroup.add_argument(
         "-f", "--file",
         help="")
+
+    inputGroup.add_argument(
+        "-c", "--candidate", dest="cand",
+        default=-1,
+        help="ID of a candidate."
+        )
 
     args = parser.parse_args()
 
@@ -181,6 +193,13 @@ if __name__ == "__main__":
     
     start_time = time.time()
 
+    p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirData+os.sep)
+    lsDirData = p.stdout.read()
+    lsDirData = lsDirData.split('\n')
+    lsDirData.sort()
+    lsDirData.remove('')
+
     """
 
     PERFORMS LCs FITTING
@@ -211,12 +230,12 @@ if __name__ == "__main__":
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
 
-        p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData+os.sep)
-        lsDirData = p.stdout.read()
-        lsDirData = lsDirData.split('\n')
-        lsDirData.sort()
-        lsDirData.remove('')
+        # p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
+        #     cwd=args.dirData+os.sep)
+        # lsDirData = p.stdout.read()
+        # lsDirData = lsDirData.split('\n')
+        # lsDirData.sort()
+        # lsDirData.remove('')
 
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(len(lsDirData))
@@ -235,11 +254,6 @@ if __name__ == "__main__":
 
         print "\n" + indent \
             + "Data will be smoothed using GP kernel " + kern.name.upper()
-
-        # Redirecting stderr output to file
-        # saveErr = sys.stderr
-        # ferr = open('error.log', 'w')
-        # sys.stderr = ferr
 
         # Fitting single lightcurves 
         #
@@ -415,13 +429,13 @@ if __name__ == "__main__":
 
         print "\n" + indent + "Interval [{:<},{:<})".format(args.limits[0], args.limits[1])
 
-        p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData+os.sep)
-            # cwd=args.dirFit+os.sep)
-        lsDirData = p.stdout.read()
-        lsDirData = lsDirData.split('\n')
-        lsDirData.sort()
-        lsDirData.remove('')
+        # p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+        #     cwd=args.dirData+os.sep)
+        #     # cwd=args.dirFit+os.sep)
+        # lsDirData = p.stdout.read()
+        # lsDirData = lsDirData.split('\n')
+        # lsDirData.sort()
+        # lsDirData.remove('')
         
         # filePath = 'peaked.dat'.format(socket.gethostname())
         # peakIdx = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
@@ -580,13 +594,13 @@ if __name__ == "__main__":
         print indent + "Rows in [{:<d}, {:<d})".format(i_start, i_end)
         print indent + "Cols in [{:<d}, {:<d})".format(j_start, j_end)
 
-        p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirFit+os.sep)
-            # cwd=args.dirFit+os.sep)
-        lsDirFit = p.stdout.read()
-        lsDirFit = lsDirFit.split('\n')
-        lsDirFit.sort()
-        lsDirFit.remove('')
+        # p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+        #     cwd=args.dirFit+os.sep)
+        #     # cwd=args.dirFit+os.sep)
+        # lsDirFit = p.stdout.read()
+        # lsDirFit = lsDirFit.split('\n')
+        # lsDirFit.sort()
+        # lsDirFit.remove('')
 
         """
         setting value for big distance
@@ -913,22 +927,22 @@ if __name__ == "__main__":
         getting file list from directory
         File will be sorted by SNID
         """
-        if "lsDirFit" not in globals():
-            p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-                cwd=args.dirFit+os.sep
-                )
-            lsDirFit = p.stdout.read()
-            lsDirFit = lsDirFit.split('\n')
-            lsDirFit.sort()
-            lsDirFit.remove('')
+        # if "lsDirFit" not in globals():
+        #     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
+        #         cwd=args.dirFit+os.sep
+        #         )
+        #     lsDirFit = p.stdout.read()
+        #     lsDirFit = lsDirFit.split('\n')
+        #     lsDirFit.sort()
+        #     lsDirFit.remove('')
 
-        if 'catalog' not in globals():
-            p = subprocess.Popen("ls *_SN*.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData+os.sep)
-            lsDirData = p.stdout.read()
-            lsDirData = lsDirData.split('\n')
-            lsDirData.sort()
-            lsDirData.remove('')
+        # if 'catalog' not in globals():
+        #     p = subprocess.Popen("ls *_SN*.DAT", shell=True, stdout=subprocess.PIPE,
+        #     cwd=args.dirData+os.sep)
+        #     lsDirData = p.stdout.read()
+        #     lsDirData = lsDirData.split('\n')
+        #     lsDirData.sort()
+        #     lsDirData.remove('')
                        
 
         print indent + 'Plotting ...'
@@ -1069,7 +1083,9 @@ if __name__ == "__main__":
                         flux = util.correct_for_absorption(data.flux, 
                             candidate.MWEBV, b)
 
-
+                        """
+                        Setting limits for plot axes
+                        """
                         if min(fit_b.flux) < min(flux):
                             y_min = min(fit_b.flux) - 3*max(fit_b.fluxErr)
                         else:
@@ -1082,6 +1098,9 @@ if __name__ == "__main__":
 
                         dictAx[b][r[b], c[b]].set_ylim(y_min, y_max)
 
+                        """
+                        Setting limits for fill_between
+                        """
                         fluxUpLim = [val for val in [
                             fit_b.flux[i] + fit_b.fluxErr[i] 
                                 for i in range(len(fit_b.flux))
@@ -1095,7 +1114,9 @@ if __name__ == "__main__":
                             fluxUpLim, fluxLowLim, 
                             facecolor='red', alpha=0.4, linewidth=0.5)
                         
-
+                        """
+                        Setting limits for fill_between
+                        """
                         fluxUpLim = [val for val in [
                             fit_b.flux[i] + 2*fit_b.fluxErr[i] 
                                 for i in range(len(fit_b.flux))
@@ -1104,11 +1125,14 @@ if __name__ == "__main__":
                             fit_b.flux[i] - 2*fit_b.fluxErr[i] 
                                 for i in range(len(fit_b.flux))
                             ]]
+
                         dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
                             fluxUpLim, fluxLowLim, 
                             facecolor='red', alpha=0.2, linewidth=0.5)
                         
-                       
+                        """
+                        Setting limits for fill_between
+                        """
                         fluxUpLim = [val for val in [
                             fit_b.flux[i] + 3*fit_b.fluxErr[i] 
                                 for i in range(len(fit_b.flux))
@@ -1117,6 +1141,7 @@ if __name__ == "__main__":
                             fit_b.flux[i] - 3*fit_b.fluxErr[i] 
                                 for i in range(len(fit_b.flux))
                             ]]
+
                         dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
                             fluxUpLim, fluxLowLim, 
                             facecolor='red', alpha=0.1, linewidth=0.5)
@@ -1149,19 +1174,75 @@ if __name__ == "__main__":
         
         
         print indent + "Plots saved in files:"
-        if not os.path.exists(path.abspath(args.dirFit + os.sep + "plots/" + \
-            args.dirFit[args.dirFit.rfind('/'):])):
-            os.makedirs(args.dirFit + os.sep + "plots" + args.dirFit[args.dirFit.rfind('/'):])
+        if not os.path.exists(path.abspath(args.dirFit + os.sep + "plots" + os.sep)):
+            os.makedirs(args.dirFit + os.sep + "plots")
         for b in dictFig.keys():
             dictFig[b].savefig(
-                args.dirFit + os.sep + "plots" + args.dirFit[args.dirFit.rfind('/'):] + \
-                "/" + GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark), 
+                args.dirFit + os.sep + "plots"+ os.sep + GPkern + \
+                "_band_{:<1}_{:<f}.png".format(b,timeMark), 
                 dpi=300
                 )
-            print indent + " - " + args.dirFit + os.sep + "plots" + \
-                args.dirFit[args.dirFit.rfind('/'):] + \
-                "/" + GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark)
+            print indent + " - " + args.dirFit + os.sep + "plots" + os.sep + \
+                GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark)
 
         plt.close('all')
+            
+
+    """
+
+    PLOT OBSERVATION AND FIT (publication style)
+    --nice-plots
+    """
+
+    if args.nicePlots:
+        """
+        1 candidate 
+        choose how many bands
+        make the plot with confidence regions
+        """
+        if args.cand == -1:
+            args.cand = np.random.random_integers(
+                low=0, high=len(lsDirData))
+
+        fname = 'DES_SN{:0>6d}.DAT'.format(args.cand)
+        candidate = util.get_sn_from_file(
+                args.dirData + os.sep + fname
+                )
+
+        tmpSN = util.get_sn_from_file(
+            args.dirFit+os.sep+lsDirFit[i+offset],
+            magFlag=args.mag,
+                )
+        """
+        Initializing SupernovaFit object
+        """
+        fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
+        
+        for b in tmpSN.lcsDict.keys():
+            fit.set_lightcurve(b,
+                tmpSN.lcsDict[b].mjd,
+                tmpSN.lcsDict[b].flux, 
+                tmpSN.lcsDict[b].fluxErr,
+                magFlag=args.mag
+                )
+        
+        if fit.r.badCurve:
+            raise SystemExit('Bad r curve!')
+
+        fit.shift_mjds()
+        """
+        Fixing shiftedMjd for not-peaked LCs
+        """
+        if fit.peaked == False:
+            """
+            correcting using CC results
+            """
+            for b in candidate.lcsDict.keys():
+                fit.lcsDict[b].shiftedMjd = [el + fit.ccMjdMaxFlux 
+                                        for el in fit.lcsDict[b].shiftedMjd]
+
+
+
+
     print "\n" + indent \
         + "The process took {:5.3f} secs.".format(time.time()-start_time)
