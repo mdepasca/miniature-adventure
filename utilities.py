@@ -641,6 +641,30 @@ def correct_for_absorption(flux, ebv, band):
     return [flux[i]*a_flux for i in range(len(flux))]
 
 
+def pre_process(data, bands):
+    """
+    Performs correction for time dilution and Galaxy reddening
+
+    Keyword arguments:
+    data -- data from observations. Supernova type.
+    bands -- a list of bands to pre-precesse.
+
+    Returns:
+    data corrected
+    """
+
+    for b in bands:
+        data.lcsDict[b].mjd = time_correct(data.lcsDict[b].mjd, 
+            data.zSpec if data.zSpec else data.zPhotHost)
+
+        data.lcsDict[b].flux = correct_for_absorption(data.lcsDict[b].flux, 
+            data.MWEBV, b)
+
+    return data
+
+
+
+
 def pick_random_sn(catalog, band):
     """Extracts light curve in specified band of random supernova from catalogue (DEPRECATED: no more catalogue).
 
