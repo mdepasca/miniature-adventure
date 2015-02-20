@@ -999,12 +999,15 @@ if __name__ == '__main__':
             # Fitting Lightcurve
             if (not candidate.lcsDict[b].badCurve) and (len(flux) >= 3):
                 
+                start_time = time.time()
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux, 
                                                 kern, n_restarts=10, 
                                                 parallel=False,
-                                                test_length=False,
+                                                test_length=True,
                                                 test_prior=args.testPrior)
+                print "\n" + indent \
+                    + "The process took {:5.3f} secs.".format(time.time()-start_time)
                 print GPModel
 
                 candidateFit.set_lightcurve(
