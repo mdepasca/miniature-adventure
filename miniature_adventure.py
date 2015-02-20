@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     inputGroup.add_argument(
         "--all-bands", dest="allBands",
-        action="store_true"
+        action="store_true",
         help="Plot all bands --nice-plots option."
         )
 
