@@ -1264,9 +1264,8 @@ if __name__ == "__main__":
         pre-precessed data)
         """
         for b in bands:
-            if not candidate.lcsDict[b].badCurve and 
-            not fit.lcsDict[b].badCurve:
-
+            if (not candidate.lcsDict[b].badCurve) and (not fit.lcsDict[b].badCurve):
+                
                 candidate = util.pre_process(candidate, b)
 
                 candidate.lcsDict[b].mjd = [el - fit.r.mjd[fit.r.max_flux_index] 
