@@ -11,7 +11,7 @@ from math import floor
 import gc
 
 import numpy as np
-from scipy import signal
+from scipy import signal, linalg
 from matplotlib import pyplot as plt
 
 import GPy
@@ -140,9 +140,19 @@ if __name__ == "__main__":
 
     inputGroup.add_argument(
         "-c", "--candidate", dest="cand",
-        default=-1,
+        default=-1, type=int,
         help="ID of a candidate."
         )
+
+    inputGroup.add_argument(
+        "--all-bands", dest="allBands",
+        action="store_true"
+        help="Plot all bands --nice-plots option."
+        )
+
+    inputGroup.add_argument(
+        "-b", "--band", dest="band", default='r', 
+        help="Which band to plot with --nice-plots.")
 
     args = parser.parse_args()
 
@@ -328,6 +338,11 @@ if __name__ == "__main__":
                     print indent + bcolors.FAIL + \
                         "{:<}   {:<}   {:<}".format(i, candidate.SNID, b) + \
                         bcolors.txtrst
+                    """
+                    >>> if 'break' instead of 'continue' the candidate would not be
+                    >>> processed and the further code would be easier (no double
+                    >>> checks both on data and fit).
+                    """
                     continue
 
                 # Diverting warnings to log file
@@ -1024,11 +1039,11 @@ if __name__ == "__main__":
                 fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
                 if i == 0:
                     GPkern = tmpSN.kern
-                for l in tmpSN.lcsDict.keys():
-                    fit.set_lightcurve(l,
-                        tmpSN.lcsDict[l].mjd,
-                        tmpSN.lcsDict[l].flux, 
-                        tmpSN.lcsDict[l].fluxErr,
+                for b in tmpSN.lcsDict.keys():
+                    fit.set_lightcurve(b,
+                        tmpSN.lcsDict[b].mjd,
+                        tmpSN.lcsDict[b].flux, 
+                        tmpSN.lcsDict[b].fluxErr,
                         magFlag=args.mag
                         )
                 if fit.r.badCurve:
@@ -1044,11 +1059,9 @@ if __name__ == "__main__":
                     """
                     for b in bands:
                         fit.lcsDict[b].shiftedMjd = [
-                            fit.lcsDict[b].shiftedMjd[l] + 
-                            fit.ccMjdMaxFlux for l in range(len(
-                                fit.lcsDict[b].shiftedMjd
-                                ))
+                        el + fit.ccMjdMaxFlux for el in fit.lcsDict[b].shiftedMjd
                         ]
+                            
 
                 for b in dictAx.keys():
                     data = candidate.lcsDict[b]
@@ -1200,6 +1213,9 @@ if __name__ == "__main__":
         choose how many bands
         make the plot with confidence regions
         """
+        if args.nBands != 1 or args.nBands != 4:
+            args.nBands = 1
+
         if args.cand == -1:
             args.cand = np.random.random_integers(
                 low=0, high=len(lsDirData))
@@ -1240,6 +1256,104 @@ if __name__ == "__main__":
             for b in candidate.lcsDict.keys():
                 fit.lcsDict[b].shiftedMjd = [el + fit.ccMjdMaxFlux 
                                         for el in fit.lcsDict[b].shiftedMjd]
+
+
+        bands = candidate.lcsDict.keys() if args.allBands else args.band
+            """
+            Pre-process data so to be compared with fit (made from 
+            pre-precessed data)
+            """
+        for b in bands:
+            if not candidate.lcsDict[b].badCurve and 
+            not fit.lcsDict[b].badCurve:
+
+                candidate = util.pre_process(candidate, b)
+
+                candidate.lcsDict[b].mjd = [el - fit.r.mjd[fit.r.max_flux_index] 
+                        for el in candidate.lcsDict[b].mjd]
+                if fit.peaked == False:
+                    candidate.lcsDict[b].mjd = [el + fit.ccMjdMaxFlux 
+                            for el in candidate.lcsDict[b].mjd]
+
+            else:
+                raise SystemExit('Bad {:1s} curve!'.format(b))
+
+        if not args.allBands:
+            fig = plt.figure()
+            # fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
+        else:
+            fig, ax = plt.subplots(nrows=2, ncols=2, 
+                    # figsize=(16.5, 11.7), 
+                    tight_layout=False
+                    )
+
+            axDict = {
+            'g':ax[0,0],
+            'r':ax[0,1],
+            'i':ax[1,0],
+            'z':ax[1,1]
+            }
+
+
+        if not args.allBands:
+            """
+            Setting limits for fill_between
+            """
+            fluxUpLim = [el for el in [
+                fit_b.flux[i] + fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+            fluxLowLim = [el for el in [
+                fit_b.flux[i] - fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+
+            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                fluxUpLim, fluxLowLim, 
+                facecolor='red', alpha=0.4, linewidth=0.5)
+            
+            """
+            Setting limits for fill_between
+            """
+            fluxUpLim = [el for el in [
+                fit_b.flux[i] + 2*fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+            fluxLowLim = [el for el in [
+                fit_b.flux[i] - 2*fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+
+            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                fluxUpLim, fluxLowLim, 
+                facecolor='red', alpha=0.2, linewidth=0.5)
+            
+            """
+            Setting limits for fill_between
+            """
+            fluxUpLim = [el for el in [
+                fit_b.flux[i] + 3*fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+            fluxLowLim = [el for el in [
+                fit_b.flux[i] - 3*fit_b.fluxErr[i] 
+                    for i in range(len(fit_b.flux))
+                ]]
+
+            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
+                fluxUpLim, fluxLowLim, 
+                facecolor='red', alpha=0.1, linewidth=0.5)
+            
+
+            dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
+                color='#7f0000', 
+                linewidth=2)
+
+            dictAx[b][r[b], c[b]].scatter(epoch, flux, 
+                s=10, label=str(candidate.SNID), c='black', marker='x')
+
+            dictAx[b][r[b], c[b]].errorbar(epoch, flux,
+                data.fluxErr, fmt=None, color='black', ecolor='black')
 
 
 
