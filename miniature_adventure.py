@@ -65,7 +65,7 @@ if __name__ == "__main__":
         )
 
     actionGroup.add_argument(
-        '--length', dest='testLength'
+        '--length', dest='testLength',
         action='store_true',
         help='Set length scale hyper parameter to random value to ease \
             optimization.'
@@ -376,14 +376,6 @@ if __name__ == "__main__":
                                                     test_prior=args.prior)
                     # sys.stdout = saveOut
                     # fout.close()
-
-                    candidateFit.set_lightcurve(b, 
-                        predMjd, predFlux, predErr)
-
-                    print indent + \
-                        "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
-                                                        i, candidate.SNID, b
-                            )
                 except linalg.LinAlgError:
                     """
                     if LinAlgError light curve won't be saved.
@@ -393,21 +385,29 @@ if __name__ == "__main__":
                                                         i, candidate.SNID, b
                             ) + bcolors.FAIL + 'LinAlgError' + bcolors.txtrst
                     candidateFit.r.badCurve = True
-                    break                                   
-            
-            if not candidateFit.r.badCurve:
-                # candidateFit.shift_mjds()
-                filePath = args.dirFit + os.sep + \
-                    path.splitext(lsDirData[i])[0] + "_FIT.DAT"
-                    
-                candidateFit.save_on_txt(filePath)
-                
-                if candidateFit.peaked:
-                    peakIdx = np.append(peakIdx, i)
-                    fPeaked.write('{:<}\n'.format(filePath))
+                    break
                 else:
-                    nopeakIdx = np.append(nopeakIdx, i)
-                    fNopeaked.write('{:<}\n'.format(filePath))
+                    candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
+
+                    print indent + bcolors.OKGREEN + \
+                        "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
+                                                        i, candidate.SNID, b
+                            ) + bcolors.txtrst  
+            else:
+                if not candidateFit.r.badCurve:
+                    # candidateFit.shift_mjds()
+                    filePath = args.dirFit + os.sep + \
+                        path.splitext(lsDirData[i])[0] + "_FIT.DAT"
+                        
+                    candidateFit.save_on_txt(filePath)
+                    print indent + 'file saved!'
+                    
+                    if candidateFit.peaked:
+                        peakIdx = np.append(peakIdx, i)
+                        fPeaked.write('{:<}\n'.format(filePath))
+                    else:
+                        nopeakIdx = np.append(nopeakIdx, i)
+                        fNopeaked.write('{:<}\n'.format(filePath))
 
         fPeaked.close()
         fNopeaked.close()
