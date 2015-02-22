@@ -343,7 +343,7 @@ if __name__ == "__main__":
                 if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
-                        "{:<}   {:<}   {:<}".format(i, candidate.SNID, b) + \
+                        "{:<}   {:<}   {:<} Bad Curve".format(i, candidate.SNID, b) + \
                         bcolors.txtrst
                     """
                     >>> if 'break' instead of 'continue' the candidate would not be
@@ -376,16 +376,15 @@ if __name__ == "__main__":
                                                     test_prior=args.prior)
                     # sys.stdout = saveOut
                     # fout.close()
-                except linalg.LinAlgError:
+                except linalg.LinAlgError as e:
                     """
                     if LinAlgError light curve won't be saved.
                     """
                     print indent + \
                         "{:>5d}   {:>5d}   {:>4s}  >  FAIL".format(
                                                         i, candidate.SNID, b
-                            ) + bcolors.FAIL + 'LinAlgError' + bcolors.txtrst
+                            ) + bcolors.FAIL + ' LinAlgError' + bcolors.txtrst
                     candidateFit.r.badCurve = True
-                    break
                 else:
                     candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
 
