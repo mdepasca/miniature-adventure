@@ -476,6 +476,8 @@ if __name__ == "__main__":
         else:    
             nopeakList = np.asarray(tmp)
         
+        filePath = 'repeats.txt'
+        repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(args.dirFit + os.sep + filePath, 'w')
@@ -531,13 +533,18 @@ if __name__ == "__main__":
                 """
                 READ DATA FROM PEAKED FILE
                 """
+                if j in repeats: 
+                    print indent + bcolors.WARNING + 'File appears also in unpeaked list: ignoring it.' + bcolors.txtrst
+                    continue
                 filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
+                    print indent + bcolors.WARNING + 'File appears also in peaked list but it does not exists: ignoring it.' + bcolors.txtrst
                     continue
                 
                 if tmpSN.r.badCurve:
+                    print indent + bcolors.WARNING + 'Peaked file has bad r curve: ignoring it.' + bcolors.txtrst
                     continue
                 peaked = cls.SupernovaFit(tmpSN)
                 for l in tmpSN.lcsDict.keys():
