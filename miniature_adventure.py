@@ -217,6 +217,13 @@ if __name__ == "__main__":
     lsDirData.sort()
     lsDirData.remove('')
 
+    p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
+            cwd=args.dirFit+os.sep)
+    lsDirFit = p.stdout.read()
+    lsDirFit = lsDirFit.split('\n')
+    lsDirFit.sort()
+    lsDirFit.remove('')
+    
     """
 
     PERFORMS LCs FITTING
@@ -534,17 +541,23 @@ if __name__ == "__main__":
                 READ DATA FROM PEAKED FILE
                 """
                 if j in repeats: 
-                    print indent + bcolors.WARNING + 'File appears also in unpeaked list: ignoring it.' + bcolors.txtrst
+                    print indent + bcolors.WARNING + \
+                        'File appears also in unpeaked list: ignoring it.' + \
+                            bcolors.txtrst
                     continue
                 filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
-                    print indent + bcolors.WARNING + 'File appears also in peaked list but it does not exists: ignoring it.' + bcolors.txtrst
+                    print indent + bcolors.WARNING + \
+                    'File appears also in peaked list but it does not exists: ignoring it.' + \
+                    bcolors.txtrst
                     continue
                 
                 if tmpSN.r.badCurve:
-                    print indent + bcolors.WARNING + 'Peaked file has bad r curve: ignoring it.' + bcolors.txtrst
+                    print indent + bcolors.WARNING + \
+                    'Peaked file has bad r curve: ignoring it.' + \
+                    bcolors.txtrst
                     continue
                 peaked = cls.SupernovaFit(tmpSN)
                 for l in tmpSN.lcsDict.keys():
@@ -613,7 +626,7 @@ if __name__ == "__main__":
         """
         j_offset = 0
         i_start = 0
-        i_end = 500
+        i_end = 5330
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
