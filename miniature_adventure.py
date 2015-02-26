@@ -60,6 +60,12 @@ if __name__ == "__main__":
         )
 
     actionGroup.add_argument(
+        '--offset', '-o', dest='offset',
+        default=0, type=int,
+        help='Offset for columns WRT limits (which are referred to rows).'
+    )
+
+    actionGroup.add_argument(
         '--prior', dest='prior',
         action='store_true', help='Use priors in GP regression.'
         )
@@ -624,9 +630,9 @@ if __name__ == "__main__":
         Distance values are saved in a R matrix. This will be used by the R 
         package `diffusionMap` through rpy2 Python package.
         """
-        j_offset = 0
-        i_start = 0
-        i_end = 5330
+        j_offset = args.offset
+        i_start = args.limits[0]
+        i_end = args.limits[1]
         j_start = i_start + j_offset
         j_end = i_end + j_offset
         print "\n" + indent + bcolors.undwht + \
@@ -658,7 +664,7 @@ if __name__ == "__main__":
         widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
             AnimatedMarker(), indent, Timer()]
         
-        # creating numpy matrix: list of 4 lists
+        # creating list of 4 lists
         distList = list([[], [], [], []])
         nCols = 0
         # distList = np.zeros((4, 
@@ -682,11 +688,9 @@ if __name__ == "__main__":
                 #
                 # continue to nex object
 
-                # for b in bands:
-                    # distList[bandDict[b], i-i_start, j-j_start] = nullVal
-                print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
-                    "THE FILE HAS TO BE DELETED" +\
-                    " indices {:<d}, {:<d}".format(i, j)
+                # print "{:<} Has bad curve in r band - ".format(lsDirFit[i]) + \
+                #     "THE FILE HAS TO BE DELETED" +\
+                #     " indices {:<d}".format(i)
                 missRowlist.append(i)
                 continue
                 
@@ -770,11 +774,9 @@ if __name__ == "__main__":
                     #
                     # continue to nex object
 
-                    # for b in bands:
-                    #     distList[bandDict[b], i-i_start, j-j_start] = nullVal
-                    print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
-                        " THE FILE HAS TO BE DELETED:" +\
-                        " indices {:<d}, {:<d}".format(i, j)
+                    # print "{:<} Has bad curve in r band -".format(lsDirFit[j])+\
+                    #     " THE FILE HAS TO BE DELETED:" +\
+                    #     " indices {:<d}, {:<d}".format(i, j)
                     continue
 
                 jCandidate = cls.SupernovaFit(tmpSN)
@@ -823,12 +825,22 @@ if __name__ == "__main__":
                         """
                         distList[bandDict[b]].append(distFlag)
                         # distList[bandDict[b], i-i_start, j-j_start] = distFlag
-
-            if (i == i_start):
+            
+            """
+            # >>> !! Checking for i being equal to its beginning value in the loop
+            does not take into account the 
+            possibility of the first SN having a bad r curve, in which case
+            the loop will never arrive here, since it is reset by a continue.
+            Checking on nCols being still equal to zero is much better, since is
+            the only way to verify if the first loop has been completed. 
+            """
+            # if (i == i_start): 
+            if (nCols == 0):
                 nCols = len(distList[0])
+                print 'nCols updated! {:<d}'.format(nCols)
             pbar.update(i-i_start+1)
         pbar.finish()
-
+        
         distMatrix = np.zeros((4, 
             len(distList[0])/nCols, nCols),
             dtype=float
