@@ -606,7 +606,7 @@ def time_correct(mjd, zed):
     mjd -- Python list, contains measurements epochs in MJDs.
     zed -- float, redshift to use for correction.
     """
-    return [mjd[i]/(1.+zed) for i in range(len(mjd))]
+    return [el/(1.+zed) for el in mjd]
 
 
 def k_correction():
@@ -638,7 +638,7 @@ def correct_for_absorption(flux, ebv, band):
 
     a_mag = Rband[band] * ebv
     a_flux = 10**(0.4*a_mag)
-    return [flux[i]*a_flux for i in range(len(flux))]
+    return [el*a_flux for el in flux]
 
 
 def pre_process(data, bands):
