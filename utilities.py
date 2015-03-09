@@ -352,14 +352,14 @@ def extract_training_set(path):
     lsList.sort()
     lsList.remove('')
 
-    outFileTest  = open('products/SIMGEN_PUBLIC_DES_FIT.TEST', 'w')
-    outFileTrain = open('products/SIMGEN_PUBLIC_DES_FIT.TRAIN', 'w')
-    outFileIa    = open('products/SIMGEN_PUBLIC_DES_FIT.Ia.TRAIN', 'w')
-    outFileII    = open('products/SIMGEN_PUBLIC_DES_FIT.II.TRAIN', 'w')
-    outFileIbc   = open('products/SIMGEN_PUBLIC_DES_FIT.Ibc.TRAIN', 'w')
-    outFileIaPec = open('products/SIMGEN_PUBLIC_DES_FIT.IaPec.TRAIN', 'w')
-    outFileOther = open('products/SIMGEN_PUBLIC_DES_FIT.Other.TRAIN', 'w')
-    outFileRej   = open('products/SIMGEN_PUBLIC_DES_FIT.Rej.TRAIN', 'w')
+    outFileTest  = open('results/SIMGEN_PUBLIC_DES.TEST', 'w')
+    outFileTrain = open('results/SIMGEN_PUBLIC_DES.TRAIN', 'w')
+    outFileIa    = open('results/SIMGEN_PUBLIC_DES.Ia.TRAIN', 'w')
+    outFileII    = open('results/SIMGEN_PUBLIC_DES.II.TRAIN', 'w')
+    outFileIbc   = open('results/SIMGEN_PUBLIC_DES.Ibc.TRAIN', 'w')
+    outFileIaPec = open('results/SIMGEN_PUBLIC_DES.IaPec.TRAIN', 'w')
+    outFileOther = open('results/SIMGEN_PUBLIC_DES.Other.TRAIN', 'w')
+    outFileRej   = open('results/SIMGEN_PUBLIC_DES.Rej.TRAIN', 'w')
 
     for i in range(len(lsList)):
         tmpSN = get_sn_from_file(path+lsList[i])
