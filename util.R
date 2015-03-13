@@ -174,8 +174,9 @@ compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     z.thr <- 0.17/2
 
     colfill <- c('darkorange', 'seagreen3', 'blue2')
+    par.default <- par(no.readonly=TRUE)
     par(mfrow=c(3,1), lty=3, ann=FALSE, mar=c(0,0,0,0), oma=c(5,6,4,2))
-    plot(d3$x, d3$n*d3$y, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
+    plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
         ylim=c(0,3.5), axes=FALSE, type='l')
     # plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
     #     ylim=c(0,3.5), axes=FALSE)
@@ -233,6 +234,201 @@ compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     # else{
     #     legend(0, 1.8, levels(gentype.f), fill=colfill)
     # }
+    if (save){
+        dev.off()
+    }
+    par(par.default)
+}
+
+plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
+    file.list <- list.files(path=dir.path, pattern='\\.DAT$', full.names=TRUE)
+    # plot.new()
+    # colors <- grey(0:(lc.num-1)/(lc.num+1))
+    colors <- heat.colors(lc.num)
+    ran <- sample(1:length(file.list), lc.num, replace=FALSE)
+    for (i in c(1:lc.num)){
+    # for (f in file.list[1:20]){
+        r <- readLines(file.list[ran[i]])
+        # next line gives the position of the row right before the head of the 
+        #
+        # table containing the data. In this way, all is written before can be
+        #
+        # skipped.
+        skip <- grep('NVAR:', r) 
+        lc <- read.table(file.list[ran[i]], header=TRUE, skip=skip, fill=TRUE)
+        if (class(lc$FLUXCAL) != 'numeric'){
+            del.rows <- which(is.na(lc$FLUXCALERR))
+            lc <- lc[-del.rows,]
+            lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
+        }
+        if (i == 1){
+            plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
+                type='l', 
+                xlim=c(56171, 56351), ylim=c(0,200000),
+                xlab='epoch [mjd]', ylab='flux [adu]', col=colors[i])
+        }else{
+            lines(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
+                col=colors[i])
+        }
+        errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
+            yplus=lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
+            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], add=T)
+    }    
+    return (file.list)
+}
+
+
+plot.lightcurve <- function(file.path, save=FALSE){
+    r <- readLines(file.path)
+    # gsub("[[:space:]]", "", x)
+    sn.type <- gsub('[[:space:]]', '', 
+        unlist(strsplit(r[grep('SNTYPE:', r)], ':'))[2])
+
+    if (sn.type == 1){
+        sn.type.lab <- 'type Ia'
+    }else if (sn.type %in% c(2,21,22,23)){
+        sn.type.lab <- 'type II'
+    }else{
+        sn.type.lab <- 'type Ib/c'
+    }
+    message(sn.type.lab)
+     
+    skip <- grep('NVAR:', r)
+    lc <- read.table(file.path, header=TRUE, skip=skip, fill=TRUE)
+    if (class(lc$FLUXCAL) != 'numeric'){
+        del.rows <- which(is.na(lc$FLUXCALERR))
+        lc <- lc[-del.rows,]
+        lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
+    }
+    if (save){
+        pdf(file='four_bands_lightcurve.pdf', width=7, height= 7)
+    }
+    par.default <- par(no.readonly=TRUE)
+    par(mfrow=c(4,1), ann=FALSE, mar=c(0,0,0,0), oma=c(5,6,4,2))
+    for (band in c('g','r','i','z')){
+        plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
+            axes=FALSE, pch=20,
+            xlim=c(floor(min(lc$MJD)), floor(max(lc$MJD))),
+            ylim=c(floor(min(lc$FLUXCAL)), floor(max(lc$FLUXCAL))))
+        errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
+            yplus=lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
+            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], 
+            add=T, cap=0)
+        axis(2, at=seq(0, max(lc$FLUXCAL), 30000), cex.axis=1.5)
+        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE, 
+            cex.axis=1.5, tick=TRUE)
+        box()
+        mtext(band, side=3, line=-2, adj=0.9)
+    }
+    axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), cex.axis=1.5)
+    mtext("Epoch [mjd]", side=1, outer=TRUE, line=3.2)
+    mtext("Flux [adu]", side=2, outer=TRUE, line=3.5)
+    if (save){
+        dev.off()
+    }
+    par(par.default)
+    return(lc)
+}
+
+plot.screen <- function(dir.path, save=FALSE){
+    par.default <- par(no.readonly=TRUE)
+    file.list <- list.files(path=dir.path, pattern='\\.DAT$', full.names=TRUE)
+    ran <- sample(1:length(file.list), length(file.list), replace=FALSE)
+    m <- rbind(
+        c(0.1-0.035,0.5-0.035,0.9-0.035,1-0.035),
+        c(0.1-0.035,0.5-0.035,0.8-0.035,0.9-0.035),
+        c(0.1-0.035,0.5-0.035,0.7-0.035,0.8-0.035),
+        c(0.1-0.035,0.5-0.035,0.6-0.035,0.7-0.035),
+        #-----
+        c(0.6-0.035,1-0.035,0.9-0.035,1-0.035),
+        c(0.6-0.035,1-0.035,0.8-0.035,0.9-0.035),
+        c(0.6-0.035,1-0.035,0.7-0.035,0.8-0.035),
+        c(0.6-0.035,1-0.035,0.6-0.035,0.7-0.035),
+        #-----
+        c(0.1-0.035,0.5-0.035,0.4-0.035,0.5-0.035),
+        c(0.1-0.035,0.5-0.035,0.3-0.035,0.4-0.035),
+        c(0.1-0.035,0.5-0.035,0.2-0.035,0.3-0.035),
+        c(0.1-0.035,0.5-0.035,0.1-0.035,0.2-0.035),
+        #-----
+        c(0.6-0.035,1-0.035,0.4-0.035,0.5-0.035),
+        c(0.6-0.035,1-0.035,0.3-0.035,0.4-0.035),
+        c(0.6-0.035,1-0.035,0.2-0.035,0.3-0.035),
+        c(0.6-0.035,1-0.035,0.1-0.035,0.2-0.035)
+    )
+    if (save){
+        pdf(file='four_bands_four_lightcurve.pdf', width=8.7, height=11.7)
+    }
+    split.screen(m)
+    band <- c('g','r','i','z')
+    for (i in (1:16)){
+        screen(i)
+        par(mar = c(0, 0, 0, 0), new=TRUE, tcl=-0.3, mgp=c(3,0.3,0))
+        if ((i %% 4) == 1){ # open new file
+            while (TRUE){
+                r <- readLines(file.list[ran[1]])
+                
+                skip <- grep('NVAR:', r)
+                lc <- read.table(file.list[ran[1]], header=TRUE, skip=skip, fill=TRUE)
+                
+                if (class(lc$FLUXCAL) != 'numeric'){
+                    del.rows <- which(is.na(lc$FLUXCALERR))
+                    lc <- lc[-del.rows,]
+                    lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
+                }
+                ran <- ran[-1]
+                if (!is.na(floor(min(lc$MJD))) && !is.na(floor(max(lc$MJD)))) {
+                    break
+                }
+            }
+            message(max(lc$FLUXCAL))    
+            mjd.r.max <- max(lc$FLUXCAL[which(lc$FLT=='r')])
+            flux.max <- max(lc$FLUXCAL)
+            lc$MJD <- lc$MJD - lc$MJD[which(lc$FLUXCAL==mjd.r.max)]
+            lc$FLUXCAL <- lc$FLUXCAL / flux.max *100
+            lc$FLUXCALERR <- lc$FLUXCALERR / flux.max * 100
+        }
+        
+        
+        # message(c(floor(min(lc$MJD)), floor(max(lc$MJD))))
+        # message(min(lc$FLUXCAL))
+        if (i%%4 == 0){ax <- TRUE}
+        plot(lc$MJD[which(lc$FLT==band[i%%4+1])], 
+            lc$FLUXCAL[which(lc$FLT==band[i%%4+1])], 
+            axes=FALSE, pch=20, cex=0.5, 
+            xlim=c(floor(min(lc$MJD)), floor(max(lc$MJD))),
+            ylim=c(floor(min(lc$FLUXCAL)), floor(max(lc$FLUXCAL))))
+        errbar(lc$MJD[which(lc$FLT==band[i%%4+1])], 
+            lc$FLUXCAL[which(lc$FLT==band[i%%4+1])],
+            yplus=(lc$FLUXCAL[which(lc$FLT==band[i%%4+1])]+
+                lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])]),
+            yminus=(lc$FLUXCAL[which(lc$FLT==band[i%%4+1])]-
+                lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])]), 
+            add=T, cap=0, cex=0.5)
+        box()
+        axis(2, at=seq(0, max(lc$FLUXCAL), 50), cex.axis=0.8)
+        # message(max(lc$FLUXCAL))
+        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE, 
+            tick=TRUE, cex.axis=1)
+
+        if (i %in% c(2,6,10,14)){
+            ylab.coord <- c(0,0)
+            mtext(paste("Flux / ", flux.max/100," [adu]"), side=2, at=ylab.coord, line=1.5, cex=0.8)
+        }
+
+        if (i %in% c(1,5,9,13)){mtext(band[1], side=3, line=-1.5, adj=0.95)}
+        if (i %in% c(2,6,10,14)){mtext(band[2], side=3, line=-1.5, adj=0.95)}
+        if (i %in% c(3,7,11,15)){mtext(band[3], side=3, line=-1.5, adj=0.95)}
+        if (i %in% c(4,8,12,16)){mtext(band[4], side=3, line=-1.5, adj=0.95)}
+
+        if ((i %% 4) == 0){
+        
+            axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), cex.axis=0.8)       
+            mtext(paste("Epoch - ",mjd.r.max," [mjd]"), side=1, line=1.5, cex=0.8)
+            # mtext("Flux [adu]", side=2, at=ylab.coord)#, line=3.5)
+        }
+    }
+    par(par.default)
+    close.screen(all.screens = TRUE)
     if (save){
         dev.off()
     }
