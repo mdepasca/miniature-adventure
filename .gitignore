@@ -1,10 +1,14 @@
-# auto-previous version files
+# auto-backup files
 *.*~
+\#*.*\#
 
 *.py[cod]
 
 # C extensions
 *.so
+
+# R hidden files
+.R*
 
 # Packages
 *.egg
