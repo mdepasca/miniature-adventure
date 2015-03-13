@@ -7,9 +7,9 @@
 # C extensions
 *.so
 
-# R hidden files
+# R hidden fnd data iles
 .R*
-
+*.RData
 # Packages
 *.egg
 *.egg-info
@@ -53,3 +53,11 @@ nosetests.xml
 transit/
 junk/
 products/
+results/**
+train_data/**
+fit_data/**
+
+#Image files
+*.eps
+*.png
+*.pdf
