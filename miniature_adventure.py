@@ -44,7 +44,7 @@ if __name__ == "__main__":
     """
 
     ACTION OPTIONS
-    
+
     """
 
     actionGroup.add_argument(
@@ -52,7 +52,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Fit lightcurves with Gaussian processes method."
         )
-    
+
     actionGroup.add_argument(
         '--limits', nargs=2, dest='limits',
         default=[0, 5], type=int,
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     """
 
     INPUT OPTIONS
-    
+
     """
 
     inputGroup.add_argument(
@@ -164,16 +164,20 @@ if __name__ == "__main__":
         )
 
     inputGroup.add_argument(
-        "-b", "--band", dest="band", default='r', 
+        "-b", "--band", dest="band", default='r',
         help="Which band to plot with --nice-plots.")
 
+    inputGroup.add_argument(
+        "--nBands", dest="nBands",
+        default=-1, type=int,
+        help="Number of bands to plot with --nice-plots.")
     args = parser.parse_args()
 
 
     bands = ['g', 'r', 'i', 'z']
 else:
     pass
-    
+
 if __name__ == "__main__":
     # os.system("clear")
 
@@ -183,7 +187,7 @@ if __name__ == "__main__":
     peakIdx = np.empty(0)
     nopeakIdx = np.empty(0)
 
-    print bcolors.bldpur 
+    print bcolors.bldpur
     print indent + "* * * * * * * * * * * * * * *"
     print indent + "*    Miniature Adventure    *"
     print indent + "*    -------------------    *"
@@ -201,19 +205,19 @@ if __name__ == "__main__":
                 +'for fit: '))
 
     print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
-    
+
         # check for other values
 
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
-    
+
     # modelList = np.zeros(0, dtype=np.object)
 
     # should be possible to change the next two variables
     # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
     # args.dirFit = "fit_data" + os.sep
-    
-    
+
+
     start_time = time.time()
 
     p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
@@ -229,25 +233,25 @@ if __name__ == "__main__":
     lsDirFit = lsDirFit.split('\n')
     lsDirFit.sort()
     lsDirFit.remove('')
-    
+
     """
 
     PERFORMS LCs FITTING
 
     """
     if args.fit:
-        
+
         filePath = args.dirFit + os.sep + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
-   
+
         fPeaked = open(filePath, 'w')
 
-        
+
         filePath = args.dirFit + os.sep + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
-  
+
         fNopeaked = open(filePath, 'w')
 
         # Relevant input data
@@ -256,7 +260,7 @@ if __name__ == "__main__":
         print "\n" + indent + "Index interval [{:<},{:<})".format(
                 args.limits[0], args.limits[1]
                 )
-        
+
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
 
@@ -274,7 +278,7 @@ if __name__ == "__main__":
 
 
         GP kernel specification
-        
+
 
         """
         kern = GPy.kern.RatQuad(1)
@@ -285,12 +289,12 @@ if __name__ == "__main__":
         print "\n" + indent \
             + "Data will be smoothed using GP kernel " + kern.name.upper()
 
-        # Fitting single lightcurves 
+        # Fitting single lightcurves
         #
         # THIS PIECE NEEDS TO BE PARALLELIZED
-        # 
+        #
         # optimize_restarts parallel using multiprocessing
-        
+
         """
         Receiving input on number of bands to keep. K-correction cannot
         be determined for all bands.
@@ -318,19 +322,19 @@ if __name__ == "__main__":
             # Creating SupernovaFit object
             candidateFit = cls.SupernovaFit(candidate, kern.name)
 
-            for b in candidate.lcsDict.keys(): 
+            for b in candidate.lcsDict.keys():
                 # Correcting for time dilution
                 epoch = util.time_correct(
-                    candidate.lcsDict[b].mjd, 
+                    candidate.lcsDict[b].mjd,
                     candidate.zSpec if candidate.zSpec else candidate.zPhotHost
                     )
 
                 # Correcting for absorption
                 flux = util.correct_for_absorption(
-                    candidate.lcsDict[b].flux, 
+                    candidate.lcsDict[b].flux,
                     candidate.MWEBV, b
                     )
-        
+
                 errFlux = candidate.lcsDict[b].fluxErr
 
                 # Fitting Lightcurve
@@ -345,11 +349,11 @@ if __name__ == "__main__":
                 ---> K--correction
                 """
 
-                
-                
+
+
                 """
-                Save pre processed data, before fitting. This will save time 
-                when plotting... 
+                Save pre processed data, before fitting. This will save time
+                when plotting...
                 NOT YET IMPLEMENTED, MORE A COMFORT THEN A NEED
                 """
 
@@ -368,22 +372,22 @@ if __name__ == "__main__":
                 # Diverting warnings to log file
                 # saveOut = sys.stdout
                 # fout = open('out.log', 'w')
-                
+
                 # sys.stdout = fout
 
                 """
-                Clipping to zero negative flux values, to avoid optimization to 
+                Clipping to zero negative flux values, to avoid optimization to
                 crash with some kernel.
                 When dealing with magnitudes, values above the limit of each filtere
                 will be clipped to that limit
 
                 flux = [0 if (el<0) else el for el in flux]
                 """
-                
+
                 try:
                     predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                    epoch, flux, errFlux, 
-                                                    kern, n_restarts=10, 
+                                                    epoch, flux, errFlux,
+                                                    kern, n_restarts=10,
                                                     parallel=False,
                                                     test_length=args.testLength,
                                                     test_prior=args.prior)
@@ -404,16 +408,16 @@ if __name__ == "__main__":
                     print indent + bcolors.OKGREEN + \
                         "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
                                                         i, candidate.SNID, b
-                            ) + bcolors.txtrst  
+                            ) + bcolors.txtrst
             else:
                 if not candidateFit.r.badCurve:
                     # candidateFit.shift_mjds()
                     filePath = args.dirFit + os.sep + \
                         path.splitext(lsDirData[i])[0] + "_FIT.DAT"
-                        
+
                     candidateFit.save_on_txt(filePath)
                     print indent + 'file saved!'
-                    
+
                     if candidateFit.peaked:
                         peakIdx = np.append(peakIdx, i)
                         fPeaked.write('{:<}\n'.format(filePath))
@@ -425,7 +429,7 @@ if __name__ == "__main__":
         fNopeaked.close()
         # sys.stderr = saveErr
         # ferr.close()
-        
+
         filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
@@ -433,7 +437,7 @@ if __name__ == "__main__":
         np.savetxt(args.dirFit + os.sep + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
-        
+
         filePath = args.dirFit + os.sep + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
@@ -443,16 +447,16 @@ if __name__ == "__main__":
 
     """
 
-    PERFORMING CROSS-CORRELATION 
+    PERFORMING CROSS-CORRELATION
 
     """
 
-        
+
     if args.crossCor:
         """
         getting file list from directory
         File are sorted by SNID.
-        In the following peakIdx and nopeakIdx contain index referring to the 
+        In the following peakIdx and nopeakIdx contain index referring to the
         full list of files. For this reason the list of files it is queried on
         dirData. It is then filtered using the above variables.
         """
@@ -470,38 +474,38 @@ if __name__ == "__main__":
         # lsDirData = lsDirData.split('\n')
         # lsDirData.sort()
         # lsDirData.remove('')
-        
+
         # filePath = 'peaked.dat'.format(socket.gethostname())
         # peakIdx = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
         # filePath = 'nopeaked.dat'.format(socket.gethostname())
         # tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
         # if tmp.size == 1:
         #     nopeakIdx = np.asarray([tmp])
-        # else:    
+        # else:
         #     nopeakIdx = np.asarray(tmp)
-        
+
         filePath = 'PEAKED.LIST'
         peakList = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
         filePath = 'NOPEAKED.LIST'
         tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
         if tmp.size == 1:
             nopeakList = np.asarray([tmp])
-        else:    
+        else:
             nopeakList = np.asarray(tmp)
-        
+
         filePath = 'repeats.txt'
         repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(args.dirFit + os.sep + filePath, 'w')
-        prog = 0        
+        prog = 0
         # for i in nopeakIdx[start:end]:
         for i in nopeakList[args.limits[0]:args.limits[1]]:
 
             z = 0 # goes on peakIdx to index the progress bar
-            
+
             """
-            READ DATA FROM NOT-PEAKED FILE 
+            READ DATA FROM NOT-PEAKED FILE
             creates a Supernova object
             """
             filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
@@ -520,7 +524,7 @@ if __name__ == "__main__":
             except IOError:
                 print "IOError: {:<}".format(filePath)
                 continue
-            
+
             if tmpSN.r.badCurve:
                 print "IOError (BAD r curve): {:<}".format(filePath)
                 continue
@@ -529,7 +533,7 @@ if __name__ == "__main__":
             """
             notPeaked = cls.SupernovaFit(tmpSN)
             for l in tmpSN.lcsDict.keys():
-                notPeaked.set_lightcurve(l, 
+                notPeaked.set_lightcurve(l,
                     tmpSN.lcsDict[l].mjd,
                     tmpSN.lcsDict[l].flux,
                     tmpSN.lcsDict[l].fluxErr
@@ -546,7 +550,7 @@ if __name__ == "__main__":
                 """
                 READ DATA FROM PEAKED FILE
                 """
-                if j in repeats: 
+                if j in repeats:
                     print indent + bcolors.WARNING + \
                         'File appears also in unpeaked list: ignoring it.' + \
                             bcolors.txtrst
@@ -559,7 +563,7 @@ if __name__ == "__main__":
                     'File appears also in peaked list but it does not exists: ignoring it.' + \
                     bcolors.txtrst
                     continue
-                
+
                 if tmpSN.r.badCurve:
                     print indent + bcolors.WARNING + \
                     'Peaked file has bad r curve: ignoring it.' + \
@@ -569,7 +573,7 @@ if __name__ == "__main__":
                 for l in tmpSN.lcsDict.keys():
                     peaked.set_lightcurve(l,
                         tmpSN.lcsDict[l].mjd,
-                        tmpSN.lcsDict[l].flux, 
+                        tmpSN.lcsDict[l].flux,
                         tmpSN.lcsDict[l].fluxErr
                         )
                 """
@@ -598,7 +602,7 @@ if __name__ == "__main__":
                 # ccMax[k] = offsets[np.argmax(ycorr)]
                 ccMax.append(offsets[np.argmax(ycorr)])
                 # k += 1
-                
+
                 pbar.update(z+1)
                 z += 1
 
@@ -614,7 +618,7 @@ if __name__ == "__main__":
             pbar.finish()
         reWrite.close()
         print 'CC ended!'
-        
+
 
     """
 
@@ -624,10 +628,10 @@ if __name__ == "__main__":
     if args.distMatrix:
         if not os.path.exists(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep)):
             os.makedirs(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep))
-            
+
         """
         Calculate distance between fitted lightcurves.
-        Distance values are saved in a R matrix. This will be used by the R 
+        Distance values are saved in a R matrix. This will be used by the R
         package `diffusionMap` through rpy2 Python package.
         """
         j_offset = args.offset
@@ -661,13 +665,13 @@ if __name__ == "__main__":
             'i':2,
             'z':3
             }
-        widgets = [indent, 'Processing:', ' ', Counter(), ' ', 
+        widgets = [indent, 'Processing:', ' ', Counter(), ' ',
             AnimatedMarker(), indent, Timer()]
-        
+
         # creating list of 4 lists
         distList = list([[], [], [], []])
         nCols = 0
-        # distList = np.zeros((4, 
+        # distList = np.zeros((4,
         #     len(lsDirFit[i_start:i_end]), len(lsDirFit[i_start:i_end])),
         #     dtype=float
         #     )
@@ -684,7 +688,7 @@ if __name__ == "__main__":
                 args.dirFit+os.sep+lsDirFit[i]
                 )
             if tmpSN.r.badCurve:
-                # nothing has to be added to the distance matrix. Print and 
+                # nothing has to be added to the distance matrix. Print and
                 #
                 # continue to nex object
 
@@ -693,12 +697,12 @@ if __name__ == "__main__":
                 #     " indices {:<d}".format(i)
                 missRowlist.append(i)
                 continue
-                
+
             iCandidate = cls.SupernovaFit(tmpSN)
-            
+
             for b in tmpSN.lcsDict.keys():
                 # set_lightcurve set also if the lc is peaked or not
-                iCandidate.set_lightcurve(b, 
+                iCandidate.set_lightcurve(b,
                     tmpSN.lcsDict[b].mjd,
                     tmpSN.lcsDict[b].flux,
                     tmpSN.lcsDict[b].fluxErr
@@ -719,7 +723,7 @@ if __name__ == "__main__":
                 """
                 for b in bands:
                     iCandidate.lcsDict[b].shiftedMjd = [
-                        iCandidate.lcsDict[b].shiftedMjd[l] + 
+                        iCandidate.lcsDict[b].shiftedMjd[l] +
                         iCandidate.ccMjdMaxFlux for l in range(len(
                             iCandidate.lcsDict[b].shiftedMjd
                             ))
@@ -729,9 +733,9 @@ if __name__ == "__main__":
 
             for j in range(j_start, j_end):
                 """
-                if this SN has badCurve in this band it will be far from all 
+                if this SN has badCurve in this band it will be far from all
                 the others by default.
-                here will save time from not opening all the other files 
+                here will save time from not opening all the other files
                 to create new SupernovaFit objcets.
                 """
 
@@ -745,7 +749,7 @@ if __name__ == "__main__":
 
                 if j < i:
                     # filling matrix elements below the diagonal
-                    if j in missRowlist: 
+                    if j in missRowlist:
                         missColCount += 1
                         continue
                     for b in bands:
@@ -770,7 +774,7 @@ if __name__ == "__main__":
                     print j, len(lsDirFit)
                     raise IndexError("list index out of range")
                 if tmpSN.r.badCurve:
-                    # nothing has to be added to the distance matrix. Print and 
+                    # nothing has to be added to the distance matrix. Print and
                     #
                     # continue to nex object
 
@@ -781,9 +785,9 @@ if __name__ == "__main__":
 
                 jCandidate = cls.SupernovaFit(tmpSN)
                 for b in tmpSN.lcsDict.keys():
-                    jCandidate.set_lightcurve(b, 
-                        tmpSN.lcsDict[b].mjd, 
-                        tmpSN.lcsDict[b].flux, 
+                    jCandidate.set_lightcurve(b,
+                        tmpSN.lcsDict[b].mjd,
+                        tmpSN.lcsDict[b].flux,
                         tmpSN.lcsDict[b].fluxErr
                         )
 
@@ -801,7 +805,7 @@ if __name__ == "__main__":
                     """
                     for b in bands:
                         jCandidate.lcsDict[b].shiftedMjd = [
-                            jCandidate.lcsDict[b].shiftedMjd[l] + 
+                            jCandidate.lcsDict[b].shiftedMjd[l] +
                             jCandidate.ccMjdMaxFlux for l in range(len(
                                 jCandidate.lcsDict[b].shiftedMjd
                                 ))
@@ -820,28 +824,28 @@ if __name__ == "__main__":
                     else:
                         # in case of bad curve
                         """
-                        This works like a flag. These elements will be set 
+                        This works like a flag. These elements will be set
                         equal to a neutral value (the mean of the other)
                         """
                         distList[bandDict[b]].append(distFlag)
                         # distList[bandDict[b], i-i_start, j-j_start] = distFlag
-            
+
             """
             # >>> !! Checking for i being equal to its beginning value in the loop
-            does not take into account the 
+            does not take into account the
             possibility of the first SN having a bad r curve, in which case
             the loop will never arrive here, since it is reset by a continue.
             Checking on nCols being still equal to zero is much better, since is
-            the only way to verify if the first loop has been completed. 
+            the only way to verify if the first loop has been completed.
             """
-            # if (i == i_start): 
+            # if (i == i_start):
             if (nCols == 0):
                 nCols = len(distList[0])
                 print 'nCols updated! {:<d}'.format(nCols)
             pbar.update(i-i_start+1)
         pbar.finish()
-        
-        distMatrix = np.zeros((4, 
+
+        distMatrix = np.zeros((4,
             len(distList[0])/nCols, nCols),
             dtype=float
             )
@@ -853,13 +857,13 @@ if __name__ == "__main__":
 
         # fixing flagged elements
         # raise SystemExit
-        if distMatrix[0, distMatrix[0] == distFlag].size > 0: 
+        if distMatrix[0, distMatrix[0] == distFlag].size > 0:
             ind = np.where(distMatrix[0] == distFlag)
             distMatrix[0, ind[0], ind[1]] = np.add(
                 np.add(
-                    distMatrix[1, ind[0], ind[1]], 
+                    distMatrix[1, ind[0], ind[1]],
                     distMatrix[2, ind[0], ind[1]]
-                    ), 
+                    ),
                 distMatrix[3, ind[0], ind[1]]
                 )/3.
 
@@ -869,34 +873,34 @@ if __name__ == "__main__":
             # distMatrix[1, ind[0], ind[1]] = distMatrix[1,:,:].max()
             distMatrix[1, ind[0], ind[1]] = np.add(
                 np.add(
-                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[0, ind[0], ind[1]],
                     distMatrix[2, ind[0], ind[1]]
-                    ), 
+                    ),
                 distMatrix[3, ind[0], ind[1]]
                 )/3.
 
-        if distMatrix[2, distMatrix[2] == distFlag].size > 0: 
+        if distMatrix[2, distMatrix[2] == distFlag].size > 0:
             ind = np.where(distMatrix[2] == distFlag)
             # distMatrix[2, ind[0], ind[1]] = distMatrix[2].max()
             distMatrix[2, ind[0], ind[1]] = np.add(
                 np.add(
-                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[0, ind[0], ind[1]],
                     distMatrix[1, ind[0], ind[1]]
-                    ), 
+                    ),
                 distMatrix[3, ind[0], ind[1]]
                 )/3.
 
-        if distMatrix[3, distMatrix[3] == distFlag].size > 0: 
+        if distMatrix[3, distMatrix[3] == distFlag].size > 0:
             ind = np.where(distMatrix[3] == distFlag)
             # distMatrix[3, ind[0], ind[1]] = distMatrix[3].max()
             distMatrix[3, ind[0], ind[1]] = np.add(
                 np.add(
-                    distMatrix[0, ind[0], ind[1]], 
+                    distMatrix[0, ind[0], ind[1]],
                     distMatrix[1, ind[0], ind[1]]
-                    ), 
+                    ),
                 distMatrix[2, ind[0], ind[1]]
                 )/3.
-        
+
         distMatrixSum = np.sum(distMatrix, 0)
         """
         Saving on text files
@@ -951,7 +955,7 @@ if __name__ == "__main__":
         ndim = ro.r.attributes(Rmatrix)[0][0]
         dmap = diffusionMap.diffuse(Rmatrix, neigen=5)
         util.dump_pkl('diffusion_map.pkl', dmap)
-        
+
 
     """
 
@@ -966,7 +970,7 @@ if __name__ == "__main__":
             dmap = util.open_pkl('tmp_diffusion_map.pkl')
 
         dmap_rf = randomForest.randomForest(dmap)
-        
+
 
     """
 
@@ -996,7 +1000,7 @@ if __name__ == "__main__":
         #     lsDirData = lsDirData.split('\n')
         #     lsDirData.sort()
         #     lsDirData.remove('')
-                       
+
 
         print indent + 'Plotting ...'
         '''
@@ -1004,30 +1008,30 @@ if __name__ == "__main__":
         '''
         nrows = 5
         ncols = 5
-        offset = 0
-        fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols, 
-                    figsize=(16.5, 11.7), 
+        offset = 100
+        fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols,
+                    figsize=(16.5, 11.7),
                     tight_layout=True
                     )
-        fig_r, ax_r = plt.subplots(nrows=nrows, ncols=ncols, 
-                    figsize=(16.5, 11.7), 
+        fig_r, ax_r = plt.subplots(nrows=nrows, ncols=ncols,
+                    figsize=(16.5, 11.7),
                     tight_layout=True
                     )
-        fig_i, ax_i = plt.subplots(nrows=nrows, ncols=ncols, 
-                    figsize=(16.5, 11.7), 
+        fig_i, ax_i = plt.subplots(nrows=nrows, ncols=ncols,
+                    figsize=(16.5, 11.7),
                     tight_layout=True
                     )
-        fig_z, ax_z = plt.subplots(nrows=nrows, ncols=ncols, 
-                    figsize=(16.5, 11.7), 
+        fig_z, ax_z = plt.subplots(nrows=nrows, ncols=ncols,
+                    figsize=(16.5, 11.7),
                     tight_layout=True
                     )
 
-        dictFig = {'g':fig_g, 
+        dictFig = {'g':fig_g,
                    'r':fig_r,
                    'i':fig_i,
                    'z':fig_z}
 
-        dictAx = {'g':ax_g, 
+        dictAx = {'g':ax_g,
                   'r':ax_r,
                   'i':ax_i,
                   'z':ax_z}
@@ -1074,13 +1078,13 @@ if __name__ == "__main__":
                 """
                 Initializing SupernovaFit object
                 """
-                fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
-                if i == 0:
+                fit = cls.SupernovaFit(tmpSN, tmpSN.kern if hasattr(tmpSN, 'kern') else None)
+                if (i == 0) and hasattr(tmpSN, 'kern'):
                     GPkern = tmpSN.kern
                 for b in tmpSN.lcsDict.keys():
                     fit.set_lightcurve(b,
                         tmpSN.lcsDict[b].mjd,
-                        tmpSN.lcsDict[b].flux, 
+                        tmpSN.lcsDict[b].flux,
                         tmpSN.lcsDict[b].fluxErr,
                         magFlag=args.mag
                         )
@@ -1099,7 +1103,7 @@ if __name__ == "__main__":
                         fit.lcsDict[b].shiftedMjd = [
                         el + fit.ccMjdMaxFlux for el in fit.lcsDict[b].shiftedMjd
                         ]
-                            
+
 
                 for b in dictAx.keys():
                     data = candidate.lcsDict[b]
@@ -1109,13 +1113,13 @@ if __name__ == "__main__":
                     """
                     # if fit.peaked == False:
                     #     fit.lcsDict[b].shiftedMjd = np.ma.add(
-                    #         fit.lcsDict[b].shiftedMjd, 
+                    #         fit.lcsDict[b].shiftedMjd,
                     #         fit.ccMjdMaxFlux
                     #         )
                     fit_b = fit.lcsDict[b]
 
                     fit_r = fit.lcsDict['r']
-                    
+
                     if c[b] > nrows-1:
                         c[b] = 0
                         r[b] += 1
@@ -1124,14 +1128,14 @@ if __name__ == "__main__":
                     ylim = dictAx[b][r[b], c[b]].get_ylim()
 
                     if not data.badCurve and not fit_b.badCurve:
-                        epoch = util.time_correct(data.mjd, 
+                        epoch = util.time_correct(data.mjd,
                             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
                         epoch = [val-fit_r.mjd[fit_r.max_flux_index] for val in epoch]
                         if fit.peaked == False:
                             epoch = [val+fit.ccMjdMaxFlux for val in epoch]
 
-                        flux = util.correct_for_absorption(data.flux, 
+                        flux = util.correct_for_absorption(data.flux,
                             candidate.MWEBV, b)
 
                         """
@@ -1153,62 +1157,62 @@ if __name__ == "__main__":
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + fit_b.fluxErr[i] 
+                            fit_b.flux[i] + fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - fit_b.fluxErr[i] 
+                            fit_b.flux[i] - fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
 
-                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                            fluxUpLim, fluxLowLim, 
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
+                            fluxUpLim, fluxLowLim,
                             facecolor='red', alpha=0.4, linewidth=0.5)
-                        
+
                         """
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + 2*fit_b.fluxErr[i] 
+                            fit_b.flux[i] + 2*fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - 2*fit_b.fluxErr[i] 
+                            fit_b.flux[i] - 2*fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
 
-                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                            fluxUpLim, fluxLowLim, 
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
+                            fluxUpLim, fluxLowLim,
                             facecolor='red', alpha=0.2, linewidth=0.5)
-                        
+
                         """
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + 3*fit_b.fluxErr[i] 
+                            fit_b.flux[i] + 3*fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - 3*fit_b.fluxErr[i] 
+                            fit_b.flux[i] - 3*fit_b.fluxErr[i]
                                 for i in range(len(fit_b.flux))
                             ]]
 
-                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                            fluxUpLim, fluxLowLim, 
+                        dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
+                            fluxUpLim, fluxLowLim,
                             facecolor='red', alpha=0.1, linewidth=0.5)
-                        
 
-                        dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
-                            color='#7f0000', 
+
+                        dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux,
+                            color='#7f0000',
                             linewidth=2)
 
-                        dictAx[b][r[b], c[b]].scatter(epoch, flux, 
+                        dictAx[b][r[b], c[b]].scatter(epoch, flux,
                             s=10, label=str(candidate.SNID), c='black', marker='x')
 
                         dictAx[b][r[b], c[b]].errorbar(epoch, flux,
                             data.fluxErr, fmt=None, color='black', ecolor='black')
 
-                        
+
                         if not fit.peaked:
                             pass
 
@@ -1222,22 +1226,22 @@ if __name__ == "__main__":
                         dictAx[b][r[b], c[b]].legend(
                             loc='best', framealpha=0.3, fontsize='10')
                     c[b] += 1
-        
-        
+
+
         print indent + "Plots saved in files:"
         if not os.path.exists(path.abspath(args.dirFit + os.sep + "plots" + os.sep)):
             os.makedirs(args.dirFit + os.sep + "plots")
         for b in dictFig.keys():
             dictFig[b].savefig(
                 args.dirFit + os.sep + "plots"+ os.sep + GPkern + \
-                "_band_{:<1}_{:<f}.png".format(b,timeMark), 
+                "_band_{:<1}_{:<f}.png".format(b,timeMark),
                 dpi=300
                 )
             print indent + " - " + args.dirFit + os.sep + "plots" + os.sep + \
                 GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark)
 
         plt.close('all')
-            
+
 
     """
 
@@ -1247,12 +1251,12 @@ if __name__ == "__main__":
 
     if args.nicePlots:
         """
-        1 candidate 
+        1 candidate
         choose how many bands
         make the plot with confidence regions
         """
-        if args.nBands != 1 or args.nBands != 4:
-            args.nBands = 1
+        # if args.nBands != 1 or args.nBands != 4:
+            # args.nBands = 1
 
         if args.cand == -1:
             args.cand = np.random.random_integers(
@@ -1260,26 +1264,27 @@ if __name__ == "__main__":
 
         fname = 'DES_SN{:0>6d}.DAT'.format(args.cand)
         candidate = util.get_sn_from_file(
-                args.dirData + os.sep + fname
+                args.dirData+os.sep+fname
                 )
 
+        fname = 'DES_SN{:0>6d}_FIT.DAT'.format(args.cand)
         tmpSN = util.get_sn_from_file(
-            args.dirFit+os.sep+lsDirFit[i+offset],
+            args.dirFit+os.sep+fname,
             magFlag=args.mag,
                 )
         """
         Initializing SupernovaFit object
         """
-        fit = cls.SupernovaFit(tmpSN, tmpSN.kern)
-        
+        fit = cls.SupernovaFit(tmpSN, tmpSN.kern if hasattr(tmpSN, 'kern') else None)
+
         for b in tmpSN.lcsDict.keys():
             fit.set_lightcurve(b,
                 tmpSN.lcsDict[b].mjd,
-                tmpSN.lcsDict[b].flux, 
+                tmpSN.lcsDict[b].flux,
                 tmpSN.lcsDict[b].fluxErr,
                 magFlag=args.mag
                 )
-        
+
         if fit.r.badCurve:
             raise SystemExit('Bad r curve!')
 
@@ -1292,13 +1297,13 @@ if __name__ == "__main__":
             correcting using CC results
             """
             for b in candidate.lcsDict.keys():
-                fit.lcsDict[b].shiftedMjd = [el + fit.ccMjdMaxFlux 
+                fit.lcsDict[b].shiftedMjd = [el + fit.ccMjdMaxFlux
                                         for el in fit.lcsDict[b].shiftedMjd]
 
 
         bands = candidate.lcsDict.keys() if args.allBands else args.band
         """
-        Pre-process data so to be compared with fit (made from 
+        Pre-process data so to be compared with fit (made from
         pre-precessed data)
         """
         for b in bands:
@@ -1306,21 +1311,19 @@ if __name__ == "__main__":
 
                 candidate = util.pre_process(candidate, b)
 
-                candidate.lcsDict[b].mjd = [el - fit.r.mjd[fit.r.max_flux_index] 
+                candidate.lcsDict[b].mjd = [el - fit.r.mjd[fit.r.max_flux_index]
                         for el in candidate.lcsDict[b].mjd]
                 if fit.peaked == False:
-                    candidate.lcsDict[b].mjd = [el + fit.ccMjdMaxFlux 
+                    candidate.lcsDict[b].mjd = [el + fit.ccMjdMaxFlux
                             for el in candidate.lcsDict[b].mjd]
 
             else:
                 raise SystemExit('Bad {:1s} curve!'.format(b))
 
-        if not args.allBands:
-            fig = plt.figure()
-            # fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
-        else:
-            fig, ax = plt.subplots(nrows=2, ncols=2, 
-                    # figsize=(16.5, 11.7), 
+        if args.allBands:
+
+            fig, ax = plt.subplots(nrows=2, ncols=2,
+                    # figsize=(16.5, 11.7),
                     tight_layout=False
                     )
 
@@ -1330,67 +1333,116 @@ if __name__ == "__main__":
             'i':ax[1,0],
             'z':ax[1,1]
             }
+            # fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
+        else:
+            fig = plt.figure()
+            xlim = [-35,12]
+            ylim = [-10,10]
+            # fig, ax = plt.subplots(nrows=2, ncols=1,
+            #         # figsize=(16.5, 11.7),
+            #         tight_layout=False
+            #         )
+
+            # axDict = {
+            # 'g':ax[0,0],
+            # 'r':ax[0,1],
+            # 'i':ax[1,0],
+            # 'z':ax[1,1]
+            # }
 
 
         if not args.allBands:
+            fit_b = fit.lcsDict[args.band]
+            data = candidate.lcsDict[args.band]
+            if not data.badCurve and not fit_b.badCurve:
+                epoch = data.mjd
+
+                flux = data.flux
             """
             Setting limits for fill_between
             """
             fluxUpLim = [el for el in [
-                fit_b.flux[i] + fit_b.fluxErr[i] 
+                fit_b.flux[i] + fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
             fluxLowLim = [el for el in [
-                fit_b.flux[i] - fit_b.fluxErr[i] 
+                fit_b.flux[i] - fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
 
-            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                fluxUpLim, fluxLowLim, 
+            plt.fill_between(fit_b.shiftedMjd,
+                fluxUpLim, fluxLowLim,
                 facecolor='red', alpha=0.4, linewidth=0.5)
-            
+            # axDict[b].fill_between(fit_b.shiftedMjd,
+            #     fluxUpLim, fluxLowLim,
+            #     facecolor='red', alpha=0.4, linewidth=0.5)
+
             """
             Setting limits for fill_between
             """
             fluxUpLim = [el for el in [
-                fit_b.flux[i] + 2*fit_b.fluxErr[i] 
+                fit_b.flux[i] + 2*fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
             fluxLowLim = [el for el in [
-                fit_b.flux[i] - 2*fit_b.fluxErr[i] 
+                fit_b.flux[i] - 2*fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
 
-            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                fluxUpLim, fluxLowLim, 
+            plt.fill_between(fit_b.shiftedMjd,
+                fluxUpLim, fluxLowLim,
                 facecolor='red', alpha=0.2, linewidth=0.5)
-            
+            # axDict[b].fill_between(fit_b.shiftedMjd,
+            #     fluxUpLim, fluxLowLim,
+            #     facecolor='red', alpha=0.2, linewidth=0.5)
+
             """
             Setting limits for fill_between
             """
             fluxUpLim = [el for el in [
-                fit_b.flux[i] + 3*fit_b.fluxErr[i] 
+                fit_b.flux[i] + 3*fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
             fluxLowLim = [el for el in [
-                fit_b.flux[i] - 3*fit_b.fluxErr[i] 
+                fit_b.flux[i] - 3*fit_b.fluxErr[i]
                     for i in range(len(fit_b.flux))
                 ]]
 
-            dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd, 
-                fluxUpLim, fluxLowLim, 
+            plt.fill_between(fit_b.shiftedMjd,
+                fluxUpLim, fluxLowLim,
                 facecolor='red', alpha=0.1, linewidth=0.5)
-            
+            # axDict[b].fill_between(fit_b.shiftedMjd,
+            #     fluxUpLim, fluxLowLim,
+            #     facecolor='red', alpha=0.1, linewidth=0.5)
 
-            dictAx[b][r[b], c[b]].plot(fit_b.shiftedMjd, fit_b.flux, 
-                color='#7f0000', 
-                linewidth=2)
+            plt.plot(fit_b.shiftedMjd, fit_b.flux,
+                color='#7f0000',
+                linewidth=2,
+                label='GP fit')
+            # axDict[b].plot(fit_b.shiftedMjd, fit_b.flux,
+            #     color='#7f0000',
+            #     linewidth=2)
 
-            dictAx[b][r[b], c[b]].scatter(epoch, flux, 
-                s=10, label=str(candidate.SNID), c='black', marker='x')
+            plt.scatter(epoch, flux,
+                s=30, label='data', c='black', marker='x')
 
-            dictAx[b][r[b], c[b]].errorbar(epoch, flux,
+            # axDict[b].scatter(epoch, flux,
+            #     s=10, label=str(candidate.SNID), c='black', marker='x')
+
+            plt.errorbar(epoch, flux,
                 data.fluxErr, fmt=None, color='black', ecolor='black')
+
+            # plt.xlim(xlim)
+            plt.ylim(ylim)
+
+            title = 'SN ID {:d} - Band {:s}'.format(candidate.SNID, args.band)
+
+            plt.title(title)
+            plt.xlabel('Epoch [mjd]')
+            plt.ylabel('Flux [adu]')
+            plt.legend(loc='upper right', scatterpoints=1)
+            # axDict[b].errorbar(epoch, flux,
+            #     data.fluxErr, fmt=None, color='black', ecolor='black')
 
 
 
