@@ -4,11 +4,11 @@ library(plotrix) # boxed labels
 
 redshift.distrib <- function(dump.df, save=FALSE){
     # dump <- read.table(dump.file, header=TRUE, skip=1)
-    par(mfrow=c(1,1))
-    z.ref <- d$x[which(d$y==max(d$y))]
-    z.thr <- 0.17
+    # par(mfrow=c(1,1))
 
     d <- density(dump.df$GENZ, bw=0.03)
+    z.ref <- d$x[which(d$y==max(d$y))]
+    z.thr <- 0.17
     if (save){
         message('saving plot on file...')
         pdf(file='redshift_distribution.pdf', width=7, height= 7)
