@@ -14,24 +14,24 @@ redshift.distrib <- function(dump.df, save=FALSE){
         pdf(file='redshift_distribution.pdf', width=7, height= 7)
     }
     # plot.new()
-    plot(d, xlab='Redshift', main='')#, sub=paste('N =', length(dump.df$CID), 
+    plot(d, xlab='Redshift', main='')#, sub=paste('N =', length(dump.df$CID),
         # ' Bandwidth =', d$bw, sep=' '))
     polygon(c(0,d$x[which(d$x<=z.thr)],z.thr), c(0,d$y[which(d$x<=z.thr)],0),
         density=10, angle=45)
     boxed.labels(0.1, 0.1, labels=paste(length(
         dump.df$GENZ[which(dump.df$GENZ<z.thr)])), cex=1, border=FALSE)
 
-    polygon(c(z.ref-z.thr/2, d$x[which((z.ref-z.thr/2)<d$x & 
-        d$x<(z.ref+z.thr/2))], z.ref+z.thr/2), 
-    c(0,d$y[which((z.ref-z.thr/2)<d$x & d$x<(z.ref+z.thr/2))],0), 
+    polygon(c(z.ref-z.thr/2, d$x[which((z.ref-z.thr/2)<d$x &
+        d$x<(z.ref+z.thr/2))], z.ref+z.thr/2),
+    c(0,d$y[which((z.ref-z.thr/2)<d$x & d$x<(z.ref+z.thr/2))],0),
     density=10, angle=135, lty=1)
     boxed.labels(z.ref, 0.7, labels=paste(length(
-        dump.df$GENZ[which((z.ref-z.thr/2)<dump.df$GENZ & 
+        dump.df$GENZ[which((z.ref-z.thr/2)<dump.df$GENZ &
         dump.df$GENZ<(z.ref+z.thr/2))])), cex=1, border=FALSE, ypad=1.5)
         # col='darkgray', border='darkgray')
-    # lines(d, xlab='redshift', main='', sub=paste('N =', length(dump.df$CID), 
+    # lines(d, xlab='redshift', main='', sub=paste('N =', length(dump.df$CID),
     #     ' Bandwidth =', d$bw, sep=' '))
-        
+
     rug(d$x[which(d$y==max(d$y))])
     if (save){
         dev.off()
@@ -57,7 +57,7 @@ explore.lightcurves <- function(dir.path, band='r', skip=63, err.bars=FALSE, mul
     title <- paste(lc.n, "SN non-1a simulated by SNANA", sep=' ')
     for (f in file.list[1:lc.n]){
         ## print(file.list[1])
-        
+
         lc <- read.table(f, header=TRUE, skip=skip, fill=TRUE)
         del.rows <- which(is.na(lc$FLUXCALERR))
         lc <- lc[-del.rows,]
@@ -65,7 +65,7 @@ explore.lightcurves <- function(dir.path, band='r', skip=63, err.bars=FALSE, mul
         ## print(class(lc$FLUXCALERR))
         ## print(lc$FLUXCALERR)
         if (err.bars){
-        ## 
+        ##
             errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
                    lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
                    lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)])
@@ -157,15 +157,15 @@ compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     if (save){
         pdf(file='compare_redshift_distribution.pdf', width=7, height= 7)
     }
-    gentype.f <- factor(dump.df$GENTYPE, levels=c(1,2,3), 
+    gentype.f <- factor(dump.df$GENTYPE, levels=c(1,2,3),
         labels=c("type Ia", "type II", "type Ib/c"))
     d <- density(dump.df$GENZ, bw=0.03)
     if (train){
-        train.df <- read.table('results/SIMGEN_PUBLIC_DES.TRAIN', 
+        train.df <- read.table('results/SIMGEN_PUBLIC_DES.TRAIN',
             col.names=c('idx', 'snid', 'path', 'type'))
         dump.df <- dump.df[match(train.df$snid, dump.df$CID),]
     }
-    
+
     d1 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 1)], bw=0.03)
     d2 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 2)], bw=0.03)
     d3 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 3)], bw=0.03)
@@ -176,36 +176,36 @@ compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     colfill <- c('darkorange', 'seagreen3', 'blue2')
     par.default <- par(no.readonly=TRUE)
     par(mfrow=c(3,1), lty=3, ann=FALSE, mar=c(0,0,0,0), oma=c(5,6,4,2))
-    plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
+    plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)),
         ylim=c(0,3.5), axes=FALSE, type='l')
-    # plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
+    # plot(d3, col=colfill[3], main='', xlab='Redshift', xlim=c(0,max(d1$x)),
     #     ylim=c(0,3.5), axes=FALSE)
     axis(1, at=seq(0,max(d1$x),0.2), label=FALSE, cex.axis=1.5)
     axis(2, at=seq(0,3.5,1), cex.axis=1.5)
 
     box()
-    polygon(c(z.ref-z.thr,d3$x[which((z.ref-z.thr)<d3$x & 
-        d3$x<(z.ref+z.thr))],z.ref+z.thr), 
-    c(0,d3$y[which((z.ref-z.thr)<d3$x & d3$x<(z.ref+z.thr))],0), 
+    polygon(c(z.ref-z.thr,d3$x[which((z.ref-z.thr)<d3$x &
+        d3$x<(z.ref+z.thr))],z.ref+z.thr),
+    c(0,d3$y[which((z.ref-z.thr)<d3$x & d3$x<(z.ref+z.thr))],0),
     col=colfill[3], border=colfill[3], density=10, angle=45, lty=1)
     mtext("type Ib/c", side=3, line=-2, adj=0.9)
     mtext(paste("N = ", length(which(dump.df$GENTYPE == 3))), line=-4, adj=0.9)
-    boxed.labels(z.ref-.01, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 3) 
+    boxed.labels(z.ref-.01, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 3)
         & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
 
     par(lty=2)
-    plot(d2,col=colfill[2], main='', xlab='Redshift', xlim=c(0,max(d1$x)), 
+    plot(d2,col=colfill[2], main='', xlab='Redshift', xlim=c(0,max(d1$x)),
         ylim=c(0,3.5), axes=FALSE)
     axis(1, at=seq(0,max(d1$x),0.2), label=FALSE, cex.axis=1.5)
     axis(2, at=seq(0,3.5,1), cex.axis=1.5)
     box()
-    polygon(c(z.ref-z.thr,d2$x[which((z.ref-z.thr)<d2$x & 
-        d2$x<(z.ref+z.thr))],z.ref+z.thr), 
-    c(0,d2$y[which((z.ref-z.thr)<d2$x & d2$x<(z.ref+z.thr))],0), 
+    polygon(c(z.ref-z.thr,d2$x[which((z.ref-z.thr)<d2$x &
+        d2$x<(z.ref+z.thr))],z.ref+z.thr),
+    c(0,d2$y[which((z.ref-z.thr)<d2$x & d2$x<(z.ref+z.thr))],0),
     col=colfill[2], border=colfill[2], density=10, angle=45, lty=1)
     mtext("type II", side=3, line=-2, adj=0.9)
     mtext(paste("N = ", length(which(dump.df$GENTYPE == 2))), line=-4, adj=0.93)
-    boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 2) 
+    boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 2)
         & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
 
     par(lty=1)
@@ -214,14 +214,14 @@ compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     axis(1, at=seq(0,max(d1$x),0.2), cex.axis=1.5)
     axis(2, at=seq(0,3.5,1), cex.axis=1.5)
     box()
-    polygon(c(z.ref-z.thr,d1$x[which((z.ref-z.thr)<d1$x & 
-        d1$x<(z.ref+z.thr))],z.ref+z.thr), 
-    c(0,d1$y[which((z.ref-z.thr)<d1$x & d1$x<(z.ref+z.thr))],0), 
+    polygon(c(z.ref-z.thr,d1$x[which((z.ref-z.thr)<d1$x &
+        d1$x<(z.ref+z.thr))],z.ref+z.thr),
+    c(0,d1$y[which((z.ref-z.thr)<d1$x & d1$x<(z.ref+z.thr))],0),
     col=colfill[1], border=colfill[1], density=10, angle=45, lty=1)
 
     rug(z.ref)
 
-    boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 1) 
+    boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 1)
         & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
     mtext("type Ia", side=3, line=-2, adj=0.9)
     mtext(paste("N = ", length(which(dump.df$GENTYPE == 1))), line=-4, adj=0.92)
@@ -249,12 +249,12 @@ plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
     for (i in c(1:lc.num)){
     # for (f in file.list[1:20]){
         r <- readLines(file.list[ran[i]])
-        # next line gives the position of the row right before the head of the 
+        # next line gives the position of the row right before the head of the
         #
         # table containing the data. In this way, all is written before can be
         #
         # skipped.
-        skip <- grep('NVAR:', r) 
+        skip <- grep('NVAR:', r)
         lc <- read.table(file.list[ran[i]], header=TRUE, skip=skip, fill=TRUE)
         if (class(lc$FLUXCAL) != 'numeric'){
             del.rows <- which(is.na(lc$FLUXCALERR))
@@ -262,18 +262,18 @@ plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
             lc$FLUXCAL <- as.numeric(levels(lc$FLUXCAL))[lc$FLUXCAL]
         }
         if (i == 1){
-            plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
-                type='l', 
+            plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
+                type='l',
                 xlim=c(56171, 56351), ylim=c(0,200000),
                 xlab='epoch [mjd]', ylab='flux [adu]', col=colors[i])
         }else{
-            lines(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
+            lines(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
                 col=colors[i])
         }
         errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
             yplus=lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
             yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], add=T)
-    }    
+    }
     return (file.list)
 }
 
@@ -281,7 +281,7 @@ plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
 plot.lightcurve <- function(file.path, save=FALSE){
     r <- readLines(file.path)
     # gsub("[[:space:]]", "", x)
-    sn.type <- gsub('[[:space:]]', '', 
+    sn.type <- gsub('[[:space:]]', '',
         unlist(strsplit(r[grep('SNTYPE:', r)], ':'))[2])
 
     if (sn.type == 1){
@@ -292,7 +292,7 @@ plot.lightcurve <- function(file.path, save=FALSE){
         sn.type.lab <- 'type Ib/c'
     }
     message(sn.type.lab)
-     
+
     skip <- grep('NVAR:', r)
     lc <- read.table(file.path, header=TRUE, skip=skip, fill=TRUE)
     if (class(lc$FLUXCAL) != 'numeric'){
@@ -306,16 +306,16 @@ plot.lightcurve <- function(file.path, save=FALSE){
     par.default <- par(no.readonly=TRUE)
     par(mfrow=c(4,1), ann=FALSE, mar=c(0,0,0,0), oma=c(5,6,4,2))
     for (band in c('g','r','i','z')){
-        plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)], 
+        plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
             axes=FALSE, pch=20,
             xlim=c(floor(min(lc$MJD)), floor(max(lc$MJD))),
             ylim=c(floor(min(lc$FLUXCAL)), floor(max(lc$FLUXCAL))))
         errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
             yplus=lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
-            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], 
+            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)],
             add=T, cap=0)
         axis(2, at=seq(0, max(lc$FLUXCAL), 30000), cex.axis=1.5)
-        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE, 
+        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE,
             cex.axis=1.5, tick=TRUE)
         box()
         mtext(band, side=3, line=-2, adj=0.9)
@@ -335,25 +335,25 @@ plot.screen <- function(dir.path, save=FALSE){
     file.list <- list.files(path=dir.path, pattern='\\.DAT$', full.names=TRUE)
     ran <- sample(1:length(file.list), length(file.list), replace=FALSE)
     m <- rbind(
-        c(0.1-0.035,0.5-0.035,0.9-0.035,1-0.035),
-        c(0.1-0.035,0.5-0.035,0.8-0.035,0.9-0.035),
-        c(0.1-0.035,0.5-0.035,0.7-0.035,0.8-0.035),
-        c(0.1-0.035,0.5-0.035,0.6-0.035,0.7-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.9-0.035, 1-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.8-0.035, 0.9-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.7-0.035, 0.8-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.6-0.035, 0.7-0.035),
         #-----
-        c(0.6-0.035,1-0.035,0.9-0.035,1-0.035),
-        c(0.6-0.035,1-0.035,0.8-0.035,0.9-0.035),
-        c(0.6-0.035,1-0.035,0.7-0.035,0.8-0.035),
-        c(0.6-0.035,1-0.035,0.6-0.035,0.7-0.035),
+        c(0.6-0.035, 1-0.035, 0.9-0.035, 1-0.035),
+        c(0.6-0.035, 1-0.035, 0.8-0.035, 0.9-0.035),
+        c(0.6-0.035, 1-0.035, 0.7-0.035, 0.8-0.035),
+        c(0.6-0.035, 1-0.035, 0.6-0.035, 0.7-0.035),
         #-----
-        c(0.1-0.035,0.5-0.035,0.4-0.035,0.5-0.035),
-        c(0.1-0.035,0.5-0.035,0.3-0.035,0.4-0.035),
-        c(0.1-0.035,0.5-0.035,0.2-0.035,0.3-0.035),
-        c(0.1-0.035,0.5-0.035,0.1-0.035,0.2-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.4-0.035, 0.5-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.3-0.035, 0.4-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.2-0.035, 0.3-0.035),
+        c(0.1-0.035, 0.5-0.035, 0.1-0.035, 0.2-0.035),
         #-----
-        c(0.6-0.035,1-0.035,0.4-0.035,0.5-0.035),
-        c(0.6-0.035,1-0.035,0.3-0.035,0.4-0.035),
-        c(0.6-0.035,1-0.035,0.2-0.035,0.3-0.035),
-        c(0.6-0.035,1-0.035,0.1-0.035,0.2-0.035)
+        c(0.6-0.035, 1-0.035, 0.4-0.035, 0.5-0.035),
+        c(0.6-0.035, 1-0.035, 0.3-0.035, 0.4-0.035),
+        c(0.6-0.035, 1-0.035, 0.2-0.035, 0.3-0.035),
+        c(0.6-0.035, 1-0.035, 0.1-0.035, 0.2-0.035)
     )
     if (save){
         pdf(file='four_bands_four_lightcurve.pdf', width=8.7, height=11.7)
@@ -366,10 +366,10 @@ plot.screen <- function(dir.path, save=FALSE){
         if ((i %% 4) == 1){ # open new file
             while (TRUE){
                 r <- readLines(file.list[ran[1]])
-                
+
                 skip <- grep('NVAR:', r)
                 lc <- read.table(file.list[ran[1]], header=TRUE, skip=skip, fill=TRUE)
-                
+
                 if (class(lc$FLUXCAL) != 'numeric'){
                     del.rows <- which(is.na(lc$FLUXCALERR))
                     lc <- lc[-del.rows,]
@@ -380,39 +380,38 @@ plot.screen <- function(dir.path, save=FALSE){
                     break
                 }
             }
-            message(max(lc$FLUXCAL))    
-            mjd.r.max <- max(lc$FLUXCAL[which(lc$FLT=='r')])
+
+            r.max <- max(lc$FLUXCAL[which(lc$FLT=='r')])
             flux.max <- max(lc$FLUXCAL)
-            lc$MJD <- lc$MJD - lc$MJD[which(lc$FLUXCAL==mjd.r.max)]
-            lc$FLUXCAL <- lc$FLUXCAL / flux.max *100
-            lc$FLUXCALERR <- lc$FLUXCALERR / flux.max * 100
+            mjd.r.max <- round(lc$MJD[which(lc$FLUXCAL==r.max)])
+            message(mjd.r.max)
+            lc$MJD <- lc$MJD - mjd.r.max
+            lc$FLUXCAL <- lc$FLUXCAL/r.max*100
+            lc$FLUXCALERR <- lc$FLUXCALERR/r.max*100
         }
-        
-        
-        # message(c(floor(min(lc$MJD)), floor(max(lc$MJD))))
-        # message(min(lc$FLUXCAL))
+
         if (i%%4 == 0){ax <- TRUE}
-        plot(lc$MJD[which(lc$FLT==band[i%%4+1])], 
-            lc$FLUXCAL[which(lc$FLT==band[i%%4+1])], 
-            axes=FALSE, pch=20, cex=0.5, 
+        plot(lc$MJD[which(lc$FLT==band[i%%4+1])],
+            lc$FLUXCAL[which(lc$FLT==band[i%%4+1])],
+            axes=FALSE, pch=20, cex=0.5,
             xlim=c(floor(min(lc$MJD)), floor(max(lc$MJD))),
             ylim=c(floor(min(lc$FLUXCAL)), floor(max(lc$FLUXCAL))))
-        errbar(lc$MJD[which(lc$FLT==band[i%%4+1])], 
+        errbar(lc$MJD[which(lc$FLT==band[i%%4+1])],
             lc$FLUXCAL[which(lc$FLT==band[i%%4+1])],
             yplus=(lc$FLUXCAL[which(lc$FLT==band[i%%4+1])]+
                 lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])]),
             yminus=(lc$FLUXCAL[which(lc$FLT==band[i%%4+1])]-
-                lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])]), 
+                lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])]),
             add=T, cap=0, cex=0.5)
         box()
-        axis(2, at=seq(0, max(lc$FLUXCAL), 50), cex.axis=0.8)
-        # message(max(lc$FLUXCAL))
-        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE, 
+        axis(2, at=seq(0, max(lc$FLUXCAL), 40), cex.axis=0.8)
+
+        axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), label=FALSE,
             tick=TRUE, cex.axis=1)
 
         if (i %in% c(2,6,10,14)){
-            ylab.coord <- c(0,0)
-            mtext(paste("Flux / ", flux.max/100," [adu]"), side=2, at=ylab.coord, line=1.5, cex=0.8)
+            ylab.coord <- c(0,floor(min(lc$FLUXCALERR[which(lc$FLT==band[i%%4+1])])))
+            mtext(paste("Flux / ", r.max/100," [adu]", sep=''), side=2, at=ylab.coord, line=1.5, cex=0.8)
         }
 
         if (i %in% c(1,5,9,13)){mtext(band[1], side=3, line=-1.5, adj=0.95)}
@@ -421,10 +420,11 @@ plot.screen <- function(dir.path, save=FALSE){
         if (i %in% c(4,8,12,16)){mtext(band[4], side=3, line=-1.5, adj=0.95)}
 
         if ((i %% 4) == 0){
-        
-            axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), cex.axis=0.8)       
-            mtext(paste("Epoch - ",mjd.r.max," [mjd]"), side=1, line=1.5, cex=0.8)
-            # mtext("Flux [adu]", side=2, at=ylab.coord)#, line=3.5)
+            axis(1, at=seq(floor(min(lc$MJD)), floor(max(lc$MJD)), 10), cex.axis=0.8)
+            mtext(paste("Epoch - ", mjd.r.max," [mjd]", sep=''), side=1, line=1.5, cex=0.8)
+        }
+        if ((i%%4) == 1){
+            mtext("SN type Ia - MLCS2kUV", side=3, line=0.2, cex=0.8)
         }
     }
     par(par.default)
