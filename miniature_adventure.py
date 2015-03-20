@@ -638,7 +638,7 @@ if __name__ == "__main__":
         i_start = args.limits[0]
         i_end = args.limits[1]
         j_start = i_start + j_offset
-        j_end = i_end + j_offset
+        j_end = (i_end + j_offset) if (i_end+j_offset<=len(lsDirFit)) else len(lsDirFit)
         print "\n" + indent + bcolors.undwht + \
             "(*) Calculate distances between lightcurves ..." + \
             bcolors.txtrst
