@@ -1,52 +1,33 @@
 import numpy as np
 
 print 'mat00 ...'
-mat00 = np.loadtxt('products/distance_matrix/Oct28/dist_matrix_Sum_pc017261.ads.eso.org_1414549460.544.txt')
+mat00 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424728136.080.txt')
 
 print 'mat01 ...'
-mat01 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414592263.858.txt')
+mat01 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424761931.836.txt')
 
 print 'mat02 ...'
-mat02 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414591966.764.txt')
+mat02 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424836678.486.txt')
 
 print 'mat03 ...'
-mat03 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414590774.128.txt')
+mat03 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1426935010.715.txt')#dist_matrix_Sum_mothra_1424835453.155.txt')
 
 #---> hstacking ....
 print 'hstacking mat0 ...'
 mat0 = np.hstack((mat00, mat01, mat02, mat03))
 
-# ----- line 1 -----
 print 'mat10 ...'
 mat10 = np.transpose(mat01)
+# ----- line 1 -----
 
 print 'mat11 ...'
-mat11 = np.loadtxt('products/distance_matrix/Oct28/dist_matrix_Sum_pc017261.ads.eso.org_1414547556.833.txt')
+mat11 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424976703.216.txt')
 
 print 'mat12 ...'
-mat12 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414590827.558.txt')
+mat12 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1425008330.511.txt')
 
-print 'mat13_00 ...'
-mat13_00 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414612211.194.txt')
-
-print 'mat13_01 ...'
-mat13_01 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414612669.116.txt')
-
-print 'mat13_10 ...'
-mat13_10 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414612742.041.txt')
-
-print 'mat13_11 ...'
-mat13_11 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414612592.755.txt')
-
-#---> stacking ....
-print 'stacking mat13_0 ...'
-mat13_0 = np.hstack((mat13_00, mat13_01))
-
-print 'stacking mat13_1 ...'
-mat13_1 = np.hstack((mat13_10, mat13_11))
-
-print 'stacking mat13 ...'
-mat13 = np.vstack((mat13_0, mat13_1))
+print 'mat13 ...'
+mat13 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1426934839.968.txt')#dist_matrix_Sum_mothra_1425030478.363.txt')
 
 #---> hstacking ....
 print 'stacking mat1 ...'
@@ -60,29 +41,10 @@ print 'mat21 ...'
 mat21 = np.transpose(mat12)
 
 print 'mat22 ...'
-mat22 = np.loadtxt('products/distance_matrix/Oct28/dist_matrix_Sum_pc017261.ads.eso.org_1414547515.958.txt')
+mat22 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424934904.523.txt')
 
-print 'mat23_00 ...'
-mat23_00 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414612861.709.txt')
-
-print 'mat23_01 ...'
-mat23_01 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414613331.182.txt')
-
-print 'mat23_10 ...'
-mat23_10 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414614055.800.txt')
-
-print 'mat23_11 ...'
-mat23_11 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_mothra_1414613381.914.txt')
-
-#---> stacking ....
-print 'stacking mat23_0 ...'
-mat23_0 = np.hstack((mat23_00, mat23_01))
-
-print 'stacking mat23_1 ...'
-mat23_1 = np.hstack((mat23_10, mat23_11))
-
-print 'stacking mat23 ...'
-mat23 = np.vstack((mat23_0, mat23_1))
+print 'mat23 ...'
+mat23 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1426935152.075.txt')#dist_matrix_Sum_mothra_1425005559.641.txt')
 
 #---> stacking ....
 
@@ -101,27 +63,8 @@ mat31 = np.transpose(mat13)
 print 'mat32 ...'
 mat32 = np.transpose(mat23)
 
-print 'mat33_00 ...'
-mat33_00 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_pc017261.ads.eso.org_1414587633.166.txt')
-
-print 'mat33_01 ...'
-mat33_01 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_pc017261.ads.eso.org_1414596438.697.txt')
-
-print 'mat33_10 ...'
-mat33_10 = np.transpose(mat33_01)
-
-print 'mat33_11 ...'
-mat33_11 = np.loadtxt('products/distance_matrix/dist_matrix_Sum_pc017261.ads.eso.org_1414587956.411.txt')
-
-#---> stacking ....
-print 'stacking mat33_0 ...'
-mat33_0 = np.hstack((mat33_00, mat33_01))
-
-print 'stacking mat33_1 ...'
-mat33_1 = np.hstack((mat33_10, mat33_11))
-
-print 'stacking mat33 ...'
-mat33 = np.vstack((mat33_0, mat33_1))
+print 'mat33 ...'
+mat33 = np.loadtxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum_mothra_1424972850.416.txt')
 
 #---> stacking ....
 print 'stacking mat3 ...'
@@ -132,7 +75,7 @@ print 'stacking mat ...'
 mat = np.vstack((mat0, mat1, mat2, mat3))
 
 print 'saveing mat ...'
-np.savetxt('products/distance_matrix/dist_matrix_Sum.txt', mat)
+np.savetxt('train_data/RBF_test-length/distance_matrix/dist_matrix_Sum.txt', mat)
 
 print 'END'
 #END
