@@ -837,9 +837,7 @@ if __name__ == "__main__":
                         """
                         distList[bandDict[b]].append(distFlag)
                         # distList[bandDict[b], i-i_start, j-j_start] = distFlag
-                    gc.collect()
 
-                gc.collect()
             """
             # >>> !! Checking for i being equal to its beginning value in the loop
             does not take into account the
@@ -854,7 +852,7 @@ if __name__ == "__main__":
                 print 'nCols updated! {:<d}'.format(nCols)
             pbar.update(i-i_start+1)
             
-            gc.collect()
+
 
         pbar.finish()
 
