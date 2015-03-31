@@ -5,10 +5,10 @@ import numpy as np
 import numpy.ma as ma
 import pandas as pd
 from pandas import DataFrame
-import cPickle 
-import gzip 
-import GPy 
-import classes 
+import cPickle
+import gzip
+import GPy
+import classes
 import time
 import os
 from os import path
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from cStringIO import StringIO
 import subprocess
 
-# code from 
+# code from
 #
 # http://stackoverflow.com/questions/16571150/
 #        how-to-capture-stdout-output-from-a-python-function-call
@@ -68,7 +68,7 @@ class bcolors:
     bakcyn='\033[46m'   # Cyan
     bakwht='\033[47m'   # White
     txtrst='\033[0m'    # Text Reset
-    
+
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKGREEN = '\033[92m'
@@ -88,16 +88,16 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
-        "-s", "--sn-candidate", dest="candidate", 
-        type=np.int64, default=None, 
+        "-s", "--sn-candidate", dest="candidate",
+        type=np.int64, default=None,
         help="Candidate id")
-    
-    parser.add_argument("-b", "--band", dest="band", default='r', 
+
+    parser.add_argument("-b", "--band", dest="band", default='r',
                         help="Photometric band.")
 
     parser.add_argument(
         "-t", "--test-lengthscale", dest="testLength",
-        action="store_true", 
+        action="store_true",
         help="Flag to randomize the lengthscale parameter.")
 
     parser.add_argument(
@@ -127,8 +127,8 @@ else:
 
 def flux_error_to_mag_error(fluxErr, flux):
     # error prop. zErr = abs(dF(x)/dx) xErr
-    magErr = np.multiply(np.abs(np.divide(-2.5, np.log(10) * flux)), 
-                         np.abs(fluxErr)) 
+    magErr = np.multiply(np.abs(np.divide(-2.5, np.log(10) * flux)),
+                         np.abs(fluxErr))
 
     return magErr
 
@@ -166,7 +166,7 @@ def open_pkl(filePath):
 
     Keyword Argument:
     filePath -- string, path to cPickle file.
-    """    
+    """
     fileHandler = open(filePath,'r')
     data = cPickle.load(fileHandler)
     fileHandler.close()
@@ -185,7 +185,7 @@ def dump_pkl(filePath, dataStruct):
     """
 
     fileHandler = open(filePath,'w')
-        
+
     cPickle.dump(dataStruct, fileHandler)
     fileHandler.close()
 
@@ -219,7 +219,7 @@ def create_file(indexList, outFilePath):
     """
     # indexArr = np.loadtxt(indexFile, dtype=np.int)
     outFile = open(outFilePath, 'w')
-    
+
     for i in indexList:
         filePath = 'train_data/DES_BLIND+HOSTZ_FIT/' + \
             'DES_SN{:0>6d}_FIT.DAT'.format(i)
@@ -233,7 +233,7 @@ def create_file(indexList, outFilePath):
     outFile.close()
 
 def index_to_filename(indexList, inFileName, outFileName):
-    """Filters a list of files using specified indexes. 
+    """Filters a list of files using specified indexes.
 
     Keyword arguments:
     indexList -- Python list, indices to keep in the output.
@@ -245,7 +245,7 @@ def index_to_filename(indexList, inFileName, outFileName):
     inFile.close()
 
     npLines = np.array(lines, dtype=np.str)
-    
+
     outFileList = npLines[indexList]
     np.savetxt(outFileName, outFileList, fmt='%s', newline='')
 
@@ -300,8 +300,8 @@ def extract_redshift_data(path, outFile):
     lsList.remove('')
 
     dump = pd.read_csv(
-        'train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP', 
-        sep=' ', skiprows=0, header=1, usecols=[1,2], 
+        'train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP',
+        sep=' ', skiprows=0, header=1, usecols=[1,2],
         skipinitialspace=True, engine='c')
 
     dump = dump.convert_objects(convert_numeric=True, copy=False)
@@ -320,16 +320,16 @@ def extract_redshift_data(path, outFile):
         genType[i] = dump['GENTYPE'][dump['CID']==snid[i]]
 
     df = pd.DataFrame(
-        data=zip(snid, redshift, trainFlag, genType), 
+        data=zip(snid, redshift, trainFlag, genType),
         columns=['SNID', 'redshift', 'train_flag', 'genType'])
 
     df.to_csv(
-        'products/'+outFile, sep=';', index=False, 
+        'products/'+outFile, sep=';', index=False,
         float_format='%5.4f', header=True)
-    
+
 def extract_training_set(path):
     """Creates files dividing supernovae in training and test sets. It creates also files list training set supernovae by type
-    
+
     Keyword arguments:
     path -- where to find supernova light curves files
 
@@ -344,7 +344,7 @@ def extract_training_set(path):
     """
     if path[-1] != os.sep:
         path = path + os.sep
-        
+
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=path)
     lsList = p.stdout.read()
@@ -392,7 +392,7 @@ def extract_training_set(path):
                     i, tmpSN.SNID, path+lsList[i]
                     )
                 )
-            continue 
+            continue
 
         if SNType == 3 or SNType == 32 or SNType == 33:
             outFileIbc.write(
@@ -464,15 +464,15 @@ def rewrite_file(fileName):
         if i > 0 and i < 10:
             if i == 7 and ('REDSHIFT_SPEC:' not in lines[i]):
                 line = 'REDSHIFT_SPEC: -9.0000 +- 9.0000\n'
-                outFile.write(line)    
-            
+                outFile.write(line)
+
             line = lines[i]
             line = line[2:]
             outFile.write(line)
             continue
 
         if i == 10:
-            if lines[i] != '\n': 
+            if lines[i] != '\n':
                 outFile.write(lines[i])
             else:
                 line = 'MJD_MAX_FLUX-CCF:      0.000\n'
@@ -490,7 +490,7 @@ def rewrite_file(fileName):
         if lines[i][0] == '#':
             outFile.write(lines[i])
             continue
-        
+
         if 'MJD' in lines[i]:
             if 'FIELD' not in lines[i]:
                 line = lines[i][0:15] + '   FIELD' + lines[i][15:]
@@ -513,6 +513,120 @@ def rewrite_file(fileName):
 
     outFile.close()
 
+
+def build_distance_matrix(path):
+    """
+    NOT WORKING!!!
+    Builds the full distance matrix from partial files in `path`.
+    Reads the list of files in path having `dist_matrix_Sum*` in the name.
+    Order them looking at sum of first row and first column indeces (time stamp
+    in file name is no reliable). These values are in file header in this
+    fashion:
+    # distMatrix[r_1:r_2,c_1:c_2] --- Created by `computerName`
+    Creates the matrix and saves it for R processing.
+    """
+
+    p = subprocess.Popen("ls dist_matrix_Sum*", shell=True,
+        stdout=subprocess.PIPE, cwd=path)
+    fileNames = p.stdout.read()
+    fileNames = fileNames.split('\n')
+    fileNames.sort()
+    fileNames.remove('')
+
+    print fileNames
+    print '*---------------------\n'
+    """
+    number of elements in the triangle of a square n*n triangular matrix
+    m = 0.5*(n*(n+1)) -> 2m = n^2 + n = n(n+1)
+    """
+
+    fID = []
+    dictFile = dict()
+
+    n = int((1 + np.sqrt(1+8*len(fileNames)))/2) # here in case of a better coding based on recursive function (maybe)
+    print n, len(fileNames)
+    for f in fileNames:
+        shellCmd = 'head -n 1 {:s}'.format(path+f)
+        p = subprocess.Popen(shellCmd, shell=True, stdout=subprocess.PIPE)
+        head = p.stdout.read()
+        head = head.split(',')
+        rowIdx = int(head[0].split(':')[0].split('[')[1]) + \
+                    int(head[1].split(':')[0])
+
+        colIdx = int(head[0].split(':')[1][0:-1]) + \
+                    int(head[1].split(':')[1].split(']')[0])
+        fID.append(rowIdx + colIdx)
+        dictFile[fID[-1]] = f
+
+    # To get the right order in `fileNames` I order `fID` and progate the
+    #
+    # ordering to `fileNames`
+
+
+
+    fID.sort()
+    for i in fID:
+        print path+dictFile[i]
+    raise SystemExit
+    print fID
+    mileStones = fID[0:n]
+    print 'mat00 ...'
+    mat00 = np.loadtxt(path+dictFile[fID[0]])
+    print 'mat01 ...'
+    mat01 = np.loadtxt(path+dictFile[fID[1]])
+    print 'mat02 ...'
+    mat02 = np.loadtxt(path+dictFile[fID[2]])
+    print 'mat03 ...'
+    mat03 = np.loadtxt(path+dictFile[fID[3]])
+
+    print 'hstacking mat0 ...'
+    mat0 = np.hstack((mat00, mat01, mat02, mat03))
+
+
+    print 'mat10 ...'
+    mat10 = np.transpose(mat01)
+    print 'mat10 ...'
+    mat11 = np.loadtxt(path+dictFile[fID[4]])
+    print 'mat10 ...'
+    mat12 = np.loadtxt(path+dictFile[fID[5]])
+    print 'mat10 ...'
+    mat13 = np.loadtxt(path+dictFile[fID[6]])
+
+    print 'hstacking mat0 ...'
+    mat1 = np.hstack((mat00, mat11, mat12, mat13))
+
+
+    print 'mat20 ...'
+    mat20 = np.transpose(mat02)
+    print 'mat21 ...'
+    mat21 = np.transpose(mat12)
+    print 'mat22 ...'
+    mat22 = np.loadtxt(path+dictFile[fID[7]])
+    print 'mat23 ...'
+    mat23 = np.loadtxt(path+dictFile[fID[8]])
+
+    print 'stacking mat2 ...'
+    mat2 = np.hstack((mat20, mat21, mat22, mat23))
+
+    print 'mat30 ...'
+    mat30 = np.transpose(mat03)
+    print 'mat31 ...'
+    mat31 = np.transpose(mat13)
+    print 'mat32 ...'
+    mat32 = np.transpose(mat23)
+    print 'mat33 ...'
+    mat33 = np.loadtxt(path+dictFile[fID[9]])
+
+    print 'stacking mat3 ...'
+    mat3 = np.hstack((mat30, mat31, mat32, mat33))
+
+    print 'stacking mat ...'
+    mat = np.vstack((mat0, mat1, mat2, mat3))
+
+    print 'saveing mat ...'
+    np.savetxt(path+'distance_matrix_Sum.txt', mat)
+
+    return 0
 """
 ----------------------------------------------------------------------------
 
@@ -534,13 +648,13 @@ def flux_to_mag(flux, limFlux=False):
     """
     Converts fluxes to magnitudes using the following law (from Kessler+2010):
         flux = 10^(-0.4 * m + 11) => m = -2.5 * (log_10(flux) - 11)
-    If the flux is below the limit of the instrument, returns the 
+    If the flux is below the limit of the instrument, returns the
     corresponding limiting magnitude.
 
     INPUT:
         flux: numpy array of fluxes
         limFlux: specifies the limiting flux
-        
+
     OUTPUT:
         mag: magnitude-converted fluxes
     """
@@ -550,12 +664,12 @@ def flux_to_mag(flux, limFlux=False):
 
         # applying the mask to detection below the limiting flux
         maFlux = ma.masked_where(flux < limFlux, flux)
-        
+
         # to avoid warnings due to values passed to np.log10
         # fluxMask = maFlux.mask
         # maMag = -2.5 * (-11.0 + np.log10(ma.filled(maFlux,1)))
         maMag = -2.5 * (-11.0 + np.log10(maFlux))
-        
+
         mag = ma.filled(maMag, limMag)
     else:
         if flux > 0:
@@ -570,7 +684,7 @@ def mag_to_flux(mag, limMag=False):
     """
     Converts magnitudes to fluxes using the following law (from Kessler+2010):
         flux = 10^(-0.4 * m + 11)
-    If the magnitude is above the limit of the instrument, returns the 
+    If the magnitude is above the limit of the instrument, returns the
     corresponding limiting flux.
 
     INPUT:
@@ -654,10 +768,10 @@ def pre_process(data, bands):
     """
 
     for b in bands:
-        data.lcsDict[b].mjd = time_correct(data.lcsDict[b].mjd, 
+        data.lcsDict[b].mjd = time_correct(data.lcsDict[b].mjd,
             data.zSpec if data.zSpec else data.zPhotHost)
 
-        data.lcsDict[b].flux = correct_for_absorption(data.lcsDict[b].flux, 
+        data.lcsDict[b].flux = correct_for_absorption(data.lcsDict[b].flux,
             data.MWEBV, b)
 
     return data
@@ -673,7 +787,7 @@ def pick_random_sn(catalog, band):
     band -- photometric band identifying light curve.
 
     Returns:
-    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD 
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD
              of maximum flux in r band.
     flux -- NumPy array of fluxes.
     fluxErr -- NumPy array of errors on flux measurements.
@@ -687,14 +801,14 @@ def pick_random_sn(catalog, band):
     epoch = epoch - epoch.min()
 
     flux = catalog.sne[idx].lcsDict[band].flux
-    
+
     errFlux = catalog.sne[idx].lcsDict[band].fluxErr
-    
+
     return epoch, flux, errFlux, idx
 
 
 def redshift_distrib(pathToDir, binSize):
-    """Plots the distribution of redshift values as an histogram with specified 
+    """Plots the distribution of redshift values as an histogram with specified
     bin size.
 
     Keyword arguments:
@@ -717,14 +831,14 @@ def redshift_distrib(pathToDir, binSize):
 
     i = 0
     for z in np.nditer(zed, op_flags=['readwrite']):
-        sn = get_sn_from_file(pathToDir+lsDirData[i])    
+        sn = get_sn_from_file(pathToDir+lsDirData[i])
         z[...] = sn.zSpec if sn.zSpec else sn.zPhotHost
         i += 1
 
     nBins = round((zed.max()-zed.min())/binSize)
     # print round(zed.max()*100)
     # print int(binSize*100)
-    # bins = [range(0, int(zed.max()*100), int(binSize*100))[i]/100. for i in 
+    # bins = [range(0, int(zed.max()*100), int(binSize*100))[i]/100. for i in
     #     range(len(range(0, int(zed.max()*100), int(binSize*100))))]
     # bins.append(bins[-1]+binSize)
     # print bins
@@ -745,7 +859,7 @@ def get_sn(catalog, band, idx):
     idx -- index of supernova inside catalogue.
 
     Returns:
-    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD 
+    epoch -- NumPy array of epochs in MJD. Has zero point corresponding to MJD
              of maximum flux in r band.
     flux -- NumPy array of fluxes.
     fluxErr -- NumPy array of errors on flux measurements.
@@ -758,9 +872,9 @@ def get_sn(catalog, band, idx):
     epoch = epoch - epoch.min()
 
     flux = catalog.sne[idx].lcsDict[band].flux
-    
+
     errFlux = catalog.sne[idx].lcsDict[band].fluxErr
-    
+
     return epoch, flux, errFlux
 
 def get_sn_from_file(pathToSN, magFlag=False):
@@ -787,7 +901,7 @@ def reshape_for_GPy(vec):
     return np.reshape(vec, (len(vec), 1))
 
 
-def gp_fit(X, Y, errY, kernel, 
+def gp_fit(X, Y, errY, kernel,
            n_restarts=0, parallel=True,
            test_length=False,
            test_prior=False,
@@ -812,12 +926,12 @@ def gp_fit(X, Y, errY, kernel,
     predY -- list of Y values predicted using GPy.
     var -- list of variance values for each predY.
     gpModel -- the Gaussian process model from GPy use to predict predY.
-    
+
     Notes:
     GPy code can be found at http://sheffieldml.github.io/GPy/.
     Check on shape of input should be added.
     """
-    
+
     medXStep = np.median(np.abs(np.subtract(X[0:-2], X[1:-1])))
     maxXStep = X[-1] - X[0]
     if verbose:
@@ -843,7 +957,7 @@ def gp_fit(X, Y, errY, kernel,
 
     # Block to capture unwanted output from .constrain_fixed() function
     # with Capturing() as output:
-    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False) 
+    [gpModel['.*Gaussian_noise_%s' %i].constrain_fixed(warning=False)
          for i in range(len(X))
          ]
 
@@ -863,7 +977,7 @@ def gp_fit(X, Y, errY, kernel,
             gpModel['.*power'].set_prior(powPrior, warning=False)
     else:
         pass
-    
+
     if n_restarts > 0:
         # optimize_restart is from GPy/core/model.py
         gpModel.optimize_restarts(num_restarts=n_restarts,
@@ -894,17 +1008,17 @@ def gp_fit(X, Y, errY, kernel,
 if __name__ == '__main__':
     # these limiting magnitudes are for simulations of DES survey. They should
     # be changed.
-    limMag = {'g': 25.2, 
-              'r': 25.4, 
-              'i': 25.1, 
+    limMag = {'g': 25.2,
+              'r': 25.4,
+              'i': 25.1,
               'z': 24.9}
-    
+
     dataSN = "train_data/SIMGEN_PUBLIC_DES"
 
     if args.candidate is None:
         # Picking random candidate
         #
-        # high set max number of SN in SNPhotCC 
+        # high set max number of SN in SNPhotCC
         candidateIdx = np.random.random_integers(
             low=0, high=21319)
         print candidateIdx
@@ -921,25 +1035,25 @@ if __name__ == '__main__':
     epoch = sn.lcsDict[args.band].mjd
     flux = sn.lcsDict[args.band].flux
     errFlux = sn.lcsDict[args.band].fluxErr
-    
+
     print "  Candidate ID          {:>06}".format(args.candidate)
     print "  Testing lengthscale ? {:<5}".format(args.testLength)
     print "  Magnitudes ?          {:<5}".format(args.mag)
-    
+
     # Tranforming to magnitudes
     #
     # this is done by reading them from file
-    
+
     # if args.mag:
     #     limFlux = mag_to_flux(limMag[args.band])
     #     mag = flux_to_mag(flux, limFlux)
     #     errMag = flux_error_to_mag_error(errFlux, flux)
 
-    # check the bias. Neale: should be added to the mean of the rational 
+    # check the bias. Neale: should be added to the mean of the rational
     # quadratic
     #kern = GPy.kern.Bias(1) + GPy.kern.RatQuad(1)
 
-    
+
     if args.kern == "RatQuad":
         kern = GPy.kern.RatQuad(1)
     elif args.kern == "RBF":
@@ -948,22 +1062,22 @@ if __name__ == '__main__':
         raise Exception
 
     # Fitting the data points
-    # 
-    # TBD: the fit is OK if passes the model validation procedure (which has 
-    # 
+    #
+    # TBD: the fit is OK if passes the model validation procedure (which has
+    #
     # to be done)
     if not sn.lcsDict[args.band].badCurve:
         # if args.mag:
         #     predEpoch, mu, var, GPModel = gp_fit(
-        #                                     epoch, mag, errMag, 
-        #                                     kern, n_restarts=10, 
-        #                                     test_length=args.testLength, 
+        #                                     epoch, mag, errMag,
+        #                                     kern, n_restarts=10,
+        #                                     test_length=args.testLength,
         #                                     test_prior=args.testPrior,
         #                                     verbose=args.verbose)
         # else:
         predEpoch, mu, var, GPModel = gp_fit(
-                                        epoch, flux, errFlux, 
-                                        kern, n_restarts=10, 
+                                        epoch, flux, errFlux,
+                                        kern, n_restarts=10,
                                         test_length=args.testLength,
                                         test_prior=args.testPrior,
                                         verbose=args.verbose)
@@ -973,22 +1087,22 @@ if __name__ == '__main__':
         corr_flux = correct_for_absorption(flux, sn.MWEBV, args.band)
 
         corr_predEpoch, corr_mu, corr_var, corr_GPModel = gp_fit(
-                                        corr_epoch, corr_flux, errFlux, 
-                                        kern, n_restarts=10, 
+                                        corr_epoch, corr_flux, errFlux,
+                                        kern, n_restarts=10,
                                         test_length=args.testLength,
                                         test_prior=args.testPrior,
                                         verbose=args.verbose)
 
-        
+
         # print GPModel['.*lengthscale|.*power']
-        
+
         print "  Model log likelihood = {: <6}".format(GPModel.log_likelihood())
 
         # print "  Fit to data:", mu, "\n"
         # print "  Normalised fit to data:", mu/mu.max(), "\n"
-        # 
+        #
         # Plot
-        # 
+        #
         if plt.get_fignums():
             figNum = plt.get_fignums()[-1]+1
         else:
@@ -1001,17 +1115,17 @@ if __name__ == '__main__':
             print 'mags'
             ylim = plt.ylim()
             plt.ylim(ylim[1], ylim[0])
-            plt.errorbar(epoch, mag, 
+            plt.errorbar(epoch, mag,
                  yerr=errMag, fmt=None, ecolor='black', zorder=1)
             plt.scatter(epoch, mag, color='black')
         else:
-            fig, ax = plt.subplots(nrows=2, ncols=1, 
-                figsize=(16.5, 11.7), 
+            fig, ax = plt.subplots(nrows=2, ncols=1,
+                figsize=(16.5, 11.7),
                 tight_layout=False
                 )
             fig.suptitle("{:>06}".format(args.candidate))
             print 'fluxes'
-            ax[0].errorbar(epoch, flux, 
+            ax[0].errorbar(epoch, flux,
                 yerr=errFlux, fmt=None, ecolor='black', zorder=1)
             ax[0].scatter(epoch, flux, color='black')
 
