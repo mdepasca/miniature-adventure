@@ -425,6 +425,10 @@ if __name__ == "__main__":
                         nopeakIdx = np.append(nopeakIdx, i)
                         fNopeaked.write('{:<}\n'.format(filePath))
 
+                gc.collect()
+            # free memory
+            gc.collect()
+
         fPeaked.close()
         fNopeaked.close()
         # sys.stderr = saveErr
@@ -445,6 +449,7 @@ if __name__ == "__main__":
         np.savetxt(filePath, nopeakIdx,
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
+        gc.collect()
     """
 
     PERFORMING CROSS-CORRELATION
@@ -606,6 +611,7 @@ if __name__ == "__main__":
                 pbar.update(z+1)
                 z += 1
 
+                gc.collect()
             notPeaked.ccMjdMaxFlux = np.mean(ccMax)#ccMax.mean()
             """
             re-writing file of not peaked lc to include information on maximum
@@ -616,9 +622,11 @@ if __name__ == "__main__":
 
             reWrite.write(filePath+'\n')
             pbar.finish()
+
+            gc.collect()
         reWrite.close()
         print 'CC ended!'
-
+        gc.collect()
 
     """
 
@@ -829,7 +837,9 @@ if __name__ == "__main__":
                         """
                         distList[bandDict[b]].append(distFlag)
                         # distList[bandDict[b], i-i_start, j-j_start] = distFlag
+                    gc.collect()
 
+                gc.collect()
             """
             # >>> !! Checking for i being equal to its beginning value in the loop
             does not take into account the
@@ -843,7 +853,16 @@ if __name__ == "__main__":
                 nCols = len(distList[0])
                 print 'nCols updated! {:<d}'.format(nCols)
             pbar.update(i-i_start+1)
+            
+            gc.collect()
+
         pbar.finish()
+
+        del iCandidate
+        del jCandidate
+        del tmpSN
+
+        gc.collect()
 
         distMatrix = np.zeros((4,
             len(distList[0])/nCols, nCols),
@@ -854,6 +873,13 @@ if __name__ == "__main__":
             distMatrix[bandDict[b]] = np.reshape(
                 distList[bandDict[b]], (len(distList[bandDict[b]])/nCols, nCols)
                 )
+
+        """
+        distList is no more used from now on. I delete it to save memory
+        """
+        del distList
+
+        gc.collect()
 
         # fixing flagged elements
         # raise SystemExit
@@ -905,6 +931,16 @@ if __name__ == "__main__":
         """
         Saving on text files
         """
+
+        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+            'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
+                socket.gethostname(), time.time()
+            )
+        np.savetxt(filePath, distMatrixSum, fmt='%6.4f', header=fileHeader)
+
+        del distMatrixSum
+        gc.collect()
+
         fileHeader = "distMatrix[{:<d}:{:<d},{:<d}:{:<d}] --- ".format(
             i_start, i_end, j_start, j_end
             ) + \
@@ -934,12 +970,9 @@ if __name__ == "__main__":
             )
         np.savetxt(filePath, distMatrix[3], fmt='%6.4f', header=fileHeader)
 
-
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
-            'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
-                socket.gethostname(), time.time()
-            )
-        np.savetxt(filePath, distMatrixSum, fmt='%6.4f', header=fileHeader)
+        del distMatrix
+        gc.collect()
+        
 
     """
 
