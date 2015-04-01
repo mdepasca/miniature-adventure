@@ -39,16 +39,16 @@ if __name__ == "__main__":
 	fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'
 
 	print 'mat00 ...'
-	mat00 = np.loadtxt(args.path+fileName.format(float(timeStamps)[0]))
+	mat00 = np.loadtxt(args.path+fileName.format(float(timeStamps[0])))
 
 	print 'mat01 ...'
-	mat01 = np.loadtxt(args.path+fileName.format(float(timeStamps)[1]))
+	mat01 = np.loadtxt(args.path+fileName.format(float(timeStamps[1])))
 
 	print 'mat02 ...'
-	mat02 = np.loadtxt(args.path+fileName.format(float(timeStamps)[2]))
+	mat02 = np.loadtxt(args.path+fileName.format(float(timeStamps[2])))
 
 	print 'mat03 ...'
-	mat03 = np.loadtxt(args.path+fileName.format(float(timeStamps)[3]))
+	mat03 = np.loadtxt(args.path+fileName.format(float(timeStamps[3])))
 
 	#---> hstacking ....
 	print 'hstacking mat0 ...'
@@ -62,13 +62,13 @@ if __name__ == "__main__":
 	# ----- line 1 -----
 
 	print 'mat11 ...'
-	mat11 = np.loadtxt(args.path+fileName.format(float(timeStamps)[4]))
+	mat11 = np.loadtxt(args.path+fileName.format(float(timeStamps[4])))
 
 	print 'mat12 ...'
-	mat12 = np.loadtxt(args.path+fileName.format(float(timeStamps)[5]))
+	mat12 = np.loadtxt(args.path+fileName.format(float(timeStamps[5])))
 
 	print 'mat13 ...'
-	mat13 = np.loadtxt(args.path+fileName.format(float(timeStamps)[6]))
+	mat13 = np.loadtxt(args.path+fileName.format(float(timeStamps[6])))
 
 	#---> hstacking ....
 	print 'stacking mat1 ...'
@@ -85,10 +85,10 @@ if __name__ == "__main__":
 	mat21 = np.transpose(mat12)
 
 	print 'mat22 ...'
-	mat22 = np.loadtxt(args.path+fileName.format(float(timeStamps)[7]))
+	mat22 = np.loadtxt(args.path+fileName.format(float(timeStamps[7])))
 
 	print 'mat23 ...'
-	mat23 = np.loadtxt(args.path+fileName.format(float(timeStamps)[8]))
+	mat23 = np.loadtxt(args.path+fileName.format(float(timeStamps[8])))
 
 	#---> stacking ....
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
 	mat32 = np.transpose(mat23)
 
 	print 'mat33 ...'
-	mat33 = np.loadtxt(args.path+fileName.format(float(timeStamps)[9]))
+	mat33 = np.loadtxt(args.path+fileName.format(float(timeStamps[9])))
 
 	#---> stacking ....
 	print 'stacking mat3 ...'
