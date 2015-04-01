@@ -935,7 +935,6 @@ if __name__ == "__main__":
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-
         filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()

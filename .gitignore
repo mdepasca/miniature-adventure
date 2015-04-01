@@ -4,6 +4,7 @@
 
 *.py[cod]
 *.log
+*.out
 # C extensions
 *.so
 
