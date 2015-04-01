@@ -17,11 +17,11 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 	parser.add_argument(
-		'--path', '-p', dest=path,
+		'--path', '-p', dest='path',
 		help='Path where to find files.')
 
 	parser.add_argument(
-		'--time-stamps', '-t', dest=timeStamps,
+		'--time-stamps', '-t', dest='timeStamps',
 		default='',
 		help='ASCII file containing time stamps of sub-matrix files. One per line in the correct order.')
 
