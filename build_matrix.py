@@ -8,7 +8,7 @@ if __name__ == "__main__":
 	time stamp of the sub-matrix file (WARNING: they have to be in the 
 	correct order, 1st line -> sub-matrix 00; 2nd line -> sub-matrix 01 
 	etc.).
-	The time stamp is inserted in the file name.
+	The time stamp is inserted in the file name. THIS COULD BETTER BE A LIST OF FILE NAMES!!
 	"""
 
 
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 	inFile.close()
 
 	# path = 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
-	fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'
+	fileName = 'dist_matrix_Sum_mothra_{:}.txt'
 
 	print 'mat00 ...'
 	mat00 = np.loadtxt(args.path+fileName.format(timeStamps[0]))
