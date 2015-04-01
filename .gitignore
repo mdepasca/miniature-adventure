@@ -3,7 +3,7 @@
 \#*.*\#
 
 *.py[cod]
-
+*.log
 # C extensions
 *.so
 
@@ -56,7 +56,7 @@ products/
 results/**
 train_data/**
 fit_data/**
-
+ignore/**
 #Image files
 *.eps
 *.png
