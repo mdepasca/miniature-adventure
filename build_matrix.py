@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
 	parser.add_argument(
 		'--time-stamps', '-t', dest=timeStamps,
-		default=''
+		default='',
 		help='ASCII file containing time stamps of sub-matrix files. One per line in the correct order.')
 
 	args = parser.parse_args()
