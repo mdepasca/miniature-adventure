@@ -930,6 +930,12 @@ if __name__ == "__main__":
         Saving on text files
         """
 
+        fileHeader = "distMatrix[{:<d}:{:<d},{:<d}:{:<d}] --- ".format(
+            i_start, i_end, j_start, j_end
+            ) + \
+            "Created by {:<}".format(socket.gethostname())
+
+
         filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
@@ -938,11 +944,6 @@ if __name__ == "__main__":
 
         del distMatrixSum
         gc.collect()
-
-        fileHeader = "distMatrix[{:<d}:{:<d},{:<d}:{:<d}] --- ".format(
-            i_start, i_end, j_start, j_end
-            ) + \
-            "Created by {:<}".format(socket.gethostname())
 
         filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
             'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
