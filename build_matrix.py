@@ -54,12 +54,15 @@ if __name__ == "__main__":
 	print 'hstacking mat0 ...'
 	mat0 = np.hstack((mat00, mat01, mat02, mat03))
 
-	del mat00, mat01, mat02, mat03
+	del mat00
 	gc.collect()
 
+	# ----- line 1 -----
 	print 'mat10 ...'
 	mat10 = np.transpose(mat01)
-	# ----- line 1 -----
+	
+	del mat01
+	gc.collect()
 
 	print 'mat11 ...'
 	mat11 = np.loadtxt(args.path+fileName.format(float(timeStamps[4])))
@@ -74,15 +77,20 @@ if __name__ == "__main__":
 	print 'stacking mat1 ...'
 	mat1 = np.hstack((mat10, mat11, mat12, mat13))
 
-	del mat10, mat11, mat12, mat13
+	del mat10, mat11, mat12
 	gc.collect()
 
 	# ----- line 2 -----
 	print 'mat20 ...'
 	mat20 = np.transpose(mat02)
 
+	del mat02
+
 	print 'mat21 ...'
 	mat21 = np.transpose(mat12)
+
+	del mat12
+	fc.collect()
 
 	print 'mat22 ...'
 	mat22 = np.loadtxt(args.path+fileName.format(float(timeStamps[7])))
@@ -95,7 +103,7 @@ if __name__ == "__main__":
 	print 'stacking mat2 ...'
 	mat2 = np.hstack((mat20, mat21, mat22, mat23))
 
-	del mat20, mat21, mat22, mat23
+	del mat20, mat21, mat22
 	gc.collect()
 
 	# ----- line 3 -----
@@ -109,6 +117,8 @@ if __name__ == "__main__":
 	print 'mat32 ...'
 	mat32 = np.transpose(mat23)
 
+	del mat03, mat13, mat23
+	
 	print 'mat33 ...'
 	mat33 = np.loadtxt(args.path+fileName.format(float(timeStamps[9])))
 
