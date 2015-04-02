@@ -77,7 +77,7 @@ if __name__ == "__main__":
 	print 'stacking mat1 ...'
 	mat1 = np.hstack((mat10, mat11, mat12, mat13))
 
-	del mat10, mat11, mat12
+	del mat10, mat11
 	gc.collect()
 
 	# ----- line 2 -----
@@ -90,7 +90,7 @@ if __name__ == "__main__":
 	mat21 = np.transpose(mat12)
 
 	del mat12
-	fc.collect()
+	gc.collect()
 
 	print 'mat22 ...'
 	mat22 = np.loadtxt(args.path+fileName.format(float(timeStamps[7])))
