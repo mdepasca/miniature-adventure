@@ -172,11 +172,13 @@ if __name__ == "__main__":
         help='Offset for columns WRT limits (which are referred to rows).'
     )
 
-    
+    inputGroup.add_argument(
+        '--plot-offset', dest='plotOffset',
+        default=-1, type=int,
+        help='Offset in index to begin light curves plotting from.'
+    )
+
     args = parser.parse_args()
-
-
-
 
     bands = ['g', 'r', 'i', 'z']
 else:
@@ -1043,8 +1045,11 @@ if __name__ == "__main__":
         '''
         nrows = 5
         ncols = 5
-        np.random.RandomState
-        offset = int(np.random.uniform(low=0, high=len(lsDirFit)-nrows*ncols))
+        if (args.plotOffset == -1):
+            np.random.RandomState
+            offset = int(np.random.uniform(low=0, high=len(lsDirFit)-nrows*ncols))
+        else:
+            offset = args.plotOffset
 
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols,
                     figsize=(16.5, 11.7),
