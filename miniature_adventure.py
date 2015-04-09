@@ -54,18 +54,6 @@ if __name__ == "__main__":
         )
 
     actionGroup.add_argument(
-        '--limits', nargs=2, dest='limits',
-        default=[0, 5], type=int,
-        help='Starting ending indeces for fitting and cross-correlation.'
-        )
-
-    actionGroup.add_argument(
-        '--offset', '-o', dest='offset',
-        default=0, type=int,
-        help='Offset for columns WRT limits (which are referred to rows).'
-    )
-
-    actionGroup.add_argument(
         '--prior', dest='prior',
         action='store_true', help='Use priors in GP regression.'
         )
@@ -171,7 +159,23 @@ if __name__ == "__main__":
         "--nBands", dest="nBands",
         default=-1, type=int,
         help="Number of bands to plot with --nice-plots.")
+
+    inputGroup.add_argument(
+        '--limits', nargs=2, dest='limits',
+        default=[0, 5], type=int,
+        help='Starting ending indeces for fitting and cross-correlation.'
+        )
+
+    inputGroup.add_argument(
+        '--offset', '-o', dest='offset',
+        default=0, type=int,
+        help='Offset for columns WRT limits (which are referred to rows).'
+    )
+
+    
     args = parser.parse_args()
+
+
 
 
     bands = ['g', 'r', 'i', 'z']
