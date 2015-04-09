@@ -136,7 +136,7 @@ if __name__ == "__main__":
 	del mat0, mat1, mat2, mat3
 	gc.collect()
 
-	print 'saveing mat ...'
+	print 'saving mat ...'
 	np.savetxt(args.path+'dist_matrix_Sum.txt', mat)
 
 	del mat
