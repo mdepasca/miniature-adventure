@@ -851,7 +851,7 @@ if __name__ == "__main__":
                 nCols = len(distList[0])
                 print 'nCols updated! {:<d}'.format(nCols)
             pbar.update(i-i_start+1)
-            
+
 
 
         pbar.finish()
@@ -970,7 +970,7 @@ if __name__ == "__main__":
 
         del distMatrix
         gc.collect()
-        
+
 
     """
 
@@ -1039,7 +1039,9 @@ if __name__ == "__main__":
         '''
         nrows = 5
         ncols = 5
-        offset = 100
+        np.random.RandomState
+        offset = int(np.random.uniform(low=0, high=len(lsDirFit)-nrows*ncols))
+
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols,
                     figsize=(16.5, 11.7),
                     tight_layout=True
@@ -1078,8 +1080,8 @@ if __name__ == "__main__":
              'z':0}
 
         for b in dictFig.keys():
-            dictFig[b].subplots_adjust(top=0.8)
-            dictFig[b].suptitle('band {:<1}'.format(b))
+            dictFig[b].subplots_adjust(top=0.8, wspace=0.02, hspace=0.02)
+            dictFig[b].suptitle('band {:<1} - offset {:<d}'.format(b, offset))
 
         GPkern = ''
         for i in range(nrows*ncols):
@@ -1157,6 +1159,12 @@ if __name__ == "__main__":
 
                     xlim = dictAx[b][r[b], c[b]].get_xlim()
                     ylim = dictAx[b][r[b], c[b]].get_ylim()
+
+                    dictAx[b][r[b], c[b]].set_xticks([0])
+                    dictAx[b][r[b], c[b]].set_yticks([0])
+
+                    dictAx[b][r[b], c[b]].set_xticklabels(['0'])
+                    dictAx[b][r[b], c[b]].set_yticklabels(['0'])
 
                     if not data.badCurve and not fit_b.badCurve:
                         epoch = util.time_correct(data.mjd,
