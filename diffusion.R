@@ -1,10 +1,10 @@
 # File managing diffusion map calculation
 library(diffusionMap)
-# distMatFrame <- read.table('Pymatrix.txt')
-filePath <- 'products/distance_matrix/Pymatrix.txt'
-distMat <- matrix(scan(filePath, comment.char='#'), 
-    ncol=18080, nrow=18080, byrow=TRUE)
-# distMat <- data.matrix(distMatFrame)
-# rm(distMatFrame)
+library(R.utils)
 
-# matrix(scan("matrix.dat", n = 200*2000), 200, 2000, byrow = TRUE) 
+filePath <- 'results/RATQUAD-with_prior/dist_matrix_Sum.txt'
+fileLines <- countLines(filePath)
+distMat <- matrix(scan(filePath, comment.char='#'),
+    ncol=fileLines, nrow=fileLines, byrow=TRUE)
+
+dmap <- diffuse(distMat, eps.val=eps.grid[2], neigen=120)
