@@ -327,7 +327,7 @@ def extract_redshift_data(path, outFile):
         'products/'+outFile, sep=';', index=False,
         float_format='%5.4f', header=True)
 
-def extract_training_set(path):
+def extract_training_set(path, fileName):
     """Creates files dividing supernovae in training and test sets. It creates also files list training set supernovae by type
 
     Keyword arguments:
@@ -335,12 +335,9 @@ def extract_training_set(path):
 
     Notes:
     Created files are saved in directory 'products/'. Their name are, so far, fixed.
-    SIMGEN_PUBLIC_DES_FIT.TEST
-    SIMGEN_PUBLIC_DES_FIT.TRAIN
-    SIMGEN_PUBLIC_DES_FIT.[SNType].TRAIN
-
-    Possible modifications:
-    Add input parameter specifying output files name head
+    fileName.TEST
+    fileName.TRAIN
+    fileName.[SNType].TRAIN
     """
     if path[-1] != os.sep:
         path = path + os.sep
@@ -352,14 +349,28 @@ def extract_training_set(path):
     lsList.sort()
     lsList.remove('')
 
-    outFileTest  = open('results/SIMGEN_PUBLIC_DES.TEST', 'w')
-    outFileTrain = open('results/SIMGEN_PUBLIC_DES.TRAIN', 'w')
-    outFileIa    = open('results/SIMGEN_PUBLIC_DES.Ia.TRAIN', 'w')
-    outFileII    = open('results/SIMGEN_PUBLIC_DES.II.TRAIN', 'w')
-    outFileIbc   = open('results/SIMGEN_PUBLIC_DES.Ibc.TRAIN', 'w')
-    outFileIaPec = open('results/SIMGEN_PUBLIC_DES.IaPec.TRAIN', 'w')
-    outFileOther = open('results/SIMGEN_PUBLIC_DES.Other.TRAIN', 'w')
-    outFileRej   = open('results/SIMGEN_PUBLIC_DES.Rej.TRAIN', 'w')
+    # if path.rfind('/') == len(path)-1:
+    #     fileName = path.rpartition('/')[0].rpartition('/')[-1]
+    # else:
+    #     fileName = path.rpartition('/')[-1]
+
+    outFileTest  = open('results/{:s}.TEST'.format(fileName), 'w')
+    outFileTrain = open('results/{:s}.TRAIN'.format(fileName), 'w')
+    outFileIa    = open('results/{:s}.Ia.TRAIN'.format(fileName), 'w')
+    outFileII    = open('results/{:s}.II.TRAIN'.format(fileName), 'w')
+    outFileIbc   = open('results/{:s}.Ibc.TRAIN'.format(fileName), 'w')
+    outFileIaPec = open('results/{:s}.IaPec.TRAIN'.format(fileName), 'w')
+    outFileOther = open('results/{:s}.Other.TRAIN'.format(fileName), 'w')
+    outFileRej   = open('results/{:s}.Rej.TRAIN'.format(fileName), 'w')
+
+    outFileTest.write('# {:s}\n'.format(path))
+    outFileTrain.write('# {:s}\n'.format(path))
+    outFileIa.write('# {:s}\n'.format(path))
+    outFileII.write('# {:s}\n'.format(path))
+    outFileIbc.write('# {:s}\n'.format(path))
+    outFileIaPec.write('# {:s}\n'.format(path))
+    outFileOther.write('# {:s}\n'.format(path))
+    outFileRej.write('# {:s}\n'.format(path))
 
     for i in range(len(lsList)):
         tmpSN = get_sn_from_file(path+lsList[i])
