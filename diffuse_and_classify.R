@@ -1,4 +1,7 @@
-source('diffusion.R', 'get_training.R', 'get_test.R', 'classify_RF.R')
+source('diffusion.R')
+source('get_training.R')
+source('get_test.R')
+source('classify_RF.R')
 
 path <- 'results/SIMGEN_PUBLIC_FIT/'
 specific.path <- 'RATQUAD-with_prior'
