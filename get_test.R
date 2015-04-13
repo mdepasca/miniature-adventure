@@ -1,7 +1,7 @@
 source('util.R')
 
 get_test <- function(path, fileNameRoot){
-	testSet <- read.table(paste(path, fileNameRoot, '.TEST'), 
+	testSet <- read.table(paste(path, fileNameRoot, '.TEST', sep=''), 
 		col.names=c('idx', 'snid', 'path', 'type'))
 	dump <- get_dump('train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP')
 
