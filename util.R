@@ -139,7 +139,7 @@ explore.minmax <- function(dir.path, band='r', save=FALSE){
     return(c(min(mjd.min.vec), max(mjd.max.vec), min(mjd.flux.max.vec), max(mjd.flux.max.vec), ext.mjd))
 }
 
-get.dump <- function(dump.file){
+get_dump <- function(dump.file){
     dump <- read.table(dump.file, header=TRUE, skip=1)
     dump$GENTYPE[which(dump$GENTYPE == 21)] <- 2
     dump$GENTYPE[which(dump$GENTYPE == 22)] <- 2
