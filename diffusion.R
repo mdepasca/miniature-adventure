@@ -8,17 +8,17 @@ library(R.utils)
 # neigen <- 120
 calc_diffusion_map <- function(filePath, eps.val, neigen){
 	if (!exists('fileLines')){
-	    fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt'))
+	    fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
 	    message(paste('Number of lines in input file = ', fileLines))
 	}
 
 	if (!file.exists(paste(filePath,'distance_matrix.RData'))){
 	    message(paste('Reading distance matrix from ', filePath, 'dist_matrix_Sum.txt ...'))
-	    distMat <- matrix(scan(paste(filePath,'dist_matrix_Sum.txt'), comment.char='#'),
+	    distMat <- matrix(scan(paste(filePath,'dist_matrix_Sum.txt', sep=''), comment.char='#'),
 	        ncol=fileLines, nrow=fileLines, byrow=TRUE)
         saveObject(distMat, 'distance_matrix.RData', compress=TRUE)
 	}else{
-        distMat <- loadObject(paste(filePath,'distance_matrix.RData'))
+        distMat <- loadObject(paste(filePath,'distance_matrix.RData', sep=''))
     }
     
 	message('Creating diffusion map...')
