@@ -1,11 +1,11 @@
 get_training <- function(path, fileNameRoot){
-	fNames <- dir(path, pattern=paste(fileNameRoot, '.I*.TRAIN'))
+	fNames <- dir(path, pattern=paste(fileNameRoot, '.I*.TRAIN', sep=''))
     for (f in fNames){
     	if (!exist('trainingSet')){
-    		trainingSet <- read.table(paste(path,f), 
+    		trainingSet <- read.table(paste(path,f, sep=''), 
     			col.names=c('idx', 'snid', 'path', 'type'))
     	}else{
-    		trainingSet <- rbind(trainingSet, read.table(paste(path,f), 
+    		trainingSet <- rbind(trainingSet, read.table(paste(path,f, sep=''), 
     			col.names=c('idx', 'snid', 'path', 'type')))
     	}
     }
