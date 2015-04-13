@@ -11,7 +11,7 @@ path <- paste(path, specific.path, '/distance_matrix/')
 neigen <- 120
 eps.grid <- as.vector(seq(from=2, to=5, by=0.2))
 
-dmap <- diffusion(path, eps.val=eps.grid[2], neigen=niegen)
+dmap <- calc_diffusion_map(path, eps.val=eps.grid[2], neigen=niegen)
 
 trainingSet <- get_training(path=paste(path,specific.path,'/'), 
 	fileNameRoot=specific.path)
