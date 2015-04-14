@@ -13,12 +13,15 @@ calc_diffusion_map <- function(filePath, eps.val, neigen){
 	}
 
 	if (!file.exists(paste(filePath,'distance_matrix.RData'))){
-	    message(paste('Reading distance matrix from ', filePath, 'dist_matrix_Sum.txt ...', sep=''))
-	    distMat <- matrix(scan(paste(filePath,'dist_matrix_Sum.txt', sep=''), comment.char='#'),
+	    message(paste('Reading distance matrix from ', filePath, 
+            'dist_matrix_Sum.txt ...', sep=''))
+	    distMat <- matrix(scan(paste(filePath, 'dist_matrix_Sum.txt', sep=''), 
+            comment.char='#'),
 	        ncol=fileLines, nrow=fileLines, byrow=TRUE)
-        saveObject(distMat, 'distance_matrix.RData', compress=TRUE)
+        saveObject(distMat, paste(filePath, 'distance_matrix.RData', sep=''), 
+            compress=TRUE, safe=TRUE)
 	}else{
-        distMat <- loadObject(paste(filePath,'distance_matrix.RData', sep=''))
+        distMat <- loadObject(paste(filePath, 'distance_matrix.RData', sep=''))
     }
     
 	message('Creating diffusion map...')
