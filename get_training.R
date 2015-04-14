@@ -1,7 +1,9 @@
 get_training <- function(path, fileNameRoot){
-	fNames <- dir(path, pattern=paste(fileNameRoot, '.I*.TRAIN', sep=''))
+	fNames <- list.files(path, 
+        pattern=paste(fileNameRoot, '\\.I[[:alnum:]]{1,2}.TRAIN', sep=''))
     for (f in fNames){
-    	if (!exist('trainingSet')){
+        message(f)
+    	if (!exists('trainingSet')){
     		trainingSet <- read.table(paste(path,f, sep=''), 
     			col.names=c('idx', 'snid', 'path', 'type'))
     	}else{
