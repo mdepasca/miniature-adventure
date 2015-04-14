@@ -9,7 +9,7 @@ get_training <- function(path, fileNameRoot){
     			col.names=c('idx', 'snid', 'path', 'type')))
     	}
     }
-    trainingSet$idx <- training.set$idx + 1
+    trainingSet$idx <- trainingSet$idx + 1
 
     return(trainingSet)
 }
