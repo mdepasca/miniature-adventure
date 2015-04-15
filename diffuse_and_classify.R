@@ -5,6 +5,8 @@ source('classify_RF.R')
 
 path <- 'results/SIMGEN_PUBLIC_FIT/'
 specific.path <- 'RATQUAD-with_prior'
+## specific.path <- 'RBF-with_prior'
+## specific.path <- 'RBF_test-length'
 
 path <- paste(path, specific.path, '/distance_matrix/', sep='')
 
