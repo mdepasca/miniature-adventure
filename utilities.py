@@ -382,13 +382,13 @@ def extract_training_set(path, fileName):
         SNType = tmpSN.SNTypeInt
         if SNType != -9:
             outFileTrain.write(
-                "{:0>5d}      {:0>6d}   {:>}   train\n".format(
+                "{:0>5d}      {:0>6d}   {:>}\n".format(
                     i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
         else:
             outFileTest.write(
-                "{:0>5d}      {:0>6d}   {:>}   test\n".format(
+                "{:0>5d}      {:0>6d}   {:>}\n".format(
                     i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
@@ -447,7 +447,7 @@ def extract_training_set(path, fileName):
                 i-badCount, tmpSN.SNID, path+lsList[i]
                 )
             )
-
+    print badCount
     outFileTest.close()
     outFileTrain.close()
     outFileIa.close()
