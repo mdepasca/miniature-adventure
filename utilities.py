@@ -342,6 +342,8 @@ def extract_training_set(path, fileName):
     if path[-1] != os.sep:
         path = path + os.sep
 
+    badCount = 0
+
     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=path)
     lsList = p.stdout.read()
@@ -374,17 +376,20 @@ def extract_training_set(path, fileName):
 
     for i in range(len(lsList)):
         tmpSN = get_sn_from_file(path+lsList[i])
+        if tmpSN.r.badCurve:
+            badCount += 1
+            continue
         SNType = tmpSN.SNTypeInt
         if SNType != -9:
             outFileTrain.write(
                 "{:0>5d}      {:0>6d}   {:>}   train\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
         else:
             outFileTest.write(
                 "{:0>5d}      {:0>6d}   {:>}   test\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -392,7 +397,7 @@ def extract_training_set(path, fileName):
         if SNType == 1:
             outFileIa.write(
                 "{:0>5d}      {:0>6d}   {:>}   snIa\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -400,7 +405,7 @@ def extract_training_set(path, fileName):
         if SNType == 21 or SNType == 22 or SNType == 23:
             outFileII.write(
                 "{:0>5d}      {:0>6d}   {:>}   snII\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -408,7 +413,7 @@ def extract_training_set(path, fileName):
         if SNType == 3 or SNType == 32 or SNType == 33:
             outFileIbc.write(
                 "{:0>5d}      {:0>6d}   {:>}   snIbc\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -416,7 +421,7 @@ def extract_training_set(path, fileName):
         if SNType == 11:
             outFileIaPec.write(
                 "{:0>5d}      {:0>6d}   {:>}   pec\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -424,7 +429,7 @@ def extract_training_set(path, fileName):
         if SNType == 66:
             outFileOther.write(
                 "{:0>5d}      {:0>6d}   {:>}   other\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
@@ -432,14 +437,14 @@ def extract_training_set(path, fileName):
         if SNType == -1:
             outFileIbc.write(
                 "{:0>5d}      {:0>6d}   {:>}   snIbc\n".format(
-                    i, tmpSN.SNID, path+lsList[i]
+                    i-badCount, tmpSN.SNID, path+lsList[i]
                     )
                 )
             continue
 
         outFileOther.write(
             "{:0>5d}      {:0>6d}   {:>}   other\n".format(
-                i, tmpSN.SNID, path+lsList[i]
+                i-badCount, tmpSN.SNID, path+lsList[i]
                 )
             )
 
