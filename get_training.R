@@ -1,7 +1,7 @@
 get_training <- function(path, fileNameRoot){
 
     fNames <- list.files(path, pattern=paste(fileNameRoot, '\\.I[[:alnum:]]{1,2}\\.TRAIN', sep=''))
-    message(fNames)
+
     for (f in fNames){
         message(paste('Reading file', f))
     	if (!exists('trainingSet')){
