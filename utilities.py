@@ -356,14 +356,14 @@ def extract_training_set(path, fileName):
     # else:
     #     fileName = path.rpartition('/')[-1]
 
-    outFileTest  = open('results/{:s}.TEST'.format(fileName), 'w')
-    outFileTrain = open('results/{:s}.TRAIN'.format(fileName), 'w')
-    outFileIa    = open('results/{:s}.Ia.TRAIN'.format(fileName), 'w')
-    outFileII    = open('results/{:s}.II.TRAIN'.format(fileName), 'w')
-    outFileIbc   = open('results/{:s}.Ibc.TRAIN'.format(fileName), 'w')
-    outFileIaPec = open('results/{:s}.IaPec.TRAIN'.format(fileName), 'w')
-    outFileOther = open('results/{:s}.Other.TRAIN'.format(fileName), 'w')
-    outFileRej   = open('results/{:s}.Rej.TRAIN'.format(fileName), 'w')
+    outFileTest  = open('{:s}{:s}.TEST'.format(path, fileName), 'w')
+    outFileTrain = open('{:s}{:s}.TRAIN'.format(path, fileName), 'w')
+    outFileIa    = open('{:s}{:s}.Ia.TRAIN'.format(path, fileName), 'w')
+    outFileII    = open('{:s}{:s}.II.TRAIN'.format(path, fileName), 'w')
+    outFileIbc   = open('{:s}{:s}.Ibc.TRAIN'.format(path, fileName), 'w')
+    outFileIaPec = open('{:s}{:s}.IaPec.TRAIN'.format(path, fileName), 'w')
+    outFileOther = open('{:s}{:s}.Other.TRAIN'.format(path, fileName), 'w')
+    outFileRej   = open('{:s}{:s}.Rej.TRAIN'.format(path, fileName), 'w')
 
     outFileTest.write('# {:s}\n'.format(path))
     outFileTrain.write('# {:s}\n'.format(path))

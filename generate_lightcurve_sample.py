@@ -38,28 +38,38 @@ if __name__ == '__main__':
         os.makedirs(path.abspath(finalPath))
 
 
-    p = subprocess.Popen("ls *.{DUMP,LIST}", shell=True, stdout=subprocess.PIPE,
+    p = subprocess.Popen("ls *.DUMP", shell=True, stdout=subprocess.PIPE,
             cwd=args.modelPath)
-    listFiles = p.stdout.read()
-    listFiles = listFiles.split('\n')
-    listFiles.sort()
-    listFiles.remove('')
+    dumpFile = p.stdout.read()
+    dumpFile = dumpFile.split('\n')
+    dumpFile.sort()
+    dumpFile.remove('')
 
-    dumpTable = np.genfromtxt(args.modelPath+listFiles[0], skip_header=1, 
-        names=True)
+    p = subprocess.Popen("ls *.LIST", shell=True, stdout=subprocess.PIPE,
+            cwd=args.modelPath)
+    listFile = p.stdout.read()
+    listFile = listFile.split('\n')
+    listFile.sort()
+    listFile.remove('')
 
-    dumpTable = pd.read_table(args.modelPath+listFiles[0], header=1, skiprows=0,
-        sep=' ', na_values=('SN:', 'VARNAMES:')))
+
+    dumpTable = pd.read_table(args.modelPath+dumpFile[0], header=1, skiprows=0,
+        sep=' ', na_values=('SN:', 'VARNAMES:'))
+
+
+    listTable = np.genfromtxt(args.modelPath+listFile[0], dtype=str)
     
-    dumpTable.sort(CID)
+    dumpTable.sort('CID')
 
-    listTable = np.genfromtxt(args.modelPath+listFiles[1])
 
     selected = np.random.choice(range(max(dumpTable.shape)), 
         size=args.numberEvents, replace=False)
+    
+    selected.sort()
+    dumpTable[dumpTable.index.isin(selected)].to_csv(finalPath+dumpFile[0], 
+        sep=' ', columns=('CID','GENTYPE', 'SNTYPE', 'GENZ'))
 
-    pd.to_csv(dumpTable[selected])
-    np.savetxt(listTable[selected])
+    np.savetxt(finalPath+listFile[0], listTable[selected], fmt='%s')
 
     
 
