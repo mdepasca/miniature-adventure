@@ -1,7 +1,7 @@
 library(randomForest)
 
 classify_RF <- function(dmap, trainingSet, testSet){
-	## extracting training and test set diffusion coordinate
+    ## extracting training and test set diffusion coordinate
     dmapCoord.train <- data.frame(dmap$X[trainingSet$idx,])
     dmapCoord.test <- data.frame(dmap$X[testSet$idx,])
     ## adding `type' column
