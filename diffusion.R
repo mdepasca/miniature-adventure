@@ -7,26 +7,31 @@ library(R.utils)
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/dist_matrix_Sum.txt'
 # neigen <- 120
 calc_diffusion_map <- function(filePath, eps.val, neigen){
-	if (!exists('fileLines')){
-	    fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
-	    message(paste('Number of lines in input file = ', fileLines))
-	}
+    if (!exists('fileLines')){
+        fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
+        message(paste('Number of lines in input file = ', fileLines))
+    }
 
-	if (!file.exists(paste(filePath,'distance_matrix.RData'))){
-	    message(paste('Reading distance matrix from ', filePath, 
-            'dist_matrix_Sum.txt ...', sep=''))
-	    distMat <- matrix(scan(paste(filePath, 'dist_matrix_Sum.txt', sep=''), 
-            comment.char='#'),
-	        ncol=fileLines, nrow=fileLines, byrow=TRUE)
+    if (!file.exists(paste(filePath,'distance_matrix.RData',sep=''))){
+        message(paste('Reading distance matrix from ', filePath, 
+                      'dist_matrix_Sum.txt ...', sep=''))
+        distMat <- matrix(scan(paste(filePath, 'dist_matrix_Sum.txt', sep=''), 
+                               comment.char='#'),
+                          ncol=fileLines, nrow=fileLines, byrow=TRUE)
         saveObject(distMat, paste(filePath, 'distance_matrix.RData', sep=''), 
-            compress=TRUE, safe=TRUE)
-	}else{
-        distMat <- loadObject(paste(filePath, 'distance_matrix.RData', sep=''))
+                   compress=TRUE, safe=TRUE)
+    }else{
+         distMat <- loadObject(paste(filePath, 'distance_matrix.RData', sep=''))
     }
     
-	message('Creating diffusion map...')
-	dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen)
-    rm(distMat, fileLines)
+    message('Creating diffusion map...')
+    if (!file.exists(paste(filePath, 'diffusion_map.RData', sep=''))){
+        dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen)
+        rm(distMat, fileLines)
+        saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''), compress=TRUE, safe=TRUE)
+    }else{
+        dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
+    }
     return(dmap)
 }
 
