@@ -21,6 +21,7 @@ calc_diffusion_map <- function(filePath, eps.val, neigen){
         saveObject(distMat, paste(filePath, 'distance_matrix.RData', sep=''), 
                    compress=TRUE, safe=TRUE)
     }else{
+         message('Loading distance matrix from file...')
          distMat <- loadObject(paste(filePath, 'distance_matrix.RData', sep=''))
     }
     
@@ -30,7 +31,8 @@ calc_diffusion_map <- function(filePath, eps.val, neigen){
         rm(distMat, fileLines)
         saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''), compress=TRUE, safe=TRUE)
     }else{
-        dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
+         message('Loading diffusion map from file...')
+         dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
     }
     return(dmap)
 }
