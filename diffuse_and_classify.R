@@ -15,10 +15,10 @@ eps.grid <- as.vector(seq(from=2, to=5, by=0.2))
 
 dmap <- calc_diffusion_map(path, eps.val=eps.grid[2], neigen=neigen)
 
-trainingSet <- get_training(path=paste(path,specific.path,'/', sep=''), 
+trainingSet <- get_training(path=paste(path, specific.path,'/', sep=''), 
 	fileNameRoot=specific.path)
 
-testSet <- get_test(path=paste(path,specific.path,'/', sep=''), 
+testSet <- get_test(path=paste(path, specific.path,'/', sep=''), 
 	fileNameRoot=specific.path)
 
 sn.rf <- classify_RF(dmap, trainingSet, testSet)
