@@ -328,7 +328,8 @@ def extract_redshift_data(path, outFile):
         float_format='%5.4f', header=True)
 
 def extract_training_set(path, fileName):
-    """Creates files dividing supernovae in training and test sets. It creates also files list training set supernovae by type
+    """Creates files dividing supernovae in training and test sets. 
+    It creates also files list training set supernovae by type
 
     Keyword arguments:
     path -- where to find supernova light curves files
