@@ -6,7 +6,7 @@ library(R.utils)
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF-with_prior/distance_matrix/dist_matrix_Sum.txt'
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/dist_matrix_Sum.txt'
 # neigen <- 120
-calc_diffusion_map <- function(filePath, eps.val, neigen){
+calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
     
     fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
     message(paste('Number of lines in input file = ', fileLines))
@@ -25,13 +25,13 @@ calc_diffusion_map <- function(filePath, eps.val, neigen){
     }
     
     message('Creating diffusion map...')
-    if (!file.exists(paste(filePath, 'diffusion_map.RData', sep=''))){
+    if (old.dmap){
+        message('Loading diffusion map from file...')
+        dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
+     }else{        
         dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen)
         rm(distMat, fileLines)
         saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''), compress=TRUE, safe=TRUE)
-    }else{
-         message('Loading diffusion map from file...')
-         dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
     }
     return(dmap)
 }
