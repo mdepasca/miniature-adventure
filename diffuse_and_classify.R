@@ -1,12 +1,12 @@
-source('diffusion.R')
+source('calc_diffusion_map.R')
 source('get_training.R')
 source('get_test.R')
 source('classify_RF.R')
 
 path <- 'results/SIMGEN_PUBLIC_FIT/'
-specific.path <- 'RATQUAD-with_prior'
+## specific.path <- 'RATQUAD-with_prior'
 ## specific.path <- 'RBF-with_prior'
-## specific.path <- 'RBF_test-length'
+specific.path <- 'RBF_test-length'
 
 path.distance <- paste(path, specific.path, '/distance_matrix/', sep='')
 
