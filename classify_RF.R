@@ -27,12 +27,12 @@ classify_RF <- function(dmap, trainingSet, testSet){
     types <- c('snIa', 'snIbc', 'snII')
 
     ## training the random forest classifier and testing it
-    sn.rf <- randomForest(x=dmapCoord.train[, 1:(ncols-1)], 
-    	y=dmapCoord.train[, ncols])
     ## sn.rf <- randomForest(x=dmapCoord.train[, 1:(ncols-1)], 
-    ## 	y=dmapCoord.train[, ncols],##as.factor(dmapCoord.train[, ncols]), 
-    ## 	xtest=dmapCoord.test[, 1:(ncols-1)], 
-    ## 	ytest=as.factor(dmapCoord.test[, ncols]), importance=TRUE)
+    ## 	y=dmapCoord.train[, ncols])
+    sn.rf <- randomForest(x=dmapCoord.train[, 1:(ncols-1)], 
+    	y=dmapCoord.train[, ncols],##as.factor(dmapCoord.train[, ncols]), 
+    	xtest=dmapCoord.test[, 1:(ncols-1)], 
+    	ytest=as.factor(dmapCoord.test[, ncols]), importance=TRUE)
  	
  	return(sn.rf)
 }
