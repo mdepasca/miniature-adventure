@@ -1021,23 +1021,6 @@ if __name__ == "__main__":
         getting file list from directory
         File will be sorted by SNID
         """
-        # if "lsDirFit" not in globals():
-        #     p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-        #         cwd=args.dirFit+os.sep
-        #         )
-        #     lsDirFit = p.stdout.read()
-        #     lsDirFit = lsDirFit.split('\n')
-        #     lsDirFit.sort()
-        #     lsDirFit.remove('')
-
-        # if 'catalog' not in globals():
-        #     p = subprocess.Popen("ls *_SN*.DAT", shell=True, stdout=subprocess.PIPE,
-        #     cwd=args.dirData+os.sep)
-        #     lsDirData = p.stdout.read()
-        #     lsDirData = lsDirData.split('\n')
-        #     lsDirData.sort()
-        #     lsDirData.remove('')
-
 
         print indent + 'Plotting ...'
         '''
@@ -1131,13 +1114,15 @@ if __name__ == "__main__":
                         magFlag=args.mag
                         )
                 if fit.r.badCurve:
-                    continue
-
-                fit.shift_mjds()
+                    print 'SN ID{:>06d} has bad r band light curve!'.format(
+                    fit.SNID)
+                    # continue
+                else:
+                    fit.shift_mjds()
                 """
                 Fixing shiftedMjd for not-peaked LCs
                 """
-                if fit.peaked == False:
+                if (fit.peaked == False) and (fit.r.badCurve == False) :
                     """
                     correcting using CC results
                     """
@@ -1175,7 +1160,7 @@ if __name__ == "__main__":
                     dictAx[b][r[b], c[b]].set_xticklabels(['0'])
                     dictAx[b][r[b], c[b]].set_yticklabels(['0'])
 
-                    if not data.badCurve and not fit_b.badCurve:
+                    if (data.badCurve == False) and (fit_b.badCurve == False) and (fit.r.badCurve == False):
                         epoch = util.time_correct(data.mjd,
                             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
@@ -1205,12 +1190,12 @@ if __name__ == "__main__":
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] + fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] - fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
 
                         dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
@@ -1221,12 +1206,12 @@ if __name__ == "__main__":
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + 2*fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] + 2*fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - 2*fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] - 2*fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
 
                         dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
@@ -1237,12 +1222,12 @@ if __name__ == "__main__":
                         Setting limits for fill_between
                         """
                         fluxUpLim = [val for val in [
-                            fit_b.flux[i] + 3*fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] + 3*fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
                         fluxLowLim = [val for val in [
-                            fit_b.flux[i] - 3*fit_b.fluxErr[i]
-                                for i in range(len(fit_b.flux))
+                            fit_b.flux[el] - 3*fit_b.fluxErr[el]
+                                for el in range(len(fit_b.flux))
                             ]]
 
                         dictAx[b][r[b], c[b]].fill_between(fit_b.shiftedMjd,
