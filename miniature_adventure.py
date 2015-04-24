@@ -1035,20 +1035,20 @@ if __name__ == "__main__":
             offset = args.plotOffset
 
         fig_g, ax_g = plt.subplots(nrows=nrows, ncols=ncols,
-                    figsize=(16.5, 11.7),
-                    tight_layout=True
+                    figsize=(16.5, 11.7)#,
+                    #tight_layout=True
                     )
         fig_r, ax_r = plt.subplots(nrows=nrows, ncols=ncols,
-                    figsize=(16.5, 11.7),
-                    tight_layout=True
+                    figsize=(16.5, 11.7)#,
+                    #tight_layout=True
                     )
         fig_i, ax_i = plt.subplots(nrows=nrows, ncols=ncols,
-                    figsize=(16.5, 11.7),
-                    tight_layout=True
+                    figsize=(16.5, 11.7)#,
+                    #tight_layout=True
                     )
         fig_z, ax_z = plt.subplots(nrows=nrows, ncols=ncols,
-                    figsize=(16.5, 11.7),
-                    tight_layout=True
+                    figsize=(16.5, 11.7)#,
+                    # tight_layout=True
                     )
 
         dictFig = {'g':fig_g,
@@ -1072,7 +1072,10 @@ if __name__ == "__main__":
              'z':0}
 
         for b in dictFig.keys():
-            dictFig[b].subplots_adjust(top=0.8, wspace=0.02, hspace=0.02)
+            dictFig[b].subplots_adjust(
+                top=0.96, right=0.99, bottom=0.03, left=0.02, 
+                wspace=0.08, hspace=0.13
+                )
             dictFig[b].suptitle('band {:<1} - offset {:<d}'.format(b, offset))
 
         GPkern = ''
@@ -1239,8 +1242,9 @@ if __name__ == "__main__":
                             color='#7f0000',
                             linewidth=2)
 
+                        scatterLab = 'SN ID {:<d}'.format(candidate.SNID)
                         dictAx[b][r[b], c[b]].scatter(epoch, flux,
-                            s=10, label=str(candidate.SNID), c='black', marker='x')
+                            s=10, label=scatterLab, c='black', marker='x')
 
                         dictAx[b][r[b], c[b]].errorbar(epoch, flux,
                             data.fluxErr, fmt=None, color='black', ecolor='black')
