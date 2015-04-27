@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
 
         for b in dictFig.keys():
             dictFig[b].subplots_adjust(
-                top=0.96, right=0.99, bottom=0.03, left=0.02, 
+                top=0.96, right=0.99, bottom=0.03, left=0.02,
                 wspace=0.08, hspace=0.13
                 )
             dictFig[b].suptitle('band {:<1} - offset {:<d}'.format(b, offset))
