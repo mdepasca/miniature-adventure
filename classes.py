@@ -11,8 +11,8 @@ import warnings
 import subprocess
 
 warnings.filterwarnings(
-    'error', 
-    message=".*divide by zero encountered in double_scalars.*", 
+    'error',
+    message=".*divide by zero encountered in double_scalars.*",
     category=RuntimeWarning
     )
 from math import sqrt
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     import GPy
     from matplotlib import pyplot as plt
 
-    
+
 
     parser = argparse.ArgumentParser(
         description="Test of general functions.",
@@ -35,10 +35,10 @@ if __name__ == '__main__':
     """
 
     ACTION OPTIONS
-    
+
     """
     actionGroup.add_argument(
-        "--k-correction", dest='kcor', 
+        "--k-correction", dest='kcor',
         action='store_true', help='Switch on k correction.'
         )
 
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     """
 
     INPUT OPTIONS
-    
+
     """
     inputGroup.add_argument(
         "--data-directory", dest="dirData",
@@ -64,18 +64,18 @@ if __name__ == '__main__':
         help="Path to directory containing training data.")
 
     inputGroup.add_argument(
-        "-b", "--band", dest="band", default='r', 
+        "-b", "--band", dest="band", default='r',
         help="Photometric band.")
 
     inputGroup.add_argument(
-        "-c1", "--candidate1", dest="candidate1", 
-        type=np.int32, default=None, 
+        "-c1", "--candidate1", dest="candidate1",
+        type=np.int32, default=None,
         help="First candidate idx")
 
     inputGroup.add_argument(
-        "-c2", "--candidate2", dest="candidate2", 
-        type=np.int32, default=None, 
-        help="Second candidate idx")    
+        "-c2", "--candidate2", dest="candidate2",
+        type=np.int32, default=None,
+        help="Second candidate idx")
 
     inputGroup.add_argument(
         "--mag", dest="mag",
@@ -98,7 +98,7 @@ class photoBand():
 
 class LightCurve():
     """
-    Once fully initiated, instances of this class have the following important 
+    Once fully initiated, instances of this class have the following important
     properties
     band            (string) 'g','r','i' or 'z'
     lim             (float) brightness threshold for the band (in correct units
@@ -106,7 +106,7 @@ class LightCurve():
     mjd             (array) modified julian dates of observations
     flux            (array) the observed flux
     fluxErr         (array) the error in the observed flux
-    shifted_mjd     (array) mjd shifted such that the peak has mjd = 0. To be 
+    shifted_mjd     (array) mjd shifted such that the peak has mjd = 0. To be
                             modified
     magFlag         (boolean) if the flux is expressed in magnitudes
     """
@@ -136,7 +136,7 @@ class LightCurve():
         self.fluxErr = fluxErr
         self.set_badCurve()
 
-    def set_badCurve(self): 
+    def set_badCurve(self):
 
         # this could be generalised as "if min(self.flux) <= self.lim:"
         if len(self.flux) == 0:
@@ -152,7 +152,58 @@ class LightCurve():
         Construct shiftedMjd, by subtracting 'distance' from 'self.flux'
         """
         self.shiftedMjd = [self.mjd[i]-distance for i in range(len(self.mjd))]
-    
+
+    def set_shifted_mjd_2(self, supernovaFitLC, max_flux_epoch, redshift=-1, ccMjdMaxFlux=0):
+        """Initilise `shiftedMjd` on the basis of the fitted light curve
+        `SupernovaFitLC`. If redshift is provided shiftedMjd will be also
+        corrected from time dilation.
+        """
+
+        if supernovaFitLC.band != self.band:
+            raise TypeError('Light curves of different bands.')
+
+        if self.badCurve:
+            raise TypeError('Operating on a bad light curve.')
+
+        if supernovaFitLC.badCurve:
+            raise TypeError('Bad input light curve.')
+
+        if redshift != -1:
+            self.shiftedMjd = self.calc_destretched_time(redshift)
+
+        print supernovaFitLC.mjd[supernovaFitLC.max_flux_index]
+        self.shiftedMjd = [el - max_flux_epoch# supernovaFitLC.mjd[supernovaFitLC.max_flux_index]
+                            for el in self.shiftedMjd]
+
+        if ccMjdMaxFlux != 0:
+            epochs = [el + ccMjdMaxFlux for el in self.shiftedMjd]
+            self.shiftedMjd = epochs
+            del epochs
+
+    def calc_destretched_time(self, redshift):
+        """Perform correction for time dialtion. Returns an array of time in
+        mjd.
+
+        Keywords arguments
+        redshift    -   from a object of type Supernova.
+        """
+        epochs = [el/(1.+redshift) for el in self.mjd]
+
+        return epochs
+
+    def calc_dereddened_flux(self, R, ebv):
+        """Perform correction for MW dust reddening
+
+        Keyword arguments:
+        R   -   depends on the band
+        ebv -   colour excess, from Supernova object
+        """
+
+        a_mag = R * ebv
+        a_flux = 10**(0.4*a_mag)
+
+        return [el*a_flux for el in self.flux]
+
     @property
     def max_flux(self):
         if not self.badCurve:
@@ -192,15 +243,15 @@ class Supernova():
     r               (LightCurve)
     i               (LightCurve)
     z               (LightCurve)
-    lightCurvesDict (dictionary) 4 entries, g,r,i,z returning the corresponding 
+    lightCurvesDict (dictionary) 4 entries, g,r,i,z returning the corresponding
                                  LightCurves
     SNID            (int)   supernova ID
-    SNTypeInt       (int)   supernova type integer (see relationship between 
+    SNTypeInt       (int)   supernova type integer (see relationship between
                                                     number and type)
     zSpec           (float) If known via spectroscope, otherwise None
-    hostGalaxyID    (int)   THe host galaxy ID (all supernovae (in +zPhotHost) 
+    hostGalaxyID    (int)   THe host galaxy ID (all supernovae (in +zPhotHost)
                                                 catalog have this)
-    zPhotHost       (float) The redshift of the host galaxy (all supernovae in 
+    zPhotHost       (float) The redshift of the host galaxy (all supernovae in
                                                         the catalog have this)
     zPhotHostErr    (float) Error in zPhotHost
     """
@@ -221,18 +272,18 @@ class Supernova():
         self.i = LightCurve("i", magFlag=magFlag)
         self.z = LightCurve("z", magFlag=magFlag)
 
-        self.lcsDict = {'g':self.g, 
-                        'r':self.r, 
-                        'i':self.i, 
+        self.lcsDict = {'g':self.g,
+                        'r':self.r,
+                        'i':self.i,
                         'z':self.z}
-        
+
         for line in lines:
 
             if len(line) > 3 and line[0] != "#":
-                
+
                 tag = line.split(":")[0]
                 data = line.split(":")[-1].split()
-                   
+
                 if tag == "OBS":
                     mjd = float(data[0])
                     passband = data[1]
@@ -271,7 +322,7 @@ class Supernova():
                 elif tag == "GPKERNEL":
                     self.kern = data[0]
                 elif tag == "SNTYPE":
-                    self.SNTypeInt = int(data[0])                    
+                    self.SNTypeInt = int(data[0])
                 elif tag == "RA":
                     self.RADeg = float(data[0])
                 elif tag == "DECL":
@@ -296,10 +347,10 @@ class Supernova():
             self.lcsDict[b].set_badCurve()
 
     def __cmp__(self, other):
-        return 2*(self.zPhotHost - other.zPhotHost > 0) - 1 
+        return 2*(self.zPhotHost - other.zPhotHost > 0) - 1
 
     def k_correct_flux(
-        self, nBands, 
+        self, nBands,
         lambda_obs = [479.66, 638.26, 776.90, 910.82]
         ):
 
@@ -307,7 +358,7 @@ class Supernova():
             return 0, 0
 
         band_g = photoBand('g', 479.66)
-        
+
         # defining redshift threshold for determination of rest frame wavelength
         if nBands == 3:
             zThr = lambda_obs[3]/lambda_obs[2] - 1
@@ -335,16 +386,16 @@ class Supernova():
             if self.lcsDict[b].badCurve:
                     raise TypeError("K-correction not possible: not all bands\
                     have observations")
-        
-        
-        # --- debug    
+
+
+        # --- debug
         print len(self.g.mjd), \
             len(self.r.mjd), \
             len(self.i.mjd), \
             len(self.z.mjd)
         # ---
 
-        # list of low resolution spectra (a list of lists). 
+        # list of low resolution spectra (a list of lists).
         #
         # Indexing: l[i][j], i -> list; j -> elem in i^th list
         k_corr = list()
@@ -355,7 +406,7 @@ class Supernova():
         # k_corr_i = list()
 
         # intersection of epochs in 4 bands
-        # the construction of a list without knowing which filters are being 
+        # the construction of a list without knowing which filters are being
         #
         # is difficult here. In the next I've to know the name of the band.
 
@@ -367,7 +418,7 @@ class Supernova():
         int_mjd_i = [int(round(el)) for el in self.i.mjd]
         int_mjd_z = [int(round(el)) for el in self.z.mjd]
 
-        mjd = [el for el in int_mjd_g if el in int_mjd_r 
+        mjd = [el for el in int_mjd_g if el in int_mjd_r
                 and el in int_mjd_i and el in int_mjd_z]
 
         """
@@ -417,7 +468,7 @@ class Supernova():
                     a_err**2)
 
                 k_corr[2].append(a*lambda_obs[2]+b)
-    
+
                 # k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
                 # k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
                 # k_corr_i.append(a_iz*lambda_obs[2]+b_iz)
@@ -442,7 +493,7 @@ class Supernova():
                         )/(lambda_rf[2]-lambda_rf[1])
                     b_ri = self.r.flux[int_mjd_r.index(jd)] - \
                         a_ri*lambda_rf[1]
-                
+
                     # CALCULATE K-CORRECTION
                     k_corr_g.append(a_gr*lambda_obs[0]+b_gr)
                     k_corr_r.append(a_ri*lambda_obs[1]+b_ri)
@@ -470,7 +521,7 @@ class Supernova():
             if (self.zSpec < zThr) or (self.zPhotHost < zThr):
                 """
                 g band can be k-corrected.
-                This will exclude the use of color information in 
+                This will exclude the use of color information in
                 calculating distances.
                 """
                 if (self.zSpec < 0.33) or (self.zPhotHost < 0.33):
@@ -512,6 +563,26 @@ class Supernova():
 
         return mjd, list([k_corr_g, k_corr_r, k_corr_i])
 
+    def set_shifted_mjd(self, supernovaFitObj, destretchFlag=True):
+        """Apply `set_shifted_mjd_2` from Supernova class to all the bands.
+        Depending on `destretchFlag` can or cannot perform correction
+        for time delay.
+        """
+        for b in self.lcsDict.keys():
+            if destretchFlag:
+                self.lcsDict[b].set_shifted_mjd_2(
+                    supernovaFitObj.lcsDict[b],
+                    (self.zSpec if self.zSpec else self.zPhotHost),
+                    supernovaFitObj.ccMjdMaxFlux
+                    )
+            else:
+                self.lcsDict[b].set_shifted_mjd(
+                    supernovaFitObj.lcsDict[b])
+
+    # def calc_dereddened_flux(self, R):
+    #     for b in self.lcsDict.keys():
+    #         self.lcsDict[b].calc_dereddened_flux(R, self.MWEBV)
+
 class SupernovaFit():
     ccMjdMaxFlux = 0
 
@@ -521,12 +592,12 @@ class SupernovaFit():
         self.r = LightCurve("r")
         self.i = LightCurve("i")
         self.z = LightCurve("z")
-        self.lcsDict = {"g":self.g, 
-                        "r":self.r, 
-                        "i":self.i, 
+        self.lcsDict = {"g":self.g,
+                        "r":self.r,
+                        "i":self.i,
                         "z":self.z}
         self.peaked = False
-        
+
         if hasattr(supernova, 'kern'):
             self.kern = supernova.kern
         elif GPkern != '':
@@ -536,18 +607,18 @@ class SupernovaFit():
             self.ccMjdMaxFlux = supernova.ccMjdMaxFlux
         self.SNID = supernova.SNID
         self.SNTypeInt = supernova.SNTypeInt
-        self.RADeg = supernova.RADeg 
-        self.decDeg = supernova.decDeg 
-        self.MWEBV = supernova.MWEBV 
+        self.RADeg = supernova.RADeg
+        self.decDeg = supernova.decDeg
+        self.MWEBV = supernova.MWEBV
         if hasattr(supernova, 'zSpec'):
             self.zSpec = supernova.zSpec
         if hasattr(supernova, 'zSpecErr'):
             self.zSpecErr = supernova.zSpecErr
         else:
             self.zSpecErr = None
-        self.hostGalaxyID = supernova.hostGalaxyID 
-        self.zPhotHost = supernova.zPhotHost 
-        self.zPhotHostErr = supernova.zPhotHostErr 
+        self.hostGalaxyID = supernova.hostGalaxyID
+        self.zPhotHost = supernova.zPhotHost
+        self.zPhotHostErr = supernova.zPhotHostErr
 
     def set_lightcurve(self, band, mjd, flux, fluxErr, magFlag=False):
         self.lcsDict[band].mjd = mjd
@@ -564,12 +635,12 @@ class SupernovaFit():
 
 
     def shift_mjds(self):
-        """ Shifts mjd attribute of each lc according to flux maximum 
+        """ Shifts mjd attribute of each lc according to flux maximum
         in r band for peaked lcsself.
         """
-        
+
         mjdrMax = self.r.mjd[self.r.max_flux_index]
-        
+
         for b in self.lcsDict.keys():
             if self.lcsDict[b].badCurve:
                 continue
@@ -622,13 +693,13 @@ class SupernovaFit():
         return self.peaked
 
     def get_distance(self, candidate, band):
-        """Calculate difference (aka distance) between two 
-        interpolated light curves. 
+        """Calculate difference (aka distance) between two
+        interpolated light curves.
         """
         if type(band) is not str:
             raise TypeError("variable `band` is not of type string")
         distFlag = 5
-        
+
         sizeSelf = self.lcsDict[band].size
         sizeCandidate = candidate.lcsDict[band].size
 
@@ -695,7 +766,7 @@ class SupernovaFit():
                     )/(max(mjdIntersection) - min(mjdIntersection))
 
             except RuntimeWarning:
-                print "selfID: {:<d} -- CandidateID {:<d}".format(self.SNID, 
+                print "selfID: {:<d} -- CandidateID {:<d}".format(self.SNID,
                     candidate.SNID)
                 print "1: {:<d}".format(id1)
                 print "len(num) {:<d}".format(len(num))
@@ -712,7 +783,7 @@ class SupernovaFit():
 
     def save_on_txt(self, fileName, survey="DES"):
         t = Table(masked=True)
-        # OBS is used to reproduce original SNPhotCC files can be deleted 
+        # OBS is used to reproduce original SNPhotCC files can be deleted
         #
         # provided to change init method of Supernova class
         colNames = [
@@ -754,7 +825,7 @@ class SupernovaFit():
                 # flux = np.concatenate((flux, self.lcsDict[b].flux))
                 # fluxErr = np.concatenate((fluxErr, self.lcsDict[b].fluxErr))
 
-        mjdArgsort = np.argsort(mjd)    
+        mjdArgsort = np.argsort(mjd)
 
         mjd = [mjd[i] for i in mjdArgsort]
         flux = [flux[i] for i in mjdArgsort]
@@ -801,9 +872,9 @@ class SupernovaFit():
         fOut = open(fileName, 'w')
         fOut.write("# File produced by Miniature Adventure on " + \
             "{:<02d}/{:<02d}/{:<4d} at {:<02d}:{:<02d}:{:<02d} GMT\n".format(
-                time.gmtime().tm_mday, time.gmtime().tm_mon, 
+                time.gmtime().tm_mday, time.gmtime().tm_mon,
                 time.gmtime().tm_year,
-                time.gmtime().tm_hour, time.gmtime().tm_min, 
+                time.gmtime().tm_hour, time.gmtime().tm_min,
                 time.gmtime().tm_sec))
         fOut.write("SURVEY:  {:<}\n".format(survey))
         fOut.write("SNID:  {:<d}\n".format(self.SNID))
@@ -837,9 +908,9 @@ class SupernovaFit():
         fOut.write("#\n")
         fOut.write("# NOBS: {:<}\n".format(len(mjd)))
 
-        ascii.write(t, output=fOut, delimiter='  ', 
+        ascii.write(t, output=fOut, delimiter='  ',
             format='fixed_width_two_line')
-        
+
         fOut.close()
 
 if __name__ == '__main__':
@@ -869,7 +940,7 @@ if __name__ == '__main__':
     kern = GPy.kern.RatQuad(1)
 
     """
-    ---------------------- 
+    ----------------------
     """
 
     if args.band not in ['g', 'r', 'i', 'z']:
@@ -912,8 +983,8 @@ if __name__ == '__main__':
         for b in candidate.lcsDict.keys():
             if args.mag:
                 candidate.lcsDict[b].lim = limMagDict[b]
-        
-    
+
+
         print 'candidate z = {:>6.4f}'.format(
             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
@@ -927,18 +998,18 @@ if __name__ == '__main__':
             int_mjd_r = [int(el) for el in candidate.r.mjd]
             int_mjd_i = [int(el) for el in candidate.i.mjd]
             int_mjd_z = [int(el) for el in candidate.z.mjd]
-            mjd = [el for el in int_mjd_g if el in int_mjd_r 
+            mjd = [el for el in int_mjd_g if el in int_mjd_r
                         and el in int_mjd_i and el in int_mjd_z]
             jd = mjd[0]
 
             flux = [
-                candidate.g.flux[int_mjd_g.index(jd)], 
+                candidate.g.flux[int_mjd_g.index(jd)],
                 candidate.r.flux[int_mjd_r.index(jd)],
                 candidate.i.flux[int_mjd_i.index(jd)],
                 candidate.z.flux[int_mjd_z.index(jd)]
                 ]
             fluxErr = [
-                candidate.g.fluxErr[int_mjd_g.index(jd)], 
+                candidate.g.fluxErr[int_mjd_g.index(jd)],
                 candidate.r.fluxErr[int_mjd_r.index(jd)],
                 candidate.i.fluxErr[int_mjd_i.index(jd)],
                 candidate.z.fluxErr[int_mjd_z.index(jd)]
@@ -952,9 +1023,9 @@ if __name__ == '__main__':
             plt.show()
             # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
 
-            
+
             # (a, b) = np.polyfit(
-            #     # [lambda_rf[0], lambda_rf[1]], 
+            #     # [lambda_rf[0], lambda_rf[1]],
             #     [
             #     lambda_rf[0],
             #     lambda_rf[1]#,
@@ -962,14 +1033,14 @@ if __name__ == '__main__':
             #     # lambda_rf[3],
             #     ],
             #     [
-            #     candidate.g.flux[int_mjd_g.index(jd)], 
+            #     candidate.g.flux[int_mjd_g.index(jd)],
             #     candidate.r.flux[int_mjd_r.index(jd)]#,
             #     # candidate.i.flux[int_mjd_i.index(jd)],
             #     # candidate.z.flux[int_mjd_z.index(jd)]
-            #     ], deg = 1, 
+            #     ], deg = 1,
             #     w = [
-            #         1/candidate.g.fluxErr[int_mjd_g.index(jd)], 
-            #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#, 
+            #         1/candidate.g.fluxErr[int_mjd_g.index(jd)],
+            #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#,
             #     # cov=True
             #     )
             # raise ValueError
@@ -998,11 +1069,11 @@ if __name__ == '__main__':
 
             # Fitting Lightcurve
             if (not candidate.lcsDict[b].badCurve) and (len(flux) >= 3):
-                
+
                 start_time = time.time()
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
-                                                phase, flux, errFlux, 
-                                                kern, n_restarts=10, 
+                                                phase, flux, errFlux,
+                                                kern, n_restarts=10,
                                                 parallel=False,
                                                 test_length=True,
                                                 test_prior=args.testPrior)
@@ -1013,7 +1084,7 @@ if __name__ == '__main__':
                 candidateFit.set_lightcurve(
                     b, predMjd, predFlux, predErr, args.mag
                     )
-                
+
                 print indent + \
                     "{:<} {:<}".format(candidate.SNID, b)
             else:
@@ -1024,13 +1095,13 @@ if __name__ == '__main__':
 
         candidateFit.shift_mjds()
         fit.append(candidateFit)
-        
+
 
     if args.distance:
         if fit[0].peaked and fit[1].peaked:
             print 'Distance between the 2 normalized lcs in ' + \
             '{:<} band = {:<2.4f}'.format(args.band,
-                fit[0].get_distance(fit[1], 
+                fit[0].get_distance(fit[1],
                 args.band))
 
             # if plt.get_fignums():
@@ -1045,12 +1116,12 @@ if __name__ == '__main__':
             print 'Candidate 2 - {:<}'.format(fit[1].peaked)
 
     nrows = 2
-    ncols = 4 
+    ncols = 4
 
     colorList = ['blue', 'orange']
 
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, 
-                    figsize=(16.5, 11.7), 
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols,
+                    figsize=(16.5, 11.7),
                     tight_layout=False
                     )
 
@@ -1062,8 +1133,8 @@ if __name__ == '__main__':
     }
 
     fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
-    fig.suptitle(eval('\'Band \' + args.band + (\' with Prior Test\' ' + 
-        'if args.testPrior else \'Band \' + args.band + \' No prior\') + \' -- \'' + 
+    fig.suptitle(eval('\'Band \' + args.band + (\' with Prior Test\' ' +
+        'if args.testPrior else \'Band \' + args.band + \' No prior\') + \' -- \'' +
         '+ \'Kernel: \' + kern.name'))
 
     for j in [0,1]:
@@ -1077,25 +1148,25 @@ if __name__ == '__main__':
             else:
                 upperlimits = False
                 lowerlimits = [0 if el > 0 else 1 for el in candidates[j].lcsDict[b].flux]
-            axDict[b][j].plot([min(candidates[j].lcsDict[b].mjd), 
-                max(candidates[j].lcsDict[b].mjd)], 
-                [candidates[j].lcsDict[b].lim]*2, 
+            axDict[b][j].plot([min(candidates[j].lcsDict[b].mjd),
+                max(candidates[j].lcsDict[b].mjd)],
+                [candidates[j].lcsDict[b].lim]*2,
                 c='k')
-            
+
             fluxUpLim = [val for val in [
-                        fit[j].lcsDict[b].flux[i] + 
-                        2*fit[j].lcsDict[b].fluxErr[i] 
+                        fit[j].lcsDict[b].flux[i] +
+                        2*fit[j].lcsDict[b].fluxErr[i]
                             for i in range(len(fit[j].lcsDict[b].flux))
                         ]]
             fluxLowLim = [val for val in [
-                fit[j].lcsDict[b].flux[i] - 
-                2*fit[j].lcsDict[b].fluxErr[i] 
+                fit[j].lcsDict[b].flux[i] -
+                2*fit[j].lcsDict[b].fluxErr[i]
                     for i in range(len(fit[j].lcsDict[b].flux))
                         ]]
-            axDict[b][j].fill_between(fit[j].lcsDict[b].mjd, 
-                fluxUpLim, fluxLowLim, 
+            axDict[b][j].fill_between(fit[j].lcsDict[b].mjd,
+                fluxUpLim, fluxLowLim,
                 alpha=0.2, linewidth=0.5)
-            
+
             axDict[b][j].plot(
                 fit[j].lcsDict[b].mjd,
                 fit[j].lcsDict[b].flux, c=colorList[j],
@@ -1112,13 +1183,13 @@ if __name__ == '__main__':
                 candidates[j].lcsDict[b].flux,
                 c=colorList[j],
                 label='Band {:>s} | IDX {:>5d} | SNID {:>5d}'.format(b,
-                    eval('args.candidate1 if j == 0 else args.candidate2'), 
+                    eval('args.candidate1 if j == 0 else args.candidate2'),
                     candidates[j].SNID)
                 )
             axDict[b][j].legend(
                 loc='best', framealpha=0.3, fontsize='10'
                 )
-            
+
             axDict[b][j].set_xlabel('epoch [MJD]')
             if args.mag:
                 axDict[b][j].set_ylabel('flux [mag]')
