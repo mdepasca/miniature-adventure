@@ -13,18 +13,19 @@ calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
     message(paste('Number of lines in input file = ', fileLines))
 
     if (!file.exists(paste(filePath,'distance_matrix.RData',sep=''))){
-        message(paste('Reading distance matrix from ', filePath, 
+        message(paste('Reading distance matrix from ', filePath,
                       'dist_matrix_Sum.txt ...', sep=''))
-        distMat <- matrix(scan(paste(filePath, 'dist_matrix_Sum.txt', sep=''), 
+        distMat <- matrix(scan(paste(filePath, 'dist_matrix_Sum.txt', sep=''),
                                comment.char='#'),
                           ncol=fileLines, nrow=fileLines, byrow=TRUE)
-        saveObject(distMat, paste(filePath, 'distance_matrix.RData', sep=''), 
+        saveObject(distMat, paste(filePath, 'distance_matrix.RData', sep=''),
                    compress=TRUE, safe=TRUE)
     }else{
-         message(paste('Loading distance matrix from file: ', filePath, 'distance_matrix.RData', sep=''))
+         message(paste('Loading distance matrix from file: ', filePath,
+                        'distance_matrix.RData', sep=''))
          distMat <- loadObject(paste(filePath, 'distance_matrix.RData', sep=''))
     }
-    
+
     if (old.dmap){
         message('Loading diffusion map from file...')
         dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
@@ -32,7 +33,8 @@ calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
          message('Creating diffusion map...')
          dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen)
          rm(distMat, fileLines)
-         saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''), compress=TRUE, safe=TRUE)
+         saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''),
+                    compress=TRUE, safe=TRUE)
      }
     return(dmap)
 }

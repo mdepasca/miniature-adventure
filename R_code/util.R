@@ -2,6 +2,31 @@ library(Hmisc)
 library(sm) # for comparative density plots.
 library(plotrix) # boxed labels
 
+
+get_dump <- function(dump.file){
+    dump <- read.table(dump.file, header=TRUE, skip=1)
+    dump$GENTYPE[which(dump$GENTYPE == 21)] <- 2
+    dump$GENTYPE[which(dump$GENTYPE == 22)] <- 2
+    dump$GENTYPE[which(dump$GENTYPE == 23)] <- 2
+
+    dump$GENTYPE[which(dump$GENTYPE == 32)] <- 3
+    dump$GENTYPE[which(dump$GENTYPE == 33)] <- 3
+
+    dump$GENTYPE <- as.factor(dump$GENTYPE)
+
+    return(dump)
+}
+
+snphotcc.param.distrib <- function(dump.df, param='GENZ', save=FALSE){
+    if (class(param) == 'character'){
+        param.numeric <- which(names(dump.df) == param)
+    }else{
+        param.numeric <- param
+    }
+    d.param <- density(as.numeric(dump.df[param.numeric]))
+    plot(d, xlab=paste(param), main='')
+}
+
 redshift.distrib <- function(dump.df, save=FALSE){
     # dump <- read.table(dump.file, header=TRUE, skip=1)
     # par(mfrow=c(1,1))
@@ -139,19 +164,6 @@ explore.minmax <- function(dir.path, band='r', save=FALSE){
     return(c(min(mjd.min.vec), max(mjd.max.vec), min(mjd.flux.max.vec), max(mjd.flux.max.vec), ext.mjd))
 }
 
-get_dump <- function(dump.file){
-    dump <- read.table(dump.file, header=TRUE, skip=1)
-    dump$GENTYPE[which(dump$GENTYPE == 21)] <- 2
-    dump$GENTYPE[which(dump$GENTYPE == 22)] <- 2
-    dump$GENTYPE[which(dump$GENTYPE == 23)] <- 2
-
-    dump$GENTYPE[which(dump$GENTYPE == 32)] <- 3
-    dump$GENTYPE[which(dump$GENTYPE == 33)] <- 3
-
-    dump$GENTYPE <- as.factor(dump$GENTYPE)
-
-    return(dump)
-}
 
 compare.densities <- function(dump.df,save=FALSE, train=FALSE){
     if (save){
