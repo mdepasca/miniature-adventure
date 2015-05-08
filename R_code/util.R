@@ -14,6 +14,7 @@ vec.nObs <- function(path){
         rm(tmp)
     }
     return(nObs)
+}
 
 get_dump <- function(dump.file){
     dump <- read.table(dump.file, header=TRUE, skip=1)
