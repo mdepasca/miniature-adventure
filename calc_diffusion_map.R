@@ -4,9 +4,10 @@ library(R.utils)
 
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RATQUAD-with_prior/distance_matrix/dist_matrix_Sum.txt'
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF-with_prior/distance_matrix/dist_matrix_Sum.txt'
-# filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/dist_matrix_Sum.txt'
+filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
 # neigen <- 120
 calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
+    t <- 2
     message(paste('Reading diffusion map from directory:', filePath))
     print(eps.val)
     fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
@@ -27,12 +28,12 @@ calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
     
     if (old.dmap){
         message('Loading diffusion map from file...')
-        dmap <- loadObject(paste(filePath, 'diffusion_map.RData', sep=''))
+        dmap <- loadObject(paste(filePath, 'diffusion_map_t_', t, '.RData', sep=''))
     }else{
          message('Creating diffusion map...')
-         dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen)
+         dmap <- diffuse(distMat, eps.val=eps.val, neigen=neigen, t=t)
          rm(distMat, fileLines)
-         saveObject(dmap, paste(filePath, 'diffusion_map.RData', sep=''), compress=TRUE, safe=TRUE)
+         saveObject(dmap, paste(filePath, 'diffusion_map_t_', t, '.RData', sep=''), compress=TRUE, safe=TRUE)
      }
     return(dmap)
 }
