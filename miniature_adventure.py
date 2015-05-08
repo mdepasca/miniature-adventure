@@ -320,12 +320,11 @@ if __name__ == "__main__":
         print '\n' + indent + \
                     "INDEX | SN ID | BAND"
         for i in range(args.limits[0], args.limits[1]):
-            filePath = args.dirFit + os.sep + \
-                        path.splitext(lsDirData[i])[0] + "_FIT.DAT"
+            filePath = path.splitext(lsDirData[i])[0] + "_FIT.DAT"
 
             if filePath in lsDirFit:
                 continue
-                
+
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i],
                 args.mag
