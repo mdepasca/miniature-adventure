@@ -1,6 +1,20 @@
 library(Hmisc)
-library(sm) # for comparative density plots.
+## library(sm) # for comparative density plots.
 library(plotrix) # boxed labels
+
+vec.nObs <- function(path){
+    file.list <- list.files(path=path, pattern='\\.DAT$', full.names=TRUE)
+    nObs <- c()
+    for (f in file.list){
+        print(f)
+        r <- readLines(f)
+        skip <- grep('OBS:', r)
+        tmp <- read.table(f, header=TRUE, skip=skip[2]-1, fill=TRUE) 
+        nObs <- c(nObs, dimension(tmp)[1])
+        rm(tmp)
+    }
+    return(nObs)
+}
 
 redshift.distrib <- function(dump.df, save=FALSE){
     # dump <- read.table(dump.file, header=TRUE, skip=1)
@@ -16,18 +30,18 @@ redshift.distrib <- function(dump.df, save=FALSE){
     # plot.new()
     plot(d, xlab='Redshift', main='')#, sub=paste('N =', length(dump.df$CID),
         # ' Bandwidth =', d$bw, sep=' '))
-    polygon(c(0,d$x[which(d$x<=z.thr)],z.thr), c(0,d$y[which(d$x<=z.thr)],0),
-        density=10, angle=45)
-    boxed.labels(0.1, 0.1, labels=paste(length(
-        dump.df$GENZ[which(dump.df$GENZ<z.thr)])), cex=1, border=FALSE)
+    ## polygon(c(0,d$x[which(d$x<=z.thr)],z.thr), c(0,d$y[which(d$x<=z.thr)],0),
+    ##     density=10, angle=45)
+    ## boxed.labels(0.1, 0.1, labels=paste(length(
+    ##     dump.df$GENZ[which(dump.df$GENZ<z.thr)])), cex=1, border=FALSE)
 
-    polygon(c(z.ref-z.thr/2, d$x[which((z.ref-z.thr/2)<d$x &
-        d$x<(z.ref+z.thr/2))], z.ref+z.thr/2),
-    c(0,d$y[which((z.ref-z.thr/2)<d$x & d$x<(z.ref+z.thr/2))],0),
-    density=10, angle=135, lty=1)
-    boxed.labels(z.ref, 0.7, labels=paste(length(
-        dump.df$GENZ[which((z.ref-z.thr/2)<dump.df$GENZ &
-        dump.df$GENZ<(z.ref+z.thr/2))])), cex=1, border=FALSE, ypad=1.5)
+    ## polygon(c(z.ref-z.thr/2, d$x[which((z.ref-z.thr/2)<d$x &
+    ##     d$x<(z.ref+z.thr/2))], z.ref+z.thr/2),
+    ## c(0,d$y[which((z.ref-z.thr/2)<d$x & d$x<(z.ref+z.thr/2))],0),
+    ## density=10, angle=135, lty=1)
+    ## boxed.labels(z.ref, 0.7, labels=paste(length(
+    ##     dump.df$GENZ[which((z.ref-z.thr/2)<dump.df$GENZ &
+    ##     dump.df$GENZ<(z.ref+z.thr/2))])), cex=1, border=FALSE, ypad=1.5)
         # col='darkgray', border='darkgray')
     # lines(d, xlab='redshift', main='', sub=paste('N =', length(dump.df$CID),
     #     ' Bandwidth =', d$bw, sep=' '))
