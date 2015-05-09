@@ -413,7 +413,7 @@ if __name__ == "__main__":
                     # fout.close()
                 except linalg.LinAlgError as e:
                     if sent == False:
-                        msg = 'Subject: LinAlgError\n\n'+
+                        msg = 'Subject: LinAlgError\n\n' + \
                             'index = {:<d}, SNID = {:<d}'.format(i, candidate.SNID)
                         sent = True
                     """
