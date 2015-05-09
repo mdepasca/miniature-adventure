@@ -188,8 +188,6 @@ else:
 if __name__ == "__main__":
     # os.system("clear")
     server = smtplib.SMTP('mailauth.oapd.inaf.it',587)
-    server.starttls()
-    server.login('marco.depascale', 'M@p3d_8$')
     fromAddress = 'mothra@oapd.inaf.it'
     toAddress = 'marco.depa@gmail.com'
     sent = False
@@ -413,9 +411,12 @@ if __name__ == "__main__":
                     # fout.close()
                 except linalg.LinAlgError as e:
                     if sent == False:
+                        server.starttls()
+                        server.login('marco.depascale', 'M@p3d_8$')
                         msg = 'Subject: LinAlgError\n\n' + \
                             'index = {:<d}, SNID = {:<d}'.format(i, candidate.SNID)
                         server.sendmail(fromAddress, toAddress, msg)
+                        server.close()
                         sent = True
                     """
                     if LinAlgError light curve won't be saved.
