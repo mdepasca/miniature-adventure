@@ -425,6 +425,9 @@ if __name__ == "__main__":
                                                         i, candidate.SNID, b
                             ) + bcolors.FAIL + ' LinAlgError' + bcolors.txtrst
                     candidateFit.r.badCurve = True
+                    raise ValueError('LinAlgError from GPy. Mail sent to {:s}'.format(
+                        toAddress
+                    ))
                 else:
                     candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
 
