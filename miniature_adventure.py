@@ -9,6 +9,7 @@ import warnings
 from math import floor
 # garbage collector
 import gc
+import smtplib
 
 import numpy as np
 from scipy import signal, linalg
@@ -186,6 +187,12 @@ else:
 
 if __name__ == "__main__":
     # os.system("clear")
+    server = smtplib.SMTP('mailauth.oapd.inaf.it',587)
+    server.starttls()
+    server.login('marco.depascale', 'M@p3d_8$')
+    fromAddress = 'mothra@oapd.inaf.it'
+    toAddress = 'marco.depa@gmail.com'
+    sent = False
 
     indent = "          "
     resDir = "results"+os.sep
@@ -405,6 +412,10 @@ if __name__ == "__main__":
                     # sys.stdout = saveOut
                     # fout.close()
                 except linalg.LinAlgError as e:
+                    if sent == False:
+                        msg = 'Subject: LinAlgError\n\n'+
+                            'index = {:<d}, SNID = {:<d}'.format(i, candidate.SNID)
+                        sent = True
                     """
                     if LinAlgError light curve won't be saved.
                     """
@@ -420,6 +431,7 @@ if __name__ == "__main__":
                         "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
                                                         i, candidate.SNID, b
                             ) + bcolors.txtrst
+
             else:
                 if not candidateFit.r.badCurve:
                     # candidateFit.shift_mjds()
