@@ -415,6 +415,7 @@ if __name__ == "__main__":
                     if sent == False:
                         msg = 'Subject: LinAlgError\n\n' + \
                             'index = {:<d}, SNID = {:<d}'.format(i, candidate.SNID)
+                        server.sendmail(fromAddress, toAddress, msg)
                         sent = True
                     """
                     if LinAlgError light curve won't be saved.
