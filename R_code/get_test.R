@@ -1,4 +1,4 @@
-source('util.R')
+source('R_code/util.R')
 
 get_test <- function(path, fileNameRoot){
     ## column `type` is set to 'test' for each SN
