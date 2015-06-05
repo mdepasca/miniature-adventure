@@ -291,8 +291,8 @@ if __name__ == "__main__":
 
 
         """
-        kern = GPy.kern.RatQuad(1)
-        # kern = GPy.kern.RBF(1)
+        # kern = GPy.kern.RatQuad(1)
+        kern = GPy.kern.RBF(1)
         # kern = GPy.kern.Matern32(1)
         # kern = GPy.kern.Matern52(1)
 
@@ -309,13 +309,13 @@ if __name__ == "__main__":
         Receiving input on number of bands to keep. K-correction cannot
         be determined for all bands.
         """
-        try:
-            mode = int(raw_input('\n' + indent + 'Number of bands to keep ' + \
-                'after K-correction [1-4]:'))
-        except ValueError:
-            raise ValueError("An integer is expected!")
-        if mode < 1 or mode > 4:
-            raise ValueError("The number of bands has to be between 1 and 4!")
+        # try:
+        #     mode = int(raw_input('\n' + indent + 'Number of bands to keep ' + \
+        #         'after K-correction [1-4]:'))
+        # except ValueError:
+        #     raise ValueError("An integer is expected!")
+        # if mode < 1 or mode > 4:
+        #     raise ValueError("The number of bands has to be between 1 and 4!")
 
 
         """
