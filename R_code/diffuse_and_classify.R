@@ -1,23 +1,23 @@
-source('calc_diffusion_map.R')
-source('get_training.R')
-source('get_test.R')
-source('classify_RF.R')
+source('R_code/calc_diffusion_map.R')
+source('R_code/get_training.R')
+source('R_code/get_test.R')
+source('R_code/classify_RF.R')
 
 path <- 'results/SIMGEN_PUBLIC_FIT/'
 ## specific.path <- 'RATQUAD-with_prior'
-specific.path <- 'RBF-with_prior'
-## specific.path <- 'RBF_test-length'
+## specific.path <- 'RBF-with_prior'
+specific.path <- 'RBF_test-length'
 
 path.distance <- paste(path, specific.path, '/distance_matrix/', sep='')
 
-neigen <- 50
+neigen <- 150
 eps.grid <- as.vector(seq(from=2, to=5, by=0.2))
 
 message(paste('Data from directory:', paste(path, specific.path, sep='')))
 
 ## eps.val should be near the value for which the Euclidean distance is considered too big
 ## for the 2 light curves to be similar. In this case is 5
-eps.val <- 10
+eps.val <- 5
 if (exists('dmap')){
     ## to avoid any possiblity of duplicating the size of dmap
     rm(dmap)

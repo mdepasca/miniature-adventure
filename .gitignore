@@ -62,3 +62,4 @@ ignore/**
 *.eps
 *.png
 *.pdf
+.Rproj.user
