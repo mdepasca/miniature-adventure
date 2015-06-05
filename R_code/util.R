@@ -289,7 +289,7 @@ plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
         if (i == 1){
             plot(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
                 type='l',
-                xlim=c(56171, 56351), ylim=c(0,200000),
+                ## xlim=c(56171, 56351), ylim=c(0,200000),
                 xlab='epoch [mjd]', ylab='flux [adu]', col=colors[i])
         }else{
             lines(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
@@ -297,7 +297,8 @@ plot.simulated.sample <- function(dir.path, lc.num=20, band='r', save=FALSE){
         }
         errbar(lc$MJD[which(lc$FLT==band)], lc$FLUXCAL[which(lc$FLT==band)],
             yplus=lc$FLUXCAL[which(lc$FLT==band)]+lc$FLUXCALERR[which(lc$FLT==band)],
-            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], add=T)
+            yminus=lc$FLUXCAL[which(lc$FLT==band)]-lc$FLUXCALERR[which(lc$FLT==band)], add=T,
+               errbar.col=colors[i], col=colors[i])
     }
     return (file.list)
 }
