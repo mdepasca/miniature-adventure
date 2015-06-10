@@ -42,7 +42,7 @@ if __name__ == "__main__":
     """
 
     ACTION OPTIONS
-
+    ----------------------------------------------------------------------------
     """
 
     actionGroup.add_argument(
@@ -106,10 +106,10 @@ if __name__ == "__main__":
         help='Produces plot suitable for publication (pdf, 300dpi).'
         )
 
-    """
+    """-------------------------------------------------------------------------
 
     INPUT OPTIONS
-
+    ----------------------------------------------------------------------------
     """
 
     inputGroup.add_argument(
@@ -175,6 +175,8 @@ if __name__ == "__main__":
         default=-1, type=int,
         help='Offset in index to begin light curves plotting from.'
     )
+    """-------------------------------------------------------------------------
+    """
 
     args = parser.parse_args()
 
@@ -262,13 +264,6 @@ if __name__ == "__main__":
         print "\n" + indent + \
             "Data directory: " + os.curdir + args.dirData + os.sep
 
-        # p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
-        #     cwd=args.dirData+os.sep)
-        # lsDirData = p.stdout.read()
-        # lsDirData = lsDirData.split('\n')
-        # lsDirData.sort()
-        # lsDirData.remove('')
-
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(len(lsDirData))
 
@@ -290,9 +285,6 @@ if __name__ == "__main__":
         print "\n" + indent \
             + "Data will be smoothed using GP kernel " + kern.name.upper()
 
-        """
-        The pre-processing could be only on selected number of bands
-        """
         print '\n' + indent + \
                     "INDEX | SN ID | BAND"
         for i in range(args.limits[0], args.limits[1]):
@@ -388,6 +380,7 @@ if __name__ == "__main__":
             else:
                 """
                 Saving fit results on file
+                ----------------------------------------------------------------
                 """
                 if (candidateFit.r.badCurve == False):
                     filePath = args.dirFit + os.sep + \
@@ -402,7 +395,8 @@ if __name__ == "__main__":
                     else:
                         nopeakIdx = np.append(nopeakIdx, i)
                         fNopeaked.write('{:<}\n'.format(filePath))
-
+                """-------------------------------------------------------------
+                """
                 gc.collect()
             # free memory
             gc.collect()
@@ -435,7 +429,6 @@ if __name__ == "__main__":
 
     if args.crossCor:
         """
-        getting file list from directory
         File are sorted by SNID.
         In the following peakIdx and nopeakIdx contain index referring to the
         full list of files. For this reason the list of files it is queried on
@@ -480,7 +473,7 @@ if __name__ == "__main__":
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(args.dirFit + os.sep + filePath, 'w')
         prog = 0
-        # for i in nopeakIdx[start:end]:
+
         for i in nopeakList[args.limits[0]:args.limits[1]]:
 
             z = 0 # goes on peakIdx to index the progress bar
@@ -580,7 +573,7 @@ if __name__ == "__main__":
                                         len(notPeaked.r.shiftedMjd)
                                         )
                 offsets = -lags*distancePerLag
-                
+
                 # ccMax[k] = offsets[np.argmax(ycorr)]
                 ccMax.append(offsets[np.argmax(ycorr)])
                 # k += 1
