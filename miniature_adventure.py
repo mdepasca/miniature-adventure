@@ -7,14 +7,11 @@ import socket
 import time
 import warnings
 from math import floor
-# garbage collector
-import gc
+import gc # garbage collector
 import smtplib
-
 import numpy as np
 from scipy import signal, linalg
 from matplotlib import pyplot as plt
-
 import GPy
 
 import classes as cls
@@ -216,17 +213,8 @@ if __name__ == "__main__":
 
     print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
 
-        # check for other values
-
     if not os.path.exists(path.abspath(args.dirFit)):
         os.makedirs(path.abspath(args.dirFit))
-
-    # modelList = np.zeros(0, dtype=np.object)
-
-    # should be possible to change the next two variables
-    # args.dirData = "train_data" + os.sep + "DES_BLIND+HOSTZ"
-    # args.dirFit = "fit_data" + os.sep
-
 
     start_time = time.time()
 
@@ -288,7 +276,7 @@ if __name__ == "__main__":
 
 
         GP kernel specification
-
+        ------------------------------------------------------------------------
 
         """
         # kern = GPy.kern.RatQuad(1)
@@ -296,27 +284,11 @@ if __name__ == "__main__":
         # kern = GPy.kern.Matern32(1)
         # kern = GPy.kern.Matern52(1)
 
+        """---------------------------------------------------------------------
+        """
+
         print "\n" + indent \
             + "Data will be smoothed using GP kernel " + kern.name.upper()
-
-        # Fitting single lightcurves
-        #
-        # THIS PIECE NEEDS TO BE PARALLELIZED
-        #
-        # optimize_restarts parallel using multiprocessing
-
-        """
-        Receiving input on number of bands to keep. K-correction cannot
-        be determined for all bands.
-        """
-        # try:
-        #     mode = int(raw_input('\n' + indent + 'Number of bands to keep ' + \
-        #         'after K-correction [1-4]:'))
-        # except ValueError:
-        #     raise ValueError("An integer is expected!")
-        # if mode < 1 or mode > 4:
-        #     raise ValueError("The number of bands has to be between 1 and 4!")
-
 
         """
         The pre-processing could be only on selected number of bands
@@ -356,13 +328,6 @@ if __name__ == "__main__":
 
                 errFlux = candidate.lcsDict[b].fluxErr
 
-                # Fitting Lightcurve
-                """
-                Save pre processed data, before fitting. This will save time
-                when plotting...
-                NOT YET IMPLEMENTED, MORE A COMFORT THEN A NEED
-                """
-
                 if (candidate.lcsDict[b].badCurve) or (len(flux) <= 3):
                     candidateFit.lcsDict[b].badCurve = True
                     print indent + bcolors.FAIL + \
@@ -375,21 +340,12 @@ if __name__ == "__main__":
                     """
                     continue
 
-                # Diverting warnings to log file
-                # saveOut = sys.stdout
-                # fout = open('out.log', 'w')
-
-                # sys.stdout = fout
-
-                """
-                Clipping to zero negative flux values, to avoid optimization to
-                crash with some kernel.
-                When dealing with magnitudes, values above the limit of each filtere
-                will be clipped to that limit
-
-                flux = [0 if (el<0) else el for el in flux]
                 """
 
+                Fitting Lightcurve
+                ----------------------------------------------------------------
+
+                """
                 try:
                     predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                     epoch, flux, errFlux,
@@ -397,8 +353,6 @@ if __name__ == "__main__":
                                                     parallel=False,
                                                     test_length=args.testLength,
                                                     test_prior=args.prior)
-                    # sys.stdout = saveOut
-                    # fout.close()
                 except linalg.LinAlgError as e:
                     if sent == False:
                         server = smtplib.SMTP('mailauth.oapd.inaf.it',587)
@@ -417,9 +371,11 @@ if __name__ == "__main__":
                                                         i, candidate.SNID, b
                             ) + bcolors.FAIL + ' LinAlgError' + bcolors.txtrst
                     candidateFit.r.badCurve = True
-                    raise ValueError('LinAlgError from GPy. Mail sent to {:s}'.format(
-                        toAddress
-                    ))
+                    raise ValueError(
+                        'LinAlgError from GPy. Mail sent to {:s}'.format(
+                                                                    toAddress
+                            )
+                        )
                 else:
                     candidateFit.set_lightcurve(b, predMjd, predFlux, predErr)
 
@@ -427,10 +383,13 @@ if __name__ == "__main__":
                         "{:>5d}   {:>5d}   {:>4s}  >  DONE".format(
                                                         i, candidate.SNID, b
                             ) + bcolors.txtrst
-
+                """-------------------------------------------------------------
+                """
             else:
-                if not candidateFit.r.badCurve:
-                    # candidateFit.shift_mjds()
+                """
+                Saving fit results on file
+                """
+                if (candidateFit.r.badCurve == False):
                     filePath = args.dirFit + os.sep + \
                         path.splitext(lsDirData[i])[0] + "_FIT.DAT"
 
@@ -450,8 +409,6 @@ if __name__ == "__main__":
 
         fPeaked.close()
         fNopeaked.close()
-        # sys.stderr = saveErr
-        # ferr.close()
 
         filePath = 'peaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
@@ -532,14 +489,15 @@ if __name__ == "__main__":
             READ DATA FROM NOT-PEAKED FILE
             creates a Supernova object
             """
-            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i
             try:
                 tmpSN = util.get_sn_from_file(filePath)
 
                 print "Progress: {:<d} -- {:<}".format(prog, filePath)
                 prog += 1
 
-                ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)#  "          "
+                ccIndent = "ID:{: ^7d}".format(tmpSN.SNID)
+
                 widgets = [ccIndent, Percentage(), ' ',
                    Bar(marker='#',left='[',right=']'),
                    ' ', ETA()]
@@ -622,7 +580,7 @@ if __name__ == "__main__":
                                         len(notPeaked.r.shiftedMjd)
                                         )
                 offsets = -lags*distancePerLag
-                # raise SystemExit
+                
                 # ccMax[k] = offsets[np.argmax(ycorr)]
                 ccMax.append(offsets[np.argmax(ycorr)])
                 # k += 1
@@ -1041,6 +999,9 @@ if __name__ == "__main__":
         '''
         nrows = 5
         ncols = 5
+        """
+        If plotOffset is to specified, get a proper random value
+        """
         if (args.plotOffset == -1):
             np.random.RandomState
             offset = int(np.random.uniform(low=0, high=len(lsDirFit)-nrows*ncols))
@@ -1084,6 +1045,9 @@ if __name__ == "__main__":
              'i':0,
              'z':0}
 
+        """
+        Adjust subplot margins and title
+        """
         for b in dictFig.keys():
             dictFig[b].subplots_adjust(
                 top=0.96, right=0.99, bottom=0.03, left=0.02,
@@ -1093,16 +1057,15 @@ if __name__ == "__main__":
 
         GPkern = ''
         for i in range(nrows*ncols):
-            # getting the data from file
-            # candidateIdx = np.random.random_integers(
-            #     low=0, high=len(lsDirFit))
-
+            """
+            Getting the observational data from file
+            """
             candidate = util.get_sn_from_file(
                 args.dirData + os.sep + lsDirData[i+offset]#candidateIdx]
                 )
 
             """
-            reading fit data from file
+            Reading fit data from file
             """
             try:
                 tmpSN = util.get_sn_from_file(
@@ -1119,7 +1082,8 @@ if __name__ == "__main__":
                 """
                 Initializing SupernovaFit object
                 """
-                fit = cls.SupernovaFit(tmpSN, tmpSN.kern if hasattr(tmpSN, 'kern') else None)
+                fit = cls.SupernovaFit(tmpSN,
+                        tmpSN.kern if hasattr(tmpSN, 'kern') else None)
                 if (i == 0) and hasattr(tmpSN, 'kern'):
                     GPkern = tmpSN.kern
                 for b in tmpSN.lcsDict.keys():
@@ -1134,6 +1098,9 @@ if __name__ == "__main__":
                     fit.SNID)
                     # continue
                 else:
+                    """
+                    Shift fit mjd to have 0 at r band maximum
+                    """
                     fit.shift_mjds()
                 """
                 Fixing shiftedMjd for not-peaked LCs
@@ -1149,16 +1116,12 @@ if __name__ == "__main__":
 
 
                 for b in dictAx.keys():
+                    """
+                    variable `data` initialized as light curve in band b for
+                    cleaner code.
+                    """
                     data = candidate.lcsDict[b]
 
-                    """
-                    Fixing shiftedMjd for not-peaked LCs
-                    """
-                    # if fit.peaked == False:
-                    #     fit.lcsDict[b].shiftedMjd = np.ma.add(
-                    #         fit.lcsDict[b].shiftedMjd,
-                    #         fit.ccMjdMaxFlux
-                    #         )
                     fit_b = fit.lcsDict[b]
 
                     fit_r = fit.lcsDict['r']
