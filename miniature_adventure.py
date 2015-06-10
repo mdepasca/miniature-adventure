@@ -326,6 +326,10 @@ if __name__ == "__main__":
         for i in range(args.limits[0], args.limits[1]):
             filePath = path.splitext(lsDirData[i])[0] + "_FIT.DAT"
 
+            """
+            Check if file with fit results already exits. If positive skip
+            to next loop iteration.
+            """
             if filePath in lsDirFit:
                 continue
 
@@ -353,19 +357,6 @@ if __name__ == "__main__":
                 errFlux = candidate.lcsDict[b].fluxErr
 
                 # Fitting Lightcurve
-
-                """
-                K--correction reduces the number of observation in each band
-                (Not always there are observations in all the four bands taken
-                the same MJD).
-                For this reason it has to be performed here, before checking
-                flux length.
-
-                ---> K--correction
-                """
-
-
-
                 """
                 Save pre processed data, before fitting. This will save time
                 when plotting...
