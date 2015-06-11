@@ -247,10 +247,10 @@ if __name__ == "__main__":
 
     """
     if args.fit:
-        if args.limits[1] > (len(lsDirData)-1):
+        if args.limits[1] > len(lsDirData):
             print indent + \
                 "WARNING: upper limit > than the number of files. Corrected.\n"
-            args.limits[1] = len(lsDirData) - 1
+            args.limits[1] = len(lsDirData)
         filePath = args.dirFit + os.sep + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
@@ -480,8 +480,8 @@ if __name__ == "__main__":
         else:
             nopeakList = np.asarray(tmp)
 
-        if args.limits[1] > (len(nopeakList)-1):
-            args.limits[1] = len(nopeakList) - 1
+        if args.limits[1] > len(nopeakList):
+            args.limits[1] = len(nopeakList)
         #
         # filePath = 'repeats.txt'
         # repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
