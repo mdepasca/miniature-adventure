@@ -149,6 +149,25 @@ INPUT/OUTPUT on file
 
 
 """
+def concat_files(fileList, outFile):
+    with open(outFile, 'w') as outfile:
+        for fName in fileList:
+            with open(fName, 'r') as infile:
+                for line in infile:
+                    outfile.write(line)
+
+
+def list_files(fileType='', path=None):
+    shellCmd = "ls {:<s}".format(fileType)
+    p = subprocess.Popen(shellCmd, shell=True,
+        stdout=subprocess.PIPE, cwd=path)
+    fileList = p.stdout.read()
+    fileList = fileList.split('\n')
+    fileList.remove('')
+
+    return fileList
+
+
 def open_gzip_pkl_catalog(path):
     """Opens gzipped cPickle file containing supernova catalogue (DEPRECATED).
 
@@ -328,7 +347,7 @@ def extract_redshift_data(path, outFile):
         float_format='%5.4f', header=True)
 
 def extract_training_set(path, fileName):
-    """Creates files dividing supernovae in training and test sets. 
+    """Creates files dividing supernovae in training and test sets.
     It creates also files list training set supernovae by type
 
     Keyword arguments:
