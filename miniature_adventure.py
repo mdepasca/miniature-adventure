@@ -462,16 +462,18 @@ if __name__ == "__main__":
         # else:
         #     nopeakIdx = np.asarray(tmp)
 
-        filePath = args.dirFit + os.sep + 'PEAKED.LIST'
+        filePath = args.dirFit +  'PEAKED.LIST'
         if path.exists(filePath) == False:
             # create the file concatenating existing partial files
-            peakedFileList = util.list_files(args.dirFit+os.sep+'PEAKED*.LIST')
+            print '{:<s} created!'.format(filePath)
+            peakedFileList = util.list_files(args.dirFit+'PEAKED*.LIST')
             util.concat_files(peakedFileList, filePath)
         peakList = np.loadtxt(filePath, dtype=np.str)
 
-        filePath = args.dirFit + os.sep + 'NOPEAKED.LIST'
-        if path.exists(args.dirFit + os.sep + filePath) == False:
+        filePath = args.dirFit + 'NOPEAKED.LIST'
+        if path.exists(filePath) == False:
             # create the file from existing partial files
+            print '{:<s} created!'.format(filePath)
             noPeakedFileList = util.list_files(args.dirFit+os.sep+'NOPEAKED*.LIST')
             util.concat_files(noPeakedFileList, filePath)
         tmp = np.loadtxt(filePath, dtype=np.str)
