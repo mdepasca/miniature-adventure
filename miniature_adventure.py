@@ -453,15 +453,6 @@ if __name__ == "__main__":
 
         print "\n" + indent + "Interval [{:<},{:<})".format(args.limits[0], args.limits[1])
 
-        # filePath = 'peaked.dat'.format(socket.gethostname())
-        # peakIdx = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
-        # filePath = 'nopeaked.dat'.format(socket.gethostname())
-        # tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
-        # if tmp.size == 1:
-        #     nopeakIdx = np.asarray([tmp])
-        # else:
-        #     nopeakIdx = np.asarray(tmp)
-
         filePath = args.dirFit +  'PEAKED.LIST'
         if path.exists(filePath) == False:
             # create the file concatenating existing partial files
@@ -512,7 +503,6 @@ if __name__ == "__main__":
                 widgets = [ccIndent, Percentage(), ' ',
                    Bar(marker='#',left='[',right=']'),
                    ' ', ETA()]
-                # pbar = ProgressBar(widgets=widgets, maxval=len(peakIdx)).start()
                 pbar = ProgressBar(widgets=widgets, maxval=len(peakList)).start()
             except IOError:
                 print "IOError: {:<}".format(filePath)
