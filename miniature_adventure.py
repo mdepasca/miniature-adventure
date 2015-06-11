@@ -601,7 +601,7 @@ if __name__ == "__main__":
             reWrite.write(filePath+'\n')
             pbar.finish()
 
-            gc.collect()
+            # gc.collect()
         reWrite.close()
         print 'CC ended!'
         gc.collect()
