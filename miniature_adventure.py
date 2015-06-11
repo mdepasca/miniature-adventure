@@ -589,7 +589,7 @@ if __name__ == "__main__":
                 pbar.update(z+1)
                 z += 1
 
-                gc.collect()
+                # gc.collect()
             notPeaked.ccMjdMaxFlux = np.mean(ccMax)#ccMax.mean()
             """
             re-writing file of not peaked lc to include information on maximum
