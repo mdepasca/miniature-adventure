@@ -247,7 +247,10 @@ if __name__ == "__main__":
 
     """
     if args.fit:
-
+        if args.limits[1] > (len(lsDirData)-1):
+            print indent + \
+                "WARNING: upper limit > than the number of files. Corrected.\n"
+            args.limits[1] = len(lsDirData) - 1
         filePath = args.dirFit + os.sep + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
@@ -427,10 +430,12 @@ if __name__ == "__main__":
             header='Indexes of fitted LCs without an r maximum.', fmt='%d')
 
         gc.collect()
-    """
 
+    """#########################################################################
+    ############################################################################
     PERFORMING CROSS-CORRELATION
-
+    ############################################################################
+    ############################################################################
     """
 
 
@@ -447,14 +452,6 @@ if __name__ == "__main__":
             "peaked-lcs ..." +  bcolors.txtrst
 
         print "\n" + indent + "Interval [{:<},{:<})".format(args.limits[0], args.limits[1])
-
-        # p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-        #     cwd=args.dirData+os.sep)
-        #     # cwd=args.dirFit+os.sep)
-        # lsDirData = p.stdout.read()
-        # lsDirData = lsDirData.split('\n')
-        # lsDirData.sort()
-        # lsDirData.remove('')
 
         # filePath = 'peaked.dat'.format(socket.gethostname())
         # peakIdx = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.int)
@@ -483,6 +480,8 @@ if __name__ == "__main__":
         else:
             nopeakList = np.asarray(tmp)
 
+        if args.limits[1] > (len(nopeakList)-1):
+            args.limits[1] = len(nopeakList) - 1
         #
         # filePath = 'repeats.txt'
         # repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
