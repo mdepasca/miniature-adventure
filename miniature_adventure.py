@@ -220,6 +220,10 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
+    """
+    Get list of files in data directory and fit directory
+    ----------------------------------------------------------------------------
+    """
     p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
             cwd=args.dirData+os.sep)
     lsDirData = p.stdout.read()
@@ -233,6 +237,9 @@ if __name__ == "__main__":
     lsDirFit = lsDirFit.split('\n')
     lsDirFit.sort()
     lsDirFit.remove('')
+
+    """-------------------------------------------------------------------------
+    """
 
     """
 
@@ -458,17 +465,27 @@ if __name__ == "__main__":
         # else:
         #     nopeakIdx = np.asarray(tmp)
 
-        filePath = 'PEAKED.LIST'
-        peakList = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
-        filePath = 'NOPEAKED.LIST'
-        tmp = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
+        filePath = args.dirFit + os.sep + 'PEAKED.LIST'
+        if path.exists(filePath) == False:
+            # create the file concatenating existing partial files
+            peakedFileList = util.list_files(args.dirFit+os.sep+'PEAKED*.LIST')
+            util.concat_files(peakedFileList, filePath)
+        peakList = np.loadtxt(filePath, dtype=np.str)
+
+        filePath = args.dirFit + os.sep + 'NOPEAKED.LIST'
+        if path.exists(args.dirFit + os.sep + filePath) == False:
+            # create the file from existing partial files
+            noPeakedFileList = util.list_files(args.dirFit+os.sep+'NOPEAKED*.LIST')
+            util.concat_files(noPeakedFileList, filePath)
+        tmp = np.loadtxt(filePath, dtype=np.str)
         if tmp.size == 1:
             nopeakList = np.asarray([tmp])
         else:
             nopeakList = np.asarray(tmp)
 
-        filePath = 'repeats.txt'
-        repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
+        #
+        # filePath = 'repeats.txt'
+        # repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
         reWrite = open(args.dirFit + os.sep + filePath, 'w')
@@ -525,11 +542,11 @@ if __name__ == "__main__":
                 """
                 READ DATA FROM PEAKED FILE
                 """
-                if j in repeats:
-                    print indent + bcolors.WARNING + \
-                        'File appears also in unpeaked list: ignoring it.' + \
-                            bcolors.txtrst
-                    continue
+                # if j in repeats:
+                #     print indent + bcolors.WARNING + \
+                #         'File appears also in unpeaked list: ignoring it.' + \
+                #             bcolors.txtrst
+                #     continue
                 filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
