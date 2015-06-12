@@ -9,7 +9,7 @@ import time
 import argparse
 import warnings
 import subprocess
-import cProfile
+
 
 warnings.filterwarnings(
     'error',
@@ -23,7 +23,7 @@ if __name__ == '__main__':
     import utilities as util
     import GPy
     from matplotlib import pyplot as plt
-
+    import cProfile
 
 
     parser = argparse.ArgumentParser(
@@ -762,8 +762,8 @@ if __name__ == '__main__':
         """
         Setting limits in magnitudes
         """
-        for b in candidate.lcsDict.keys():
-            if args.mag:
+        if args.mag:
+            for b in candidate.lcsDict.keys():
                 candidate.lcsDict[b].lim = limMagDict[b]
 
 
@@ -780,9 +780,17 @@ if __name__ == '__main__':
         Looping in bands and fit of flux
         """
         for b in candidate.lcsDict.keys():
+            epoch = util.time_correct(
+                    candidate.lcsDict[b].mjd,
+                    candidate.zSpec if candidate.zSpec else candidate.zPhotHost
+                    )
 
-            phase = candidate.lcsDict[b].mjd
-            flux = candidate.lcsDict[b].flux
+            # Correcting for absorption
+            flux = util.correct_for_absorption(
+                    candidate.lcsDict[b].flux,
+                    candidate.MWEBV, b
+                    )
+
 
             """
             Clipping to limiting magnitudes when flux is above 90th mag
@@ -797,6 +805,8 @@ if __name__ == '__main__':
             if (not candidate.lcsDict[b].badCurve) and (len(flux) >= 3):
 
                 start_time = time.time()
+                print "Profiling gp_fit.\n"
+                cProfile.run('util.gp_fit(phase, flux, errFlux,kern, n_restarts=10,parallel=False,test_length=True,test_prior=args.testPrior)')
                 predMjd, predFlux, predErr, GPModel = util.gp_fit(
                                                 phase, flux, errFlux,
                                                 kern, n_restarts=10,
@@ -825,6 +835,8 @@ if __name__ == '__main__':
 
     if args.distance:
         if fit[0].peaked and fit[1].peaked:
+            print 'Profiling get_distace'
+            cProfile.run('fit[0].get_distance(fit[1], args.band)')
             print 'Distance between the 2 normalized lcs in ' + \
             '{:<} band = {:<2.4f}'.format(args.band,
                 fit[0].get_distance(fit[1],
