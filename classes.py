@@ -857,86 +857,87 @@ if __name__ == '__main__':
             print 'Candidate 1 - {:<}'.format(fit[0].peaked)
             print 'Candidate 2 - {:<}'.format(fit[1].peaked)
 
-    nrows = 2
-    ncols = 4
+    if args.plot:
+        nrows = 2
+        ncols = 4
 
-    colorList = ['blue', 'orange']
+        colorList = ['blue', 'orange']
 
-    fig, ax = plt.subplots(nrows=nrows, ncols=ncols,
-                    figsize=(16.5, 11.7),
-                    tight_layout=False
+        fig, ax = plt.subplots(nrows=nrows, ncols=ncols,
+                        figsize=(16.5, 11.7),
+                        tight_layout=False
+                        )
+
+        axDict = {
+        'g':[ax[0,0], ax[0,2]],
+        'r':[ax[0,1], ax[0,3]],
+        'i':[ax[1,0], ax[1,2]],
+        'z':[ax[1,1], ax[1,3]]
+        }
+
+        fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
+        fig.suptitle(eval('\'Band \' + args.band + (\' with Prior Test\' ' +
+            'if args.testPrior else \'Band \' + args.band + \' No prior\') + \' -- \'' +
+            '+ \'Kernel: \' + kern.name'))
+
+        for j in [0,1]:
+            for b in axDict.keys():
+                if args.mag:
+                    upperlimits = [
+                        0 if el < 90 else 1 for el in candidates[j].lcsDict[b].fluxErr
+                    ]
+                    axDict[b][j].set_ylim(candidates[j].lcsDict[b].lim+2, 22)
+                    lowerlimits = False
+                else:
+                    upperlimits = False
+                    lowerlimits = [0 if el > 0 else 1 for el in candidates[j].lcsDict[b].flux]
+                axDict[b][j].plot([min(candidates[j].lcsDict[b].mjd),
+                    max(candidates[j].lcsDict[b].mjd)],
+                    [candidates[j].lcsDict[b].lim]*2,
+                    c='k')
+
+                fluxUpLim = [val for val in [
+                            fit[j].lcsDict[b].flux[i] +
+                            2*fit[j].lcsDict[b].fluxErr[i]
+                                for i in range(len(fit[j].lcsDict[b].flux))
+                            ]]
+                fluxLowLim = [val for val in [
+                    fit[j].lcsDict[b].flux[i] -
+                    2*fit[j].lcsDict[b].fluxErr[i]
+                        for i in range(len(fit[j].lcsDict[b].flux))
+                            ]]
+                axDict[b][j].fill_between(fit[j].lcsDict[b].mjd,
+                    fluxUpLim, fluxLowLim,
+                    alpha=0.2, linewidth=0.5)
+
+                axDict[b][j].plot(
+                    fit[j].lcsDict[b].mjd,
+                    fit[j].lcsDict[b].flux, c=colorList[j],
+                    )
+                axDict[b][j].errorbar(
+                    candidates[j].lcsDict[b].mjd,
+                    candidates[j].lcsDict[b].flux,
+                    candidates[j].lcsDict[b].fluxErr,
+                    uplims=upperlimits, lolims=lowerlimits, ecolor=colorList[j],
+                    fmt=None
+                    )
+                axDict[b][j].scatter(
+                    candidates[j].lcsDict[b].mjd,
+                    candidates[j].lcsDict[b].flux,
+                    c=colorList[j],
+                    label='Band {:>s} | IDX {:>5d} | SNID {:>5d}'.format(b,
+                        eval('args.candidate1 if j == 0 else args.candidate2'),
+                        candidates[j].SNID)
+                    )
+                axDict[b][j].legend(
+                    loc='best', framealpha=0.3, fontsize='10'
                     )
 
-    axDict = {
-    'g':[ax[0,0], ax[0,2]],
-    'r':[ax[0,1], ax[0,3]],
-    'i':[ax[1,0], ax[1,2]],
-    'z':[ax[1,1], ax[1,3]]
-    }
-
-    fig.subplots_adjust(left=0.05, right=0.97, top=0.94, wspace=0.29)
-    fig.suptitle(eval('\'Band \' + args.band + (\' with Prior Test\' ' +
-        'if args.testPrior else \'Band \' + args.band + \' No prior\') + \' -- \'' +
-        '+ \'Kernel: \' + kern.name'))
-
-    for j in [0,1]:
-        for b in axDict.keys():
-            if args.mag:
-                upperlimits = [
-                    0 if el < 90 else 1 for el in candidates[j].lcsDict[b].fluxErr
-                ]
-                axDict[b][j].set_ylim(candidates[j].lcsDict[b].lim+2, 22)
-                lowerlimits = False
-            else:
-                upperlimits = False
-                lowerlimits = [0 if el > 0 else 1 for el in candidates[j].lcsDict[b].flux]
-            axDict[b][j].plot([min(candidates[j].lcsDict[b].mjd),
-                max(candidates[j].lcsDict[b].mjd)],
-                [candidates[j].lcsDict[b].lim]*2,
-                c='k')
-
-            fluxUpLim = [val for val in [
-                        fit[j].lcsDict[b].flux[i] +
-                        2*fit[j].lcsDict[b].fluxErr[i]
-                            for i in range(len(fit[j].lcsDict[b].flux))
-                        ]]
-            fluxLowLim = [val for val in [
-                fit[j].lcsDict[b].flux[i] -
-                2*fit[j].lcsDict[b].fluxErr[i]
-                    for i in range(len(fit[j].lcsDict[b].flux))
-                        ]]
-            axDict[b][j].fill_between(fit[j].lcsDict[b].mjd,
-                fluxUpLim, fluxLowLim,
-                alpha=0.2, linewidth=0.5)
-
-            axDict[b][j].plot(
-                fit[j].lcsDict[b].mjd,
-                fit[j].lcsDict[b].flux, c=colorList[j],
-                )
-            axDict[b][j].errorbar(
-                candidates[j].lcsDict[b].mjd,
-                candidates[j].lcsDict[b].flux,
-                candidates[j].lcsDict[b].fluxErr,
-                uplims=upperlimits, lolims=lowerlimits, ecolor=colorList[j],
-                fmt=None
-                )
-            axDict[b][j].scatter(
-                candidates[j].lcsDict[b].mjd,
-                candidates[j].lcsDict[b].flux,
-                c=colorList[j],
-                label='Band {:>s} | IDX {:>5d} | SNID {:>5d}'.format(b,
-                    eval('args.candidate1 if j == 0 else args.candidate2'),
-                    candidates[j].SNID)
-                )
-            axDict[b][j].legend(
-                loc='best', framealpha=0.3, fontsize='10'
-                )
-
-            axDict[b][j].set_xlabel('epoch [MJD]')
-            if args.mag:
-                axDict[b][j].set_ylabel('flux [mag]')
-            else:
-                axDict[b][j].set_ylabel('flux [adu]')
+                axDict[b][j].set_xlabel('epoch [MJD]')
+                if args.mag:
+                    axDict[b][j].set_ylabel('flux [mag]')
+                else:
+                    axDict[b][j].set_ylabel('flux [adu]')
 
 
-    plt.show()
+        plt.show()
