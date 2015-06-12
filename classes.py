@@ -784,7 +784,7 @@ if __name__ == '__main__':
         Looping in bands and fit of flux
         """
         for b in candidate.lcsDict.keys():
-            epoch = util.time_correct(
+            phase = util.time_correct(
                     candidate.lcsDict[b].mjd,
                     candidate.zSpec if candidate.zSpec else candidate.zPhotHost
                     )
