@@ -826,9 +826,9 @@ if __name__ == "__main__":
 
         pbar.finish()
 
-        del iCandidate
-        del jCandidate
-        del tmpSN
+        # del iCandidate
+        # del jCandidate
+        # del tmpSN
 
         gc.collect()
 
