@@ -631,14 +631,6 @@ if __name__ == "__main__":
         print indent + "Rows in [{:<d}, {:<d})".format(i_start, i_end)
         print indent + "Cols in [{:<d}, {:<d})".format(j_start, j_end)
 
-        # p = subprocess.Popen("ls *.DAT", shell=True, stdout=subprocess.PIPE,
-        #     cwd=args.dirFit+os.sep)
-        #     # cwd=args.dirFit+os.sep)
-        # lsDirFit = p.stdout.read()
-        # lsDirFit = lsDirFit.split('\n')
-        # lsDirFit.sort()
-        # lsDirFit.remove('')
-
         """
         setting value for big distance
         """
