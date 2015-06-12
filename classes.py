@@ -54,6 +54,10 @@ if __name__ == '__main__':
         action='store_true', help='Test prior in GP regression.'
         )
 
+    actionGroup.add_argument(
+        '--plot', dest='plot',
+        action='store_true', help='Plot results of test.'
+    )
     """
 
     INPUT OPTIONS
