@@ -9,6 +9,7 @@ import time
 import argparse
 import warnings
 import subprocess
+import cProfile
 
 warnings.filterwarnings(
     'error',
@@ -709,22 +710,16 @@ if __name__ == '__main__':
         'i': 25.1,
         'z': 24.9
     }
-    p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData+os.sep)
-    lsDirData = p.stdout.read()
-    lsDirData = lsDirData.split('\n')
-    lsDirData.sort()
-    lsDirData.remove('')
-    # fCandidatesList = "DES_BLIND+HOSTZ.LIST"
-    # candidatesFileList = np.genfromtxt(dirData+os.sep+fCandidatesList, dtype=None)\
+
+    lsDirData = util.list_files("*SN*.DAT", path=args.dirData+os.sep)
 
     """
 
     KERNEL SPECIFICATION
 
     """
-    # kern = GPy.kern.RBF(1)
-    kern = GPy.kern.RatQuad(1)
+    kern = GPy.kern.RBF(1)
+    # kern = GPy.kern.RatQuad(1)
 
     """
     ----------------------
@@ -775,62 +770,6 @@ if __name__ == '__main__':
         print 'candidate z = {:>6.4f}'.format(
             candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
 
-        if args.kcor:
-            lambda_rf = [el/(
-                1+(candidate.zSpec if candidate.zSpec else candidate.zPhotHost)
-                ) for el in lambda_obs]
-
-            plt.figure()
-            int_mjd_g = [int(el) for el in candidate.g.mjd]
-            int_mjd_r = [int(el) for el in candidate.r.mjd]
-            int_mjd_i = [int(el) for el in candidate.i.mjd]
-            int_mjd_z = [int(el) for el in candidate.z.mjd]
-            mjd = [el for el in int_mjd_g if el in int_mjd_r
-                        and el in int_mjd_i and el in int_mjd_z]
-            jd = mjd[0]
-
-            flux = [
-                candidate.g.flux[int_mjd_g.index(jd)],
-                candidate.r.flux[int_mjd_r.index(jd)],
-                candidate.i.flux[int_mjd_i.index(jd)],
-                candidate.z.flux[int_mjd_z.index(jd)]
-                ]
-            fluxErr = [
-                candidate.g.fluxErr[int_mjd_g.index(jd)],
-                candidate.r.fluxErr[int_mjd_r.index(jd)],
-                candidate.i.fluxErr[int_mjd_i.index(jd)],
-                candidate.z.fluxErr[int_mjd_z.index(jd)]
-                ]
-            plt.errorbar(lambda_obs, flux, yerr=fluxErr, fmt='k--', ecolor='black')
-            # if args.mag:
-            #     plt.xlim([plt.ylim()[1]], plt.ylim()[0]])
-            plt.scatter(lambda_obs, flux, color='black')
-            plt.errorbar(lambda_rf, flux, yerr=fluxErr, fmt='b--', ecolor='blue')
-            plt.scatter(lambda_rf, flux, color='blue')
-            plt.show()
-            # mjd_k_corr, k_correct_flux = candidate.k_correct_flux()
-
-
-            # (a, b) = np.polyfit(
-            #     # [lambda_rf[0], lambda_rf[1]],
-            #     [
-            #     lambda_rf[0],
-            #     lambda_rf[1]#,
-            #     # lambda_rf[2],
-            #     # lambda_rf[3],
-            #     ],
-            #     [
-            #     candidate.g.flux[int_mjd_g.index(jd)],
-            #     candidate.r.flux[int_mjd_r.index(jd)]#,
-            #     # candidate.i.flux[int_mjd_i.index(jd)],
-            #     # candidate.z.flux[int_mjd_z.index(jd)]
-            #     ], deg = 1,
-            #     w = [
-            #         1/candidate.g.fluxErr[int_mjd_g.index(jd)],
-            #         1/candidate.r.fluxErr[int_mjd_r.index(jd)]]#,
-            #     # cov=True
-            #     )
-            # raise ValueError
 
         """
         Create SupernovaFit objects
