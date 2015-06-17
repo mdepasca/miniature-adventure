@@ -906,12 +906,12 @@ if __name__ == '__main__':
                     2*fit[j].lcsDict[b].fluxErr[i]
                         for i in range(len(fit[j].lcsDict[b].flux))
                             ]]
-                axDict[b][j].fill_between(fit[j].lcsDict[b].mjd,
+                axDict[b][j].fill_between(fit[j].lcsDict[b].shiftedMjd,
                     fluxUpLim, fluxLowLim,
                     alpha=0.2, linewidth=0.5)
 
                 axDict[b][j].plot(
-                    fit[j].lcsDict[b].mjd,
+                    fit[j].lcsDict[b].shiftedMjd,
                     fit[j].lcsDict[b].flux, c=colorList[j],
                     )
                 axDict[b][j].errorbar(
