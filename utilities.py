@@ -1036,6 +1036,57 @@ def gp_fit(X, Y, errY, kernel,
     return list(predX.reshape(predX.size)), \
         list(meanY.reshape(meanY.size)), list(var.reshape(var.size)), gpModel
 
+
+
+def sort_distance_file(distanceMatPath):
+    l = list()
+    r = list()
+    c = list()
+
+    subProcCmd = "ls {:>s}*Sum*.txt".format(distanceMatPath)
+    p = subprocess.Popen(subProcCmd, shell=True, stdout=subprocess.PIPE)
+    lsPath = p.stdout.read()
+    lsPath = lsPath.split('\n')
+    lsPath.sort()
+    lsPath.remove('')
+
+    for distanceFile in lsPath:
+        with open(distanceFile, 'r') as f:
+            line = f.readline()
+            f.close()
+
+        squareIdx1 = line.index('[')
+        squareIdx2 = line.index(']')
+        commaIdx = line.index(',')
+        colonIdx1 = line.index(':')
+        colonIdx2 = line.index(':', colonIdx1+1)
+    
+        r.append(int(line[squareIdx1+1:colonIdx1]))
+        c.append(int(line[commaIdx+1:colonIdx2]))
+
+    l = [r,c]
+    a = np.asarray(l)
+
+    sortIdx = np.argsort(a[0])
+
+    aSort = np.array([a[0][sortIdx], a[1][sortIdx]])
+    lsPath = [lsPath[el] for el in sortIdx.tolist()]
+
+    uniques = np.unique(aSort[0])
+
+    sortIdx = np.zeros_like(aSort[0])
+    for u in uniques:
+        sub = np.where(aSort[0] == u)[0]
+        offset = sub[0]
+        sortIdx[sub[0]:sub[-1]+1] = np.argsort(aSort[1][sub])+offset
+    
+    lsPath = [lsPath[el] for el in sortIdx.tolist()]
+    aSort[1] = aSort[1][sortIdx]
+
+    return lsPath
+
+
+
 #
 #
 # Module Testing
