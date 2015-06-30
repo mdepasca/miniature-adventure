@@ -112,6 +112,7 @@ class Supernova():
     def __cmp__(self, other):
         return 2*(self.zPhotHost - other.zPhotHost > 0) - 1
 
+
     def set_shifted_mjd(self, supernovaFitObj, destretchFlag=True):
         """Apply `set_shifted_mjd_2` from Supernova class to all the bands.
         Depending on `destretchFlag` can or cannot perform correction
@@ -128,4 +129,6 @@ class Supernova():
                 self.lcsDict[b].set_shifted_mjd(
                     supernovaFitObj.lcsDict[b])
 
-    def calc_dereddened_flux(self, R):
+    # def calc_dereddened_flux(self, R):
+    #     for b in self.lcsDict.keys():
+    #         self.lcsDict[b].calc_dereddened_flux(R, self.MWEBV)

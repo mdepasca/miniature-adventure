@@ -1,17 +1,3 @@
-import supernova
-import ligtcurve
-from astropy.io import ascii
-from astropy.table import Table, Column, MaskedColumn, vstack, hstack
-import numpy as np
-import time
-import warnings
-
-warnings.filterwarnings(
-    'error',
-    message=".*divide by zero encountered in double_scalars.*",
-    category=RuntimeWarning
-    )
-
 class SupernovaFit():
     ccMjdMaxFlux = 0
 
