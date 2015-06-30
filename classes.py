@@ -123,13 +123,14 @@ class LightCurve():
     TRY TO USE __slots__
     """
     __slots__ = ['band', 'lim', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
-        'shifted_mjd', 'normFlux', 'normErr', 'magFlag']
+        'shifted_mjd', 'normFlux', 'normErr', 'magFlag', 'SNR']
     def __init__(self, band, magFlag=False, lim=0):
         self.band = band
         self.mjd = list()#np.zeros(0, dtype=float)
         self.shiftedMjd = list()#np.zeros(0, dtype=float)
         self.flux = list()#np.zeros(0, dtype=float)
         self.fluxErr = list()#np.zeros(0, dtype=float)
+        self.SNR = list()
         self.magFlag = magFlag
         self.lim = lim
 
