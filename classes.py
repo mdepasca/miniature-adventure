@@ -123,14 +123,14 @@ class LightCurve():
     TRY TO USE __slots__
     """
     __slots__ = ['band', 'lim', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
-        'shifted_mjd', 'normFlux', 'normErr', 'magFlag', 'SNR']
+        'shifted_mjd', 'normFlux', 'normErr', 'magFlag', 'snr']
     def __init__(self, band, magFlag=False, lim=0):
         self.band = band
         self.mjd = list()#np.zeros(0, dtype=float)
         self.shiftedMjd = list()#np.zeros(0, dtype=float)
         self.flux = list()#np.zeros(0, dtype=float)
         self.fluxErr = list()#np.zeros(0, dtype=float)
-        self.SNR = list()
+        self.snr = list()
         self.magFlag = magFlag
         self.lim = lim
 
@@ -293,6 +293,7 @@ class Supernova():
                 if tag == "OBS":
                     mjd = float(data[0])
                     passband = data[1]
+                    snr = float(data[5])
                     if magFlag:
                         flux = float(data[6])
                         fluxErr = float(data[7])
@@ -304,21 +305,25 @@ class Supernova():
                             self.g.mjd.append(mjd)
                             self.g.flux.append(flux)
                             self.g.fluxErr.append(fluxErr)
+                            self.g.snr.append(snr)
                             # self.g.add_data_point(mjd, flux, fluxErr)
                         elif passband == "r":
                             self.r.mjd.append(mjd)
                             self.r.flux.append(flux)
                             self.r.fluxErr.append(fluxErr)
+                            self.r.snr.append(snr)
                             # self.r.add_data_point(mjd, flux, fluxErr)
                         elif passband == "i":
                             self.i.mjd.append(mjd)
                             self.i.flux.append(flux)
                             self.i.fluxErr.append(fluxErr)
+                            self.i.snr.append(snr)
                             # self.i.add_data_point(mjd, flux, fluxErr)
                         elif passband == "z":
                             self.z.mjd.append(mjd)
                             self.z.flux.append(flux)
                             self.z.fluxErr.append(fluxErr)
+                            self.z.snr.append(snr)
                             # self.z.add_data_point(mjd, flux, fluxErr)
                         else:
                             print "Filter not recognized: {:<}".format(passband)
