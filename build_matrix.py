@@ -1,6 +1,7 @@
 import numpy as np
 import gc
 import argparse
+import utilities as util
 
 if __name__ == "__main__":
 	"""
@@ -11,7 +12,6 @@ if __name__ == "__main__":
 	The time stamp is inserted in the file name. THIS COULD BETTER BE A LIST OF FILE NAMES!!
 	"""
 
-
 	parser = argparse.ArgumentParser(
         description = "SN lightcurve fitter and classifier: Bulding distance matrix from files.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -20,65 +20,62 @@ if __name__ == "__main__":
 		'--path', '-p', dest='path',
 		help='Path where to find files.')
 
-	parser.add_argument(
-		'--time-stamps', '-t', dest='timeStamps',
-		default='',
-		help='ASCII file containing time stamps of sub-matrix files. One per line in the correct order.')
-
 	args = parser.parse_args()
 
 if __name__ == "__main__":
-	if args.timeStamps == '':
-		raise SystemExit
+	# if args.timeStamps == '':
+	# 	raise SystemExit
 
-	inFile = file(args.timeStamps, 'r')
-	timeStamps = inFile.readlines()
-	inFile.close()
+	# inFile = file(args.timeStamps, 'r')
+	# timeStamps = inFile.readlines()
+	# inFile.close()
 
-	# path = 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
-	fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'
+        fileList = util.sort_distance_file(args.path)
+        
+	# # path = 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
+	# fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'
 
 	print 'mat00 ...'
-	mat00 = np.loadtxt(args.path+fileName.format(float(timeStamps[0])))
+	mat00 = np.loadtxt(fileList[0])
 
 	print 'mat01 ...'
-	mat01 = np.loadtxt(args.path+fileName.format(float(timeStamps[1])))
+	mat01 = np.loadtxt(fileList[1])
 
 	print 'mat02 ...'
-	mat02 = np.loadtxt(args.path+fileName.format(float(timeStamps[2])))
+	mat02 = np.loadtxt(fileList[2])
 
 	print 'mat03 ...'
-	mat03 = np.loadtxt(args.path+fileName.format(float(timeStamps[3])))
+	mat03 = np.loadtxt(fileList[3])
 
 	#---> hstacking ....
 	print 'hstacking mat0 ...'
 	mat0 = np.hstack((mat00, mat01, mat02, mat03))
 
 	del mat00
-	gc.collect()
+
 
 	# ----- line 1 -----
 	print 'mat10 ...'
 	mat10 = np.transpose(mat01)
 	
 	del mat01
-	gc.collect()
+	# gc.collect()
 
 	print 'mat11 ...'
-	mat11 = np.loadtxt(args.path+fileName.format(float(timeStamps[4])))
+	mat11 = np.loadtxt(fileList[4])
 
 	print 'mat12 ...'
-	mat12 = np.loadtxt(args.path+fileName.format(float(timeStamps[5])))
+	mat12 = np.loadtxt(fileList[5])
 
 	print 'mat13 ...'
-	mat13 = np.loadtxt(args.path+fileName.format(float(timeStamps[6])))
+	mat13 = np.loadtxt(fileList[6])
 
 	#---> hstacking ....
 	print 'stacking mat1 ...'
 	mat1 = np.hstack((mat10, mat11, mat12, mat13))
 
 	del mat10, mat11
-	gc.collect()
+	# gc.collect()
 
 	# ----- line 2 -----
 	print 'mat20 ...'
@@ -93,10 +90,10 @@ if __name__ == "__main__":
 	gc.collect()
 
 	print 'mat22 ...'
-	mat22 = np.loadtxt(args.path+fileName.format(float(timeStamps[7])))
+	mat22 = np.loadtxt(fileList[7])
 
 	print 'mat23 ...'
-	mat23 = np.loadtxt(args.path+fileName.format(float(timeStamps[8])))
+	mat23 = np.loadtxt(fileList[8])
 
 	#---> stacking ....
 
@@ -104,7 +101,7 @@ if __name__ == "__main__":
 	mat2 = np.hstack((mat20, mat21, mat22, mat23))
 
 	del mat20, mat21, mat22
-	gc.collect()
+	# gc.collect()
 
 	# ----- line 3 -----
 
@@ -120,26 +117,26 @@ if __name__ == "__main__":
 	del mat03, mat13, mat23
 	
 	print 'mat33 ...'
-	mat33 = np.loadtxt(args.path+fileName.format(float(timeStamps[9])))
+	mat33 = np.loadtxt(fileList[9])
 
 	#---> stacking ....
 	print 'stacking mat3 ...'
 	mat3 = np.hstack((mat30, mat31, mat32, mat33))
 
 	del mat30, mat31, mat32, mat33
-	gc.collect()
+	# gc.collect()
 
 	#---> stacking ....
 	print 'stacking mat ...'
 	mat = np.vstack((mat0, mat1, mat2, mat3))
 
 	del mat0, mat1, mat2, mat3
-	gc.collect()
+	# gc.collect()
 
 	print 'saving mat ...'
 	np.savetxt(args.path+'dist_matrix_Sum.txt', mat)
 
 	del mat
-	gc.collect()
+	# gc.collect()
 	print 'END'
 	#END
