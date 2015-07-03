@@ -1,3 +1,3 @@
 import lightcurve
 import supernova
-# import supernovaFit
+import supernova_fit

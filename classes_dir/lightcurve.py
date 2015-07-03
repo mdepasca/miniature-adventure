@@ -1,5 +1,3 @@
-import numpy as np
-
 class LightCurve():
     """
     Once fully initiated, instances of this class have the following important
@@ -22,13 +20,14 @@ class LightCurve():
     TRY TO USE __slots__
     """
     __slots__ = ['band', 'lim', 'mjd', 'shiftedMjd', 'flux', 'fluxErr', 'badCurve',
-        'shifted_mjd', 'normFlux', 'normErr', 'magFlag']
+        'shifted_mjd', 'normFlux', 'normErr', 'magFlag', 'SNR']
     def __init__(self, band, magFlag=False, lim=0):
         self.band = band
         self.mjd = list()#np.zeros(0, dtype=float)
         self.shiftedMjd = list()#np.zeros(0, dtype=float)
         self.flux = list()#np.zeros(0, dtype=float)
         self.fluxErr = list()#np.zeros(0, dtype=float)
+        self.SNR = list()
         self.magFlag = magFlag
         self.lim = lim
 
@@ -57,7 +56,7 @@ class LightCurve():
         """
         self.shiftedMjd = [self.mjd[i]-distance for i in range(len(self.mjd))]
 
-    def set_shifted_mjd_2(self, supernovaFitLC, redshift=-1, ccMjdMaxFlux=0):
+    def set_shifted_mjd_2(self, supernovaFitLC, max_flux_epoch, redshift=-1, ccMjdMaxFlux=0):
         """Initilise `shiftedMjd` on the basis of the fitted light curve
         `SupernovaFitLC`. If redshift is provided shiftedMjd will be also
         corrected from time dilation.
@@ -75,8 +74,9 @@ class LightCurve():
         if redshift != -1:
             self.shiftedMjd = self.calc_destretched_time(redshift)
 
-        self.shiftedMjd = [el - supernovaFitLC.mjd[supernovaFitLC.max_flux_index]
-                            for el in self.mjd]
+        print supernovaFitLC.mjd[supernovaFitLC.max_flux_index]
+        self.shiftedMjd = [el - max_flux_epoch# supernovaFitLC.mjd[supernovaFitLC.max_flux_index]
+                            for el in self.shiftedMjd]
 
         if ccMjdMaxFlux != 0:
             epochs = [el + ccMjdMaxFlux for el in self.shiftedMjd]

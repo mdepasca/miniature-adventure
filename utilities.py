@@ -346,6 +346,29 @@ def extract_redshift_data(path, outFile):
         'products/'+outFile, sep=';', index=False,
         float_format='%5.4f', header=True)
 
+def generate_training_set(path, colNum=7):
+
+    if path[-1] != '/':
+        path = path + '/'
+
+    subProcCmd = "{:>s}*.DUMP".format(path)
+
+    dumpFile = list_files(subProcCmd)
+
+    subProcCmd = "{:>s}*.DAT".format(path)
+
+    snFileList = list_files(subProcCmd)
+
+    snGenType = pd.read_csv(dumpFile[0],
+        sep=' ', skiprows=0, header=1, usecols=[colNum], skipinitialspace=True,
+        engine='c')
+
+    shuffIdxArray = np.shuffle(np.arange(len(np.where(
+                                            snGenType['GENTYPE'] == 1
+                                            )[0])))
+
+
+
 def extract_training_set(path, fileName):
     """Creates files dividing supernovae in training and test sets.
     It creates also files list training set supernovae by type
@@ -1060,7 +1083,7 @@ def sort_distance_file(distanceMatPath):
         commaIdx = line.index(',')
         colonIdx1 = line.index(':')
         colonIdx2 = line.index(':', colonIdx1+1)
-    
+
         r.append(int(line[squareIdx1+1:colonIdx1]))
         c.append(int(line[commaIdx+1:colonIdx2]))
 
@@ -1079,7 +1102,7 @@ def sort_distance_file(distanceMatPath):
         sub = np.where(aSort[0] == u)[0]
         offset = sub[0]
         sortIdx[sub[0]:sub[-1]+1] = np.argsort(aSort[1][sub])+offset
-    
+
     lsPath = [lsPath[el] for el in sortIdx.tolist()]
     aSort[1] = aSort[1][sortIdx]
 
