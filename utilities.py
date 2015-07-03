@@ -348,7 +348,7 @@ def extract_redshift_data(path, outFile):
 
 def generate_training_set(path, colNum=7):
 
-    if path[-1] != '/'
+    if path[-1] != '/':
         path = path + '/'
 
     subProcCmd = "{:>s}*.DUMP".format(path)
