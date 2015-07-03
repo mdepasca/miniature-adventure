@@ -293,7 +293,11 @@ class Supernova():
                 if tag == "OBS":
                     mjd = float(data[0])
                     passband = data[1]
-                    snr = float(data[5])
+                    try:
+                        snr = float(data[5])
+                    except IndexError:
+                        # the column does not exists
+                        snr = -9
                     if magFlag:
                         flux = float(data[6])
                         fluxErr = float(data[7])
