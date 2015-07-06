@@ -213,6 +213,12 @@ if __name__ == "__main__":
             args.dirFit = str(raw_input(indent + 'Specify new directory '\
                 +'for fit: '))
 
+    if args.dirData[-1] != os.sep:
+        args.dirData += os.sep
+
+    if args.dirFit[-1] != os.sep:
+        args.dirFit += os.sep
+
     print indent + 'Fit directory will be: ' + path.abspath(args.dirFit)
 
     if not os.path.exists(path.abspath(args.dirFit)):
@@ -225,14 +231,14 @@ if __name__ == "__main__":
     ----------------------------------------------------------------------------
     """
     p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirData+os.sep)
+            cwd=args.dirData)
     lsDirData = p.stdout.read()
     lsDirData = lsDirData.split('\n')
     lsDirData.sort()
     lsDirData.remove('')
 
     p = subprocess.Popen("ls *SN*.DAT", shell=True, stdout=subprocess.PIPE,
-            cwd=args.dirFit+os.sep)
+            cwd=args.dirFit)
     lsDirFit = p.stdout.read()
     lsDirFit = lsDirFit.split('\n')
     lsDirFit.sort()
@@ -465,7 +471,7 @@ if __name__ == "__main__":
         if path.exists(filePath) == False:
             # create the file from existing partial files
             print '{:<s} created!'.format(filePath)
-            noPeakedFileList = util.list_files(args.dirFit+os.sep+'NOPEAKED*.LIST')
+            noPeakedFileList = util.list_files(args.dirFit+'NOPEAKED*.LIST')
             util.concat_files(noPeakedFileList, filePath)
         tmp = np.loadtxt(filePath, dtype=np.str)
         if tmp.size == 1:
@@ -663,7 +669,7 @@ if __name__ == "__main__":
             Reading in i-candidate
             """
             tmpSN = util.get_sn_from_file(
-                args.dirFit+os.sep+lsDirFit[i]
+                args.dirFit+lsDirFit[i]
                 )
             if tmpSN.r.badCurve:
                 # nothing has to be added to the distance matrix. Print and
@@ -746,7 +752,7 @@ if __name__ == "__main__":
                 """
                 try:
                     tmpSN = util.get_sn_from_file(
-                        args.dirFit+os.sep+lsDirFit[j]
+                        args.dirFit+lsDirFit[j]
                     )
                 except IndexError:
                     print j, len(lsDirFit)
@@ -1062,7 +1068,7 @@ if __name__ == "__main__":
             """
             try:
                 tmpSN = util.get_sn_from_file(
-                            args.dirFit+os.sep+lsDirFit[i+offset],
+                            args.dirFit+lsDirFit[i+offset],
                             magFlag=args.mag,
                         )
             except IndexError:
@@ -1270,12 +1276,12 @@ if __name__ == "__main__":
 
         fname = 'DES_SN{:0>6d}.DAT'.format(args.cand)
         candidate = util.get_sn_from_file(
-                args.dirData+os.sep+fname
+                args.dirData+fname
                 )
 
         fname = 'DES_SN{:0>6d}_FIT.DAT'.format(args.cand)
         tmpSN = util.get_sn_from_file(
-            args.dirFit+os.sep+fname,
+            args.dirFit+fname,
             magFlag=args.mag,
                 )
         """
