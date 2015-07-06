@@ -257,14 +257,14 @@ if __name__ == "__main__":
             print indent + \
                 "WARNING: upper limit > than the number of files. Corrected.\n"
             args.limits[1] = len(lsDirData)
-        filePath = args.dirFit + os.sep + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = args.dirFit + 'PEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
 
         fPeaked = open(filePath, 'w')
 
 
-        filePath = args.dirFit + os.sep + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
+        filePath = args.dirFit + 'NOPEAKED_{:<}_{:<5.3f}.LIST'.format(
             socket.gethostname(), time.time()
             )
 
@@ -278,7 +278,7 @@ if __name__ == "__main__":
                 )
 
         print "\n" + indent + \
-            "Data directory: " + os.curdir + args.dirData + os.sep
+            "Data directory: " + os.curdir + args.dirData
 
         print "\n" + indent \
             + "Number of candidates = {:<d}".format(len(lsDirData))
@@ -314,7 +314,7 @@ if __name__ == "__main__":
                 continue
 
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + lsDirData[i],
+                args.dirData + lsDirData[i],
                 args.mag
                 )
 
@@ -399,7 +399,7 @@ if __name__ == "__main__":
                 ----------------------------------------------------------------
                 """
                 if (candidateFit.r.badCurve == False):
-                    filePath = args.dirFit + os.sep + \
+                    filePath = args.dirFit + \
                         path.splitext(lsDirData[i])[0] + "_FIT.DAT"
 
                     candidateFit.save_on_txt(filePath)
@@ -424,11 +424,11 @@ if __name__ == "__main__":
             socket.gethostname(), time.time()
             )
 
-        np.savetxt(args.dirFit + os.sep + filePath, peakIdx,
+        np.savetxt(args.dirFit + filePath, peakIdx,
             header='Indexes of fitted LCs with r maximum.', fmt='%d')
 
 
-        filePath = args.dirFit + os.sep + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
+        filePath = args.dirFit + 'nopeaked_{:<}_{:<5.3f}.dat'.format(
             socket.gethostname(), time.time()
             )
 
@@ -483,10 +483,10 @@ if __name__ == "__main__":
             args.limits[1] = len(nopeakList)
         #
         # filePath = 'repeats.txt'
-        # repeats = np.loadtxt(args.dirFit + os.sep + filePath, dtype=np.str)
+        # repeats = np.loadtxt(args.dirFit + filePath, dtype=np.str)
 
         filePath = 'cross_correlated_files_{:<5.3f}.dat'.format(time.time())
-        reWrite = open(args.dirFit + os.sep + filePath, 'w')
+        reWrite = open(args.dirFit + filePath, 'w')
         prog = 0
 
         for i in nopeakList[args.limits[0]:args.limits[1]]:
@@ -544,7 +544,7 @@ if __name__ == "__main__":
                 #         'File appears also in unpeaked list: ignoring it.' + \
                 #             bcolors.txtrst
                 #     continue
-                filePath = j#args.dirFit + os.sep + lsDirData[j][0:12] + '_FIT.DAT'
+                filePath = j#args.dirFit + lsDirData[j][0:12] + '_FIT.DAT'
                 try:
                     tmpSN = util.get_sn_from_file(filePath)
                 except IOError:
@@ -601,7 +601,7 @@ if __name__ == "__main__":
             re-writing file of not peaked lc to include information on maximum
             position from CC.
             """
-            filePath = i#args.dirFit + os.sep + lsDirData[i][0:12] + '_FIT.DAT'
+            filePath = i#args.dirFit + lsDirData[i][0:12] + '_FIT.DAT'
             notPeaked.save_on_txt(filePath)
 
             reWrite.write(filePath+'\n')
@@ -616,10 +616,17 @@ if __name__ == "__main__":
 
     CALCULATING DISTANCE MATRIX
 
+
+
+    needs:
+    - args.distMatrix
+    - args.limits
+    - args.offset
+    - args.dirFit
     """
     if args.distMatrix:
-        if not os.path.exists(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep)):
-            os.makedirs(path.abspath(args.dirFit + os.sep + 'distance_matrix' + os.sep))
+        if not os.path.exists(path.abspath(args.dirFit + 'distance_matrix' + os.sep)):
+            os.makedirs(path.abspath(args.dirFit + 'distance_matrix' + os.sep))
 
         """
         Calculate distance between fitted lightcurves.
@@ -911,7 +918,7 @@ if __name__ == "__main__":
             ) + \
             "Created by {:<}".format(socket.gethostname())
 
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + 'distance_matrix' + os.sep + \
             'dist_matrix_Sum_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
@@ -920,25 +927,25 @@ if __name__ == "__main__":
         del distMatrixSum
         gc.collect()
 
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + 'distance_matrix' + os.sep + \
             'dist_matrix_g_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[0], fmt='%6.4f', header=fileHeader)
 
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + 'distance_matrix' + os.sep + \
             'dist_matrix_r_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[1], fmt='%6.4f', header=fileHeader)
 
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + 'distance_matrix' + os.sep + \
             'dist_matrix_i_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
         np.savetxt(filePath, distMatrix[2], fmt='%6.4f', header=fileHeader)
 
-        filePath = args.dirFit + os.sep + 'distance_matrix' + os.sep + \
+        filePath = args.dirFit + 'distance_matrix' + os.sep + \
             'dist_matrix_z_{:<}_{:<5.3f}.txt'.format(
                 socket.gethostname(), time.time()
             )
@@ -1060,7 +1067,7 @@ if __name__ == "__main__":
             Getting the observational data from file
             """
             candidate = util.get_sn_from_file(
-                args.dirData + os.sep + lsDirData[i+offset]#candidateIdx]
+                args.dirData + lsDirData[i+offset]#candidateIdx]
                 )
 
             """
@@ -1241,15 +1248,15 @@ if __name__ == "__main__":
 
 
         print indent + "Plots saved in files:"
-        if not os.path.exists(path.abspath(args.dirFit + os.sep + "plots" + os.sep)):
-            os.makedirs(args.dirFit + os.sep + "plots")
+        if not os.path.exists(path.abspath(args.dirFit + "plots" + os.sep)):
+            os.makedirs(args.dirFit + "plots")
         for b in dictFig.keys():
             dictFig[b].savefig(
-                args.dirFit + os.sep + "plots"+ os.sep + GPkern + \
+                args.dirFit + "plots"+ os.sep + GPkern + \
                 "_band_{:<1}_{:<f}.png".format(b,timeMark),
                 dpi=300
                 )
-            print indent + " - " + args.dirFit + os.sep + "plots" + os.sep + \
+            print indent + " - " + args.dirFit + "plots" + os.sep + \
                 GPkern + "_band_{:<1}_{:<f}.png".format(b,timeMark)
 
         plt.close('all')
