@@ -5,9 +5,9 @@ import utilities as util
 
 if __name__ == "__main__":
 	"""
-	The routine works by reading in a file containig in each line the 
-	time stamp of the sub-matrix file (WARNING: they have to be in the 
-	correct order, 1st line -> sub-matrix 00; 2nd line -> sub-matrix 01 
+	The routine works by reading in a file containig in each line the
+	time stamp of the sub-matrix file (WARNING: they have to be in the
+	correct order, 1st line -> sub-matrix 00; 2nd line -> sub-matrix 01
 	etc.).
 	The time stamp is inserted in the file name. THIS COULD BETTER BE A LIST OF FILE NAMES!!
 	"""
@@ -30,8 +30,8 @@ if __name__ == "__main__":
 	# timeStamps = inFile.readlines()
 	# inFile.close()
 
-        fileList = util.sort_distance_file(args.path)
-        
+    fileList = util.sort_distance_file(args.path)
+
 	# # path = 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
 	# fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
 	# ----- line 1 -----
 	print 'mat10 ...'
 	mat10 = np.transpose(mat01)
-	
+
 	del mat01
 	# gc.collect()
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
 	mat32 = np.transpose(mat23)
 
 	del mat03, mat13, mat23
-	
+
 	print 'mat33 ...'
 	mat33 = np.loadtxt(fileList[9])
 
