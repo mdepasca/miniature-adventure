@@ -9,7 +9,7 @@ vec.nObs <- function(path){
         print(f)
         r <- readLines(f)
         skip <- grep('OBS:', r)
-        tmp <- read.table(f, header=TRUE, skip=skip[2]-1, fill=TRUE) 
+        tmp <- read.table(f, header=TRUE, skip=skip[2]-1, fill=TRUE)
         nObs <- c(nObs, dimension(tmp)[1])
         rm(tmp)
     }
@@ -20,24 +20,24 @@ vec.nObs <- function(path){
 get_dump <- function(dump.file){
   dump <- read.table(dump.file, skip=1, header=TRUE, fill=TRUE, as.is=T)
 
-  for (i in seq(2, length(names(dump)))){
-    tmp <- as.numeric(dump[,i])
-    dump[,i] <- tmp
-    remove(tmp)
-  }
-  del.rows <- which(is.na(dump$GENZ))
-  dump <- dump[-del.rows,]
+  # for (i in seq(2, length(names(dump)))){
+  #   tmp <- as.numeric(dump[,i])
+  #   dump[,i] <- tmp
+  #   remove(tmp)
+  # }
+  # del.rows <- which(is.na(dump$GENZ))
+  # dump <- dump[-del.rows,]
 
   dump$GENTYPE[which(dump$GENTYPE == 20)] <- 2
   dump$GENTYPE[which(dump$GENTYPE == 21)] <- 2
   dump$GENTYPE[which(dump$GENTYPE == 22)] <- 2
   dump$GENTYPE[which(dump$GENTYPE == 23)] <- 2
-  
+
   dump$GENTYPE[which(dump$GENTYPE == 32)] <- 3
   dump$GENTYPE[which(dump$GENTYPE == 33)] <- 3
-  
+
   dump$GENTYPE <- as.factor(dump$GENTYPE)
-  
+
   return(dump)
 }
 
@@ -56,7 +56,7 @@ snphotcc.param.distrib <- function(dump.df, param='GENZ', save=FALSE){
 redshift.distrib <- function(dump.df, save=FALSE, z.ref=-1, z.thr=0.17){
     # dump <- read.table(dump.file, header=TRUE, skip=1)
     # par(mfrow=c(1,1))
-    
+
     d <- density(dump.df$GENZ, bw=0.03)
     if (z.ref == -1){
         z.ref <- d$x[which(d$y==max(d$y))]
@@ -73,7 +73,7 @@ redshift.distrib <- function(dump.df, save=FALSE, z.ref=-1, z.thr=0.17){
     ##     density=10, angle=45)
     ## boxed.labels(0.1, 0.1, labels=paste(length(
     ##     dump.df$GENZ[which(dump.df$GENZ<z.thr)])), cex=1, border=FALSE)
-    
+
     ## polygon(c(z.ref-z.thr/2, d$x[which((z.ref-z.thr/2)<d$x &
     ##     d$x<(z.ref+z.thr/2))], z.ref+z.thr/2),
     ## c(0,d$y[which((z.ref-z.thr/2)<d$x & d$x<(z.ref+z.thr/2))],0),
@@ -84,7 +84,7 @@ redshift.distrib <- function(dump.df, save=FALSE, z.ref=-1, z.thr=0.17){
     # col='darkgray', border='darkgray')
     # lines(d, xlab='redshift', main='', sub=paste('N =', length(dump.df$CID),
     #     ' Bandwidth =', d$bw, sep=' '))
-    
+
     rug(d$x[which(d$y==max(d$y))])
     if (save){
         dev.off()
@@ -106,16 +106,16 @@ compare.densities <- function(dump.df, save=FALSE, train=FALSE, z.ref=-1, z.thr=
                            col.names=c('idx', 'snid', 'path', 'type'))
     dump.df <- dump.df[match(train.df$snid, dump.df$CID),]
   }
-  
+
   d1 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 1)], bw=0.03)
   d2 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 2)], bw=0.03)
   d3 <- density(dump.df$GENZ[which(dump.df$GENTYPE == 3)], bw=0.03)
-  
+
   if (z.ref == -1){
     z.ref <- d$x[which(d$y==max(d$y))]
   }
 #   z.thr <- 0.17/2
-  
+
   colfill <- c('darkorange', 'seagreen3', 'blue2')
   par.default <- par(no.readonly=TRUE)
   par(mfrow=c(3,1), lty=3, ann=FALSE, mar=c(0,0,0,0), oma=c(5,6,4,2))
@@ -125,7 +125,7 @@ compare.densities <- function(dump.df, save=FALSE, train=FALSE, z.ref=-1, z.thr=
   #     ylim=c(0,3.5), axes=FALSE)
   axis(1, at=seq(0,max(d1$x),0.2), label=FALSE, cex.axis=1.5)
   axis(2, at=seq(0,3.5,1), cex.axis=1.5)
-  
+
   box()
   polygon(c(z.ref-z.thr,d3$x[which((z.ref-z.thr)<d3$x &
                                      d3$x<(z.ref+z.thr))],z.ref+z.thr),
@@ -135,7 +135,7 @@ compare.densities <- function(dump.df, save=FALSE, train=FALSE, z.ref=-1, z.thr=
   mtext(paste("N = ", length(which(dump.df$GENTYPE == 3))), line=-4, adj=0.9)
   boxed.labels(z.ref-.01, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 3)
                             & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
-  
+
   par(lty=2)
   plot(d2,col=colfill[2], main='', xlab='Redshift', xlim=c(0,max(d1$x)),
        ylim=c(0,3.5), axes=FALSE)
@@ -150,7 +150,7 @@ compare.densities <- function(dump.df, save=FALSE, train=FALSE, z.ref=-1, z.thr=
   mtext(paste("N = ", length(which(dump.df$GENTYPE == 2))), line=-4, adj=0.93)
   boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 2)
                               & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
-  
+
   par(lty=1)
   plot(d1, col=colfill[1], main='', xlab='Redshift', xlim=c(0,max(d1$x)),
        ylim=c(0,3.5), axes=FALSE)
@@ -161,9 +161,9 @@ compare.densities <- function(dump.df, save=FALSE, train=FALSE, z.ref=-1, z.thr=
                                      d1$x<(z.ref+z.thr))],z.ref+z.thr),
           c(0,d1$y[which((z.ref-z.thr)<d1$x & d1$x<(z.ref+z.thr))],0),
           col=colfill[1], border=colfill[1], density=10, angle=45, lty=1)
-  
+
   rug(z.ref)
-  
+
   boxed.labels(z.ref, 0.5, labels=paste(length(dump.df$GENZ[which((dump.df$GENTYPE == 1)
                               & (z.ref-z.thr)<dump.df$GENZ & dump.df$GENZ<(z.ref+z.thr))])), cex=1, border=FALSE)
   mtext("type Ia", side=3, line=-2, adj=0.9)
@@ -331,7 +331,7 @@ plot.lightcurve <- function(file.path, save=FALSE){
     # gsub("[[:space:]]", "", x)
     sn.type <- gsub('[[:space:]]', '',
         unlist(strsplit(r[grep('SNTYPE:', r)], ':'))[2])
-    
+
     if (sn.type == 1){
         sn.type.lab <- 'type Ia'
     }else if (sn.type %in% c(2,21,22,23)){
