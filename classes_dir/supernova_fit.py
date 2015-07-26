@@ -1,3 +1,5 @@
+import lightcurve
+import supernova
 class SupernovaFit():
     ccMjdMaxFlux = 0
 

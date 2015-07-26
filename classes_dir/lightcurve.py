@@ -1,3 +1,5 @@
+import numpy as np
+
 class LightCurve():
     """
     Once fully initiated, instances of this class have the following important

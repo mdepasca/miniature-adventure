@@ -6,7 +6,7 @@ class Supernova():
     r               (LightCurve)
     i               (LightCurve)
     z               (LightCurve)
-    lightCurvesDict (dictionary) 4 entries, g,r,i,z returning the corresponding
+    lcsDict         (dictionary) 4 entries, g,r,i,z returning the corresponding
                                  LightCurves
     SNID            (int)   supernova ID
     SNTypeInt       (int)   supernova type integer (see relationship between
