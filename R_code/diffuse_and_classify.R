@@ -22,7 +22,7 @@ if (exists('dmap')){
     ## to avoid any possiblity of duplicating the size of dmap
     rm(dmap)
 }
-dmap <- calc_diffusion_map(path.distance, eps.val=eps.val, neigen=neigen)
+dmap <- calc_diffusion_map(path.distance, eps.val=eps.val, neigen=neigen, old.dmap=TRUE)
 
 if (exists('trainingSet')){
     ## if the variable exists, assignment as below would only

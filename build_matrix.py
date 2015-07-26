@@ -30,7 +30,7 @@ if __name__ == "__main__":
 	# timeStamps = inFile.readlines()
 	# inFile.close()
 
-    fileList = util.sort_distance_file(args.path)
+        fileList = util.sort_distance_file(args.path)
 
 	# # path = 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
 	# fileName = 'dist_matrix_Sum_mothra_{:<14.3f}.txt'

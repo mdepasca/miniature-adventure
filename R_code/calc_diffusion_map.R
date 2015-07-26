@@ -7,7 +7,7 @@ library(R.utils)
 filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
 # neigen <- 120
 calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
-    t <- 1
+    t <- 2
     message(paste('Reading diffusion map from directory:', filePath))
     print(eps.val)
     fileLines <- countLines(paste(filePath,'dist_matrix_Sum.txt', sep=''))
