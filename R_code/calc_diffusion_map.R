@@ -4,7 +4,7 @@ library(R.utils)
 
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RATQUAD-with_prior/distance_matrix/dist_matrix_Sum.txt'
 # filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF-with_prior/distance_matrix/dist_matrix_Sum.txt'
-filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
+# filePath <- 'results/SIMGEN_PUBLIC_FIT/RBF_test-length/distance_matrix/'
 # neigen <- 120
 calc_diffusion_map <- function(filePath, eps.val, neigen, old.dmap=FALSE){
     t <- 2
