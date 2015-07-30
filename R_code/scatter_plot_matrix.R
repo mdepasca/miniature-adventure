@@ -19,7 +19,7 @@ if (!exists('dmap')){
      mydata.corr <- abs(cor(mydata))
      mycolors <- dmat.color(mydata.corr)
      myorder <- order.single(mydata.corr)
-     png(file=paste(plotDir, fileName, sep=''), width=7, height=7, units='in', res=300)
+     #png(file=paste(plotDir, fileName, sep=''), width=7, height=7, units='in', res=300)
      cpairs(mydata,
             myorder,
             panel.colors=mycolors,
@@ -29,7 +29,7 @@ if (!exists('dmap')){
             labels=as.character(myorder+min-1),
             main="Variables Ordered and Colored by Correlation"
             )
-     dev.off()
+     #dev.off()
      message(paste(plotDir, fileName, sep=''))
      par(par.defaults)
 }

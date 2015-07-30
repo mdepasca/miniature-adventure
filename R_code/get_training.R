@@ -12,8 +12,8 @@ get_training <- function(path, fileNameRoot){
                                                           col.names=c('idx', 'snid', 'path', 'type')))
          }
     }
-    message('Increasing by 1 idx column')
-    trainingSet$idx <- trainingSet$idx + 1
+    #message('Increasing by 1 idx column')
+    trainingSet$idx <- trainingSet$idx #+ 1
 
     return(trainingSet)
 }

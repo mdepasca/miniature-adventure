@@ -1,12 +1,12 @@
 source('R_code/util.R')
 
-get_test <- function(path, fileNameRoot){
+get_test <- function(path, fileNameRoot, pathToDump){
     ## column `type` is set to 'test' for each SN
     testSet <- read.table(paste(path, fileNameRoot, '.TEST', sep=''),
                           stringsAsFactors=FALSE,
                           col.names=c('idx', 'snid', 'path'))
 
-    dump <- get_dump('train_data/SIMGEN_PUBLIC_DES/SIMGEN_PUBLIC_DES.DUMP')
+    dump <- get_dump(pathToDump)
 
     match.idx <- match(testSet$snid, dump$CID)
 
@@ -25,7 +25,7 @@ get_test <- function(path, fileNameRoot){
     testSet$type[which(testSet$type == 33)] <- 'snIbc'
 
     testSet$type <- as.factor(testSet$type)
-    testSet$idx <- testSet$idx + 1
+    testSet$idx <- testSet$idx #+ 1
 
     rm(match.idx, dump)
 

@@ -3,10 +3,12 @@ source('R_code/get_training.R')
 source('R_code/get_test.R')
 source('R_code/classify_RF.R')
 
-path <- 'results/SIMGEN_PUBLIC_FIT/'
+# path <- 'results/SIMGEN_PUBLIC_FIT/'
+path <- 'results/DES_BLIND+HOSTZ_FIT/'
 ## specific.path <- 'RATQUAD-with_prior'
 ## specific.path <- 'RBF-with_prior'
-specific.path <- 'RBF_test-length'
+# specific.path <- 'RBF_test-length'
+specific.path <- ''
 
 path.distance <- paste(path, specific.path, '/distance_matrix/', sep='')
 
@@ -22,7 +24,7 @@ if (exists('dmap')){
     ## to avoid any possiblity of duplicating the size of dmap
     rm(dmap)
 }
-dmap <- calc_diffusion_map(path.distance, eps.val=eps.val, neigen=neigen, old.dmap=TRUE)
+dmap <- calc_diffusion_map(path.distance, eps.val=eps.val, neigen=neigen, old.dmap=FALSE)
 
 if (exists('trainingSet')){
     ## if the variable exists, assignment as below would only
@@ -37,4 +39,4 @@ message(paste('Building test set from', paste(path, specific.path, '/', sep=''))
 testSet <- get_test(path=paste(path, specific.path, '/', sep=''), fileNameRoot=specific.path)
 
 if (exists('sn.rf')){ rm(sn.rf) }
-sn.rf <- classify_RF(dmap, trainingSet, testSet)
+sn.rf.snphotcc <- classify_RF(dmap, trainingSet, testSet)
