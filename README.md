@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/14986838.svg)](https://zenodo.org/badge/latestdoi/14986838)
+
 miniature-adventure
 ===================
 
